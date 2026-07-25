@@ -1,0 +1,4024 @@
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { onAuthStateChanged, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth'; 
+import { auth, googleProvider, db, handleFirestoreError, OperationType, getWeekdayLabel, isQueryParamValid } from './firebase';
+import { setupBackgroundSync } from './lib/offlineStorage';
+import { doc, setDoc, deleteField, updateDoc, deleteDoc, writeBatch, query, collection, where, getDocs, getDoc, onSnapshot } from 'firebase/firestore';
+import { TABS, PLAYERS as INITIAL_PLAYERS, COMPETITIVE_MATCHES, TEST_MATCHES, SCOUTING_DATA as INITIAL_SCOUTING, INITIAL_FINANCE_DATA, INITIAL_MEETINGS_DATA, INITIAL_TRAINING_SESSIONS, INITIAL_SUMMER_PREP, INITIAL_WINTER_PREP, YEARLY_PLAN, DEPTH_CHART, FINANCE_META, INITIAL_FORMATION, CARD_RECORDS, COMPETITIVE_MINUTES, TEST_MINUTES } from './constants';
+import { TabId, Spieler, Training, Vorbereitung, Spiel, Finanz, LogEntry, Player, IndividualTrainingRecord, TrainingSession, ScoutingEntry, MeetingEntry, FinanceEntry, SummerPrepUnit, WinterPrepUnit, DayPlan } from './types';
+import { useSyncedState } from './hooks/useSyncedState';
+import { useCollectionSync } from './hooks/useCollectionSync';
+import { migrateFirestoreData } from './utils/migration';
+import { UniformMask } from './components/UniformMask';
+import JSZip from 'jszip';
+import { TacticBoard } from './components/TacticBoard';
+import { FormationView } from './components/FormationView';
+import { ScoutingFormationView } from './components/ScoutingFormationView';
+import { MatchPlanningView, YearlyPlanView, BudgetFinanceView, CardStatisticsSheet, RunsSWView, PhysioPlanView, IndividualSteuerungView, TrainingAttendanceView, SummerPreparationView, WinterPreparationView, TeamListView, DeveloperTasksView, TrainingPlanningView, MatchReportView, ScoutingView, MeetingsCalendarView, AccessControlView, PlayerPortalView } from './components/Views';
+import { getPositionOrder, sortPlayers, isPlayer } from './utils/playerSorting';
+import PersonnelView from './components/views/PersonnelView';
+import { UniformView } from './components/UniformView';
+import { getHolidays } from './utils/holidays';
+import { 
+  User, 
+  Plus, 
+  UserPlus,
+  UserMinus,
+  Search, 
+  Camera, 
+  Euro, 
+  MessageSquare, 
+  Activity, 
+  Shield, 
+  ChevronRight,
+  TrendingUp,
+  Clock,
+  FileText,
+  Target,
+  Edit2,
+  Trash2,
+  Save,
+  X as CloseIcon,
+  MapPin,
+  Timer,
+  ChevronLeft,
+  Calendar,
+  RotateCcw,
+  RefreshCw,
+  Upload
+} from 'lucide-react';
+
+const KEY_TO_TAB: Record<string, string> = {
+  'players': 'Spielerprofile',
+  'attendance': 'Anwesenheit',
+  'yearlyPlan': 'Jahresplan',
+  'cardRecords': 'Karten',
+  'scoutingCandidates': 'Scouting',
+  'financeData': 'Finanzen',
+  'financeMeta': 'Finanzen',
+  'meetingsData': 'Gespräche',
+  'individualTrainingData': 'Individuelle Steuerung',
+  'summerPrep': 'Sommer Vorbereitung',
+  'winterPrep': 'Winter Vorbereitung',
+  'runRecords': 'Läufe',
+  'physioEntries': 'Physio',
+  'video_analysis': 'Video-Analyse',
+  'formation': 'Taktiktafel',
+  'depthChart': 'Kaderplanung',
+  'teamPhoto': 'Teamfoto',
+  'testMatches': 'Testspiele',
+  'testMinutes': 'Testspiele',
+};
+
+const App: React.FC = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState(false);
+
+  const [authUser, setAuthUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [ownerEmail] = useState('samerkhaleel720@gmail.com');
+  const [securityLockActive, setSecurityLockActive] = useSyncedState<boolean>('securityLockActive', false, true);
+  const [currentUserStatus, setCurrentUserStatus] = useState<'approved' | 'pending' | 'rejected' | null>(null);
+
+  const [localName, setLocalName] = useState<string>(() => localStorage.getItem('fca_local_name') || 'Gast');
+  const [localEmail, setLocalEmail] = useState<string>(() => localStorage.getItem('fca_local_email') || '');
+  const [showLocalProfileModal, setShowLocalProfileModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const isOwner = (authUser && authUser.email?.toLowerCase() === ownerEmail.toLowerCase()) ||
+                  (localEmail.toLowerCase() === ownerEmail.toLowerCase());
+
+  useEffect(() => {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const storedEmail = localStorage.getItem('fca_custom_email');
+        const storedName = localStorage.getItem('fca_custom_name');
+        if (user.isAnonymous && storedEmail) {
+          setAuthUser({
+            ...user,
+            email: storedEmail,
+            displayName: storedName || storedEmail.split('@')[0],
+            isAnonymous: true
+          });
+        } else {
+          setAuthUser(user);
+        }
+      } else {
+        const storedEmail = localStorage.getItem('fca_custom_email');
+        const storedName = localStorage.getItem('fca_custom_name');
+        if (storedEmail) {
+          if (navigator.onLine) {
+            try {
+              const cred = await signInAnonymously(auth);
+              setAuthUser({
+                ...cred.user,
+                email: storedEmail,
+                displayName: storedName || storedEmail.split('@')[0],
+                isAnonymous: true
+              });
+              return;
+            } catch (err) {
+              console.warn("Could not reconnect background custom login anonymously:", err);
+            }
+          }
+          setAuthUser({
+            uid: 'custom_session_' + storedEmail.replace(/[^a-zA-Z0-9]/g, '_'),
+            email: storedEmail,
+            displayName: storedName || storedEmail.split('@')[0],
+            isCustom: true
+          });
+        } else {
+          setAuthUser(null);
+        }
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const cleanupSync = setupBackgroundSync(db);
+    return () => cleanupSync();
+  }, []);
+
+  useEffect(() => {
+    if (authUser) {
+      const userRef = doc(db, 'app_users', authUser.uid);
+      const unsubscribe = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setCurrentUserStatus(docSnap.data().status || 'pending');
+        } else {
+          setCurrentUserStatus('pending');
+        }
+      }, (error) => {
+        console.warn("Could not fetch current user status:", error);
+        setCurrentUserStatus('pending');
+      });
+      return () => unsubscribe();
+    } else {
+      setCurrentUserStatus(null);
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    if (isOnline && authUser && currentUserStatus !== 'rejected') {
+      const userRef = doc(db, 'app_users', authUser.uid);
+      setDoc(userRef, {
+        uid: authUser.uid,
+        email: authUser.email || '',
+        name: authUser.displayName || authUser.email?.split('@')[0] || 'User',
+        role: authUser.email === ownerEmail ? 'owner' : 'viewer',
+        status: currentUserStatus || 'approved',
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => {
+        console.warn("Could not automatically register/update user in cloud app_users:", err);
+      });
+    }
+  }, [isOnline, authUser, ownerEmail, currentUserStatus]);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      setToast({ message: 'Erfolgreich angemeldet.', id: Date.now() });
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setToast({ message: `Anmeldung fehlgeschlagen: ${err.message}`, id: Date.now() });
+    }
+  };
+
+  const handleEmailPasswordLogin = async (email: string, pass: string) => {
+    if (pass !== '0000') {
+      setToast({ message: 'Falsches Passwort! Bitte nutze das Passwort 0000.', id: Date.now() });
+      return;
+    }
+
+    const emailClean = email.trim().toLowerCase();
+    let displayName = emailClean.split('@')[0];
+    if (emailClean === 'a.jungkeit@ernst-koenig.de') displayName = 'A. Jungkeit';
+    if (emailClean === 'marcelkobus@gmx.de') displayName = 'Marcel Kobus';
+    if (emailClean === 'samerkhaleel720@gmail.com') displayName = 'Samer Khaleel';
+
+    try {
+      setAuthLoading(true);
+      localStorage.setItem('fca_custom_email', emailClean);
+      localStorage.setItem('fca_custom_name', displayName);
+
+      const cred = await signInAnonymously(auth);
+      setAuthUser({
+        ...cred.user,
+        email: emailClean,
+        displayName: displayName,
+        isAnonymous: true
+      });
+
+      const userRef = doc(db, 'app_users', cred.user.uid);
+      await setDoc(userRef, {
+        uid: cred.user.uid,
+        email: emailClean,
+        name: displayName,
+        role: emailClean === ownerEmail ? 'owner' : 'viewer',
+        status: 'approved',
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      setToast({ message: `Erfolgreich angemeldet als ${displayName}!`, id: Date.now() });
+      setShowLoginModal(false);
+    } catch (err: any) {
+      console.error("Custom email/password login failed:", err);
+      setAuthUser({
+        uid: 'custom_session_' + emailClean.replace(/[^a-zA-Z0-9]/g, '_'),
+        email: emailClean,
+        displayName: displayName,
+        isCustom: true
+      });
+      setToast({ message: `Lokal angemeldet als ${displayName} (Offline/Simuliert)`, id: Date.now() });
+      setShowLoginModal(false);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem('fca_custom_email');
+      localStorage.removeItem('fca_custom_name');
+      await signOut(auth);
+      setToast({ message: 'Erfolgreich abgemeldet.', id: Date.now() });
+    } catch (err: any) {
+      console.error("Logout failed:", err);
+    }
+  };
+
+  const [requestEmail, setRequestEmail] = useState('');
+  const [requestName, setRequestName] = useState('');
+
+  const handleRequestAccess = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setToast({ message: 'Zukunft geplant.', id: Date.now() });
+  };
+
+  const [toast, setToast] = useState<{ message: string, id: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('personnel');
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [playerProfileTab, setPlayerProfileTab] = useState<'basis' | 'finanzen' | 'notizen'>('basis');
+  const [editingPlayer, setEditingPlayer] = useState<Spieler | null>(null);
+  const [modalCategory, setModalCategory] = useState<'player' | 'coach' | 'staff' | 'medical'>('player');
+
+  const { data: players, loading: loadingSpieler, addOrUpdateItem: saveSpieler, removeItem: deleteSpieler } = useCollectionSync<Spieler>('spieler', 'id', undefined, 'asc', true);
+  const { data: training, loading: loadingTraining, addOrUpdateItem: saveTraining, removeItem: deleteTraining } = useCollectionSync<Training>('training', 'id', undefined, 'asc', true);
+  const { data: spiele, loading: loadingSpiele, addOrUpdateItem: saveSpiel, removeItem: deleteSpiel } = useCollectionSync<Spiel>('spiele', 'id', undefined, 'asc', true);
+  const { data: budgetFinanz, loading: loadingFinanz, addOrUpdateItem: saveFinanz, removeItem: deleteFinanz } = useCollectionSync<Finanz>('budget_finanz', 'id', undefined, 'asc', true);
+
+  // Additional collections for full functionality
+  const { data: attendance, loading: loadingAttendance, addOrUpdateItem: saveAttendance, removeItem: deleteAttendance } = useCollectionSync<any>('attendance', 'playerId', undefined, 'asc', true);
+  const { data: yearlyPlan, loading: loadingYearly, addOrUpdateItem: saveYearlyPlan, removeItem: deleteYearlyPlan } = useCollectionSync<any>('yearly_plan', 'date', 'date', 'asc', true);
+  const yearlyPlanRef = useRef(yearlyPlan);
+  useEffect(() => {
+    yearlyPlanRef.current = yearlyPlan;
+  }, [yearlyPlan]);
+  const { data: cardRecords, loading: loadingCards, addOrUpdateItem: saveCardRecord, removeItem: deleteCardRecord } = useCollectionSync<any>('card_records', 'playerId', undefined, 'asc', true);
+  const { data: scoutingCandidates, loading: loadingScouting, addOrUpdateItem: saveScoutingCandidate, removeItem: deleteScoutingCandidate } = useCollectionSync<any>('scouting_candidates', 'id', 'createdAt', 'desc', true);
+  const { data: depthChart, loading: loadingDepthChart, addOrUpdateItem: saveDepthChart } = useCollectionSync<any>('depth_chart', 'id', undefined, 'asc', true);
+  const { data: financeMeta, loading: loadingFinanceMeta, addOrUpdateItem: saveFinanceMeta } = useCollectionSync<any>('finance_meta', 'id', undefined, 'asc', true);
+  const { data: meetingsData, loading: loadingMeetings, addOrUpdateItem: saveMeetingEntry, removeItem: deleteMeetingEntry } = useCollectionSync<any>('meetings_data', 'id', 'date', 'desc', true);
+  const { data: trainingSessions, loading: loadingSessions, addOrUpdateItem: saveTrainingSession, removeItem: deleteTrainingSession } = useCollectionSync<any>('training_sessions', 'id', undefined, 'asc', true);
+  const { data: individualTrainingData, loading: loadingIndividual, addOrUpdateItem: saveIndividualTraining, removeItem: removeIndividualTraining } = useCollectionSync<any>('individual_training', 'id', undefined, 'asc', true);
+  const { data: runRecords, loading: loadingRuns, addOrUpdateItem: saveRunRecord, removeItem: deleteRunRecord } = useCollectionSync<any>('run_records', 'id', undefined, 'asc', true);
+  const { data: runMeta, loading: loadingRunMeta, addOrUpdateItem: saveRunMeta } = useCollectionSync<any>('run_meta', 'id', undefined, 'asc', true);
+  const { data: physioEntries, loading: loadingPhysio, addOrUpdateItem: savePhysioEntry, removeItem: deletePhysioEntry } = useCollectionSync<any>('physio_entries', 'id', 'date', 'desc', true);
+  const { data: formation, loading: loadingFormation, addOrUpdateItem: saveFormation } = useCollectionSync<any>('formation', 'id', undefined, 'asc', true);
+  const { data: vorbereitungSommer, loading: loadingSommer, addOrUpdateItem: saveVorbereitungSommer, removeItem: removeVorbereitungSommer } = useCollectionSync<any>('vorbereitung_sommer', 'id', undefined, 'asc', true);
+  const { data: vorbereitungWinter, loading: loadingWinter, addOrUpdateItem: saveVorbereitungWinter, removeItem: removeVorbereitungWinter } = useCollectionSync<any>('vorbereitung_winter', 'id', undefined, 'asc', true);
+  const { data: winterPrepConfig, loading: loadingWinterConfig, addOrUpdateItem: saveWinterConfig } = useCollectionSync<any>('winter_prep_config', 'id', undefined, 'asc', true);
+  const { data: matchAnalyses, loading: loadingAnalyses, addOrUpdateItem: saveMatchAnalysis, removeItem: deleteMatchAnalysis } = useCollectionSync<any>('match_analyses', 'id', undefined, 'asc', true);
+
+  const { data: competitiveMatches, loading: loadingCompMatches, addOrUpdateItem: originalSaveCompMatch, removeItem: originalDeleteCompMatch } = useCollectionSync<any>('competitive_matches', 'id', undefined, 'asc', true);
+
+  const saveCompMatch = useCallback(async (match: any) => {
+    // Get the previous date if match already exists
+    const existingMatch = competitiveMatches.find((m: any) => m.id === match.id);
+    const oldDate = existingMatch?.date;
+
+    await originalSaveCompMatch(match);
+
+    // If date changed, clean up old date in yearly_plan
+    if (oldDate && oldDate !== match.date) {
+      try {
+        const oldDocRef = doc(db, 'yearly_plan', oldDate);
+        await deleteDoc(oldDocRef);
+      } catch (err) {
+        console.error('Error removing old yearly_plan entry:', err);
+      }
+    }
+
+    // Automatically sync to yearly_plan
+    if (match.date) {
+      try {
+        const docRef = doc(db, 'yearly_plan', match.date);
+        await setDoc(docRef, {
+          date: match.date,
+          type: 'Pflichtspiel',
+          opponent: match.opponent || '',
+          activity: `Pflichtspiel vs ${match.opponent || ''}`,
+          time: match.kickOff || '15:30',
+          location: match.location || '',
+          treffpunkt: match.meetingTime || '',
+          ergebnis: match.result || ''
+        }, { merge: true });
+      } catch (err) {
+        console.error('Error auto-syncing match to yearly_plan:', err);
+      }
+    }
+  }, [originalSaveCompMatch, competitiveMatches]);
+
+  const deleteCompMatch = useCallback(async (id: string | number) => {
+    const match = competitiveMatches.find((m: any) => m.id === id);
+    await originalDeleteCompMatch(id);
+
+    // Automatically remove from yearly_plan
+    if (match && match.date) {
+      try {
+        const docRef = doc(db, 'yearly_plan', match.date);
+        await deleteDoc(docRef);
+      } catch (err) {
+        console.error('Error removing match from yearly_plan:', err);
+      }
+    }
+  }, [originalDeleteCompMatch, competitiveMatches]);
+
+  const { data: competitiveMinutes, loading: loadingCompMinutes, addOrUpdateItem: saveCompMinutes, removeItem: deleteCompMinutes } = useCollectionSync<any>('competitive_minutes', 'playerId', undefined, 'asc', true);
+
+  const handleWipeAllCompetitiveMatches = useCallback(async () => {
+    try {
+      setToast({ message: 'Pflichtspiele werden gelöscht...', id: Date.now() });
+
+      // 1. Delete all competitive matches
+      for (const m of competitiveMatches) {
+        await originalDeleteCompMatch(m.id);
+        
+        // Delete related yearly_plan entry if any
+        if (m.date) {
+          try {
+            const docRef = doc(db, 'yearly_plan', m.date);
+            await deleteDoc(docRef);
+          } catch (err) {
+            console.warn(`Could not delete yearly_plan for date ${m.date}:`, err);
+          }
+        }
+      }
+
+      // 2. Also check yearlyPlan for any entries with type === 'Pflichtspiel' and delete them
+      for (const entry of yearlyPlan) {
+        if (entry.type === 'Pflichtspiel') {
+          try {
+            if (entry.date) {
+              await deleteYearlyPlan(entry.date);
+            }
+          } catch (err) {
+            console.warn(`Could not delete yearly_plan entry ${entry.date}:`, err);
+          }
+        }
+      }
+
+      // 3. Clear all player minutes/stats for competitive matches (competitive_minutes)
+      for (const rec of competitiveMinutes) {
+        try {
+          await deleteCompMinutes(rec.playerId);
+        } catch (err) {
+          console.warn(`Could not delete competitive minutes for player ${rec.playerId}:`, err);
+        }
+      }
+
+      setToast({ message: 'Erfolgreich alles gelöscht!', id: Date.now() });
+    } catch (e) {
+      console.error('Error wiping all competitive matches:', e);
+      setToast({ message: 'Fehler beim Löschen!', id: Date.now() });
+    }
+  }, [competitiveMatches, originalDeleteCompMatch, yearlyPlan, deleteYearlyPlan, competitiveMinutes, deleteCompMinutes]);
+  const { data: testMatches, loading: loadingTestMatches, addOrUpdateItem: saveTestMatch, removeItem: deleteTestMatch } = useCollectionSync<any>('test_matches', 'id', undefined, 'asc', true);
+  const { data: testMinutes, loading: loadingTestMinutes, addOrUpdateItem: saveTestMinutes, removeItem: deleteTestMinutes } = useCollectionSync<any>('test_minutes', 'playerId', undefined, 'asc', true);
+  const { data: opponents, loading: loadingOpponents, addOrUpdateItem: saveOpponent, removeItem: deleteOpponent } = useCollectionSync<any>('opponents', 'id', 'name', 'asc', true);
+  const { data: playerSessionLogs, loading: loadingSessionLogs, addOrUpdateItem: savePlayerSessionLog, removeItem: deletePlayerSessionLog } = useCollectionSync<any>('player_session_logs', 'id', undefined, 'asc', true);
+
+  const isLoading = loadingSpieler || loadingTraining || loadingSpiele || loadingFinanz ||
+                    loadingAttendance || loadingCompMatches || loadingCompMinutes || loadingYearly ||
+                    loadingCards || loadingScouting || loadingDepthChart || loadingFinanceMeta || loadingMeetings || loadingSessions ||
+                    loadingIndividual || loadingRuns || loadingRunMeta || loadingPhysio || loadingFormation || loadingWinterConfig ||
+                    loadingSommer || loadingWinter || loadingOpponents || loadingTestMatches || loadingTestMinutes || loadingAnalyses ||
+                    loadingSessionLogs;
+
+  const CLIENT_VERSION = "2026-07-07_12-30";
+  useEffect(() => {
+    if (navigator.onLine) {
+      fetch(`/api/version?cb=${Date.now()}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.version && data.version !== CLIENT_VERSION) {
+            console.log(`New app version detected on server: ${data.version} (current client is ${CLIENT_VERSION}). Auto-refreshing...`);
+            const lastReload = sessionStorage.getItem('fca_last_auto_reload');
+            const now = Date.now();
+            if (!lastReload || now - parseInt(lastReload) > 10000) {
+              sessionStorage.setItem('fca_last_auto_reload', String(now));
+              setToast({ message: "Neue App-Version geladen. Aktualisiere...", id: Date.now() });
+              setTimeout(() => {
+                window.location.reload();
+              }, 1200);
+            }
+          }
+        })
+        .catch(err => console.warn("Failed to check app version from server:", err));
+    }
+  }, []);
+
+  // Sync Summer Prep to Yearly Plan
+  const handleSaveVorbereitungSommer = async (item: any) => {
+    await saveVorbereitungSommer(item);
+    
+    // Sync to yearly plan
+    const dayPlan = {
+      date: item.date,
+      type: item.type || 'Training',
+      activity: item.content || item.inhalt || '',
+      time: item.time || item.start || '',
+      location: item.location || item.ort || '',
+      treffpunkt: item.treffpunkt || '',
+      opponent: item.opponent || item.gegner || '',
+      ergebnis: item.ergebnis || '',
+      phase: 'summer',
+      athletik: item.athletik || { start: '', end: '', notes: '' },
+      vormittag: item.vormittag || { start: '', end: '', notes: '' },
+      individual: item.individual || { start: '', end: '', notes: '' },
+      video: item.video || { start: '', end: '', notes: '' },
+      training: item.training || { start: '', end: '', notes: '' },
+      te: item.te || 0,
+      kw: item.kw || 0,
+      notes: item.notes || ''
+    };
+    
+    const existing = yearlyPlan.find((p: any) => p.date === item.date);
+    const hasChanged = !existing || 
+      existing.type !== dayPlan.type || 
+      existing.activity !== dayPlan.activity ||
+      existing.time !== dayPlan.time ||
+      existing.location !== dayPlan.location ||
+      existing.opponent !== dayPlan.opponent;
+
+    if (hasChanged) {
+      await saveYearlyPlan(dayPlan);
+    }
+  };
+
+  // Sync Test Matches to Yearly Plan
+  useEffect(() => {
+    if (!isLoading && testMatches.length > 0) {
+      const syncTests = async () => {
+        const currentYearlyPlan = yearlyPlanRef.current;
+        for (const m of testMatches) {
+          if (!m.date) continue;
+          const existing = currentYearlyPlan.find((p: any) => p.date === m.date);
+          const shouldSync = !existing || (
+            (existing.type || '') !== 'Testspiel' ||
+            (existing.opponent || '') !== (m.opponent || '') ||
+            (existing.time || '') !== (m.kickOff || '')
+          );
+
+          if (shouldSync) {
+            await saveYearlyPlan({
+              date: m.date,
+              type: 'Testspiel',
+              activity: `Testspiel vs ${m.opponent}`,
+              time: m.kickOff || '',
+              location: m.location || '',
+              opponent: m.opponent || '',
+              ergebnis: m.result || '',
+              phase: (new Date(m.date) >= new Date('2026-07-06') && new Date(m.date) <= new Date('2026-08-15')) ? 'summer' : 'season'
+            });
+          }
+        }
+      };
+      void syncTests();
+    }
+  }, [isLoading, testMatches]);
+
+  // Sync Competitive Matches to Yearly Plan
+  useEffect(() => {
+    if (!isLoading && competitiveMatches.length > 0) {
+      const syncComp = async () => {
+        const currentYearlyPlan = yearlyPlanRef.current;
+        for (const m of competitiveMatches) {
+          if (!m.date) continue;
+          const existing = currentYearlyPlan.find((p: any) => p.date === m.date);
+          const shouldSync = !existing || (
+            (existing.type || '') !== 'Pflichtspiel' ||
+            (existing.opponent || '') !== (m.opponent || '') ||
+            (existing.time || '') !== (m.kickOff || '')
+          );
+
+          if (shouldSync) {
+            await saveYearlyPlan({
+              date: m.date,
+              type: 'Pflichtspiel',
+              activity: `Pflichtspiel vs ${m.opponent}`,
+              time: m.kickOff || '',
+              location: m.location || '',
+              opponent: m.opponent || '',
+              ergebnis: m.result || '',
+              phase: (new Date(m.date) >= new Date('2026-07-06') && new Date(m.date) <= new Date('2026-08-15')) ? 'summer' : 'season'
+            });
+          }
+        }
+      };
+      void syncComp();
+    }
+  }, [isLoading, competitiveMatches]);
+
+  const handleRemoveVorbereitungSommer = async (id: string) => {
+    const item = vorbereitungSommer.find((u: any) => u.id === id);
+    await removeVorbereitungSommer(id);
+    if (item) {
+      const existing = yearlyPlanRef.current.find((p: any) => p.date === item.date);
+      if (existing && existing.phase === 'summer') {
+        await saveYearlyPlan({ ...existing, type: 'Frei', activity: '', time: '', location: '' });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoading && vorbereitungSommer.length > 0) {
+      const syncAll = async () => {
+        const currentYearlyPlan = yearlyPlanRef.current;
+        const updates: DayPlan[] = [];
+        for (const item of vorbereitungSommer) {
+          if (!item.date) continue;
+          const existing = currentYearlyPlan.find((p: any) => p.date === item.date);
+          
+          const shouldSync = !existing || (
+            existing.phase === 'summer' && (
+              (existing.type || 'Training') !== (item.type || 'Training') ||
+              (existing.activity || '') !== (item.content || item.inhalt || '') ||
+              (existing.time || '') !== (item.time || item.start || '') ||
+              (existing.location || '') !== (item.location || item.ort || '') ||
+              (existing.opponent || '') !== (item.opponent || item.gegner || '')
+            )
+          );
+
+          if (shouldSync) {
+            updates.push({
+              date: item.date,
+              type: item.type || 'Training',
+              activity: item.content || item.inhalt || '',
+              time: item.time || item.start || '',
+              location: item.location || item.ort || '',
+              treffpunkt: item.treffpunkt || '',
+              opponent: item.opponent || item.gegner || '',
+              ergebnis: item.ergebnis || '',
+              phase: 'summer',
+              athletik: item.athletik || { start: '', end: '', notes: '' },
+              vormittag: item.vormittag || { start: '', end: '', notes: '' },
+              individual: item.individual || { start: '', end: '', notes: '' },
+              video: item.video || { start: '', end: '', notes: '' },
+              training: item.training || { start: '', end: '', notes: '' },
+              te: item.te || 0,
+              kw: item.kw || 0,
+              notes: item.notes || ''
+            });
+          }
+        }
+        
+        if (updates.length > 0) {
+          console.log(`[Sync] Syncing ${updates.length} summer preparation days to yearly plan...`);
+          for (const update of updates) {
+            await saveYearlyPlan(update);
+          }
+        }
+      };
+      
+      const timeoutId = setTimeout(() => {
+        void syncAll();
+      }, 1000); // Debounce sync to avoid hanging on rapid changes
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoading, vorbereitungSommer]);
+
+  const playersWithMinutes = useMemo(() => {
+    return players.map(player => {
+      const compRecord = competitiveMinutes.find((r: any) => r.playerId === player.id);
+      const compTotal = (compRecord?.minutes ? Object.values(compRecord.minutes).reduce((acc: number, curr: any) => acc + (Number(curr) || 0), 0) : 0) as number;
+      
+      const testRecord = testMinutes.find((r: any) => r.playerId === player.id);
+      const testTotal = (testRecord?.minutes ? Object.values(testRecord.minutes).reduce((acc: number, curr: any) => acc + (Number(curr) || 0), 0) : 0) as number;
+
+      return {
+        ...player,
+        einsatzzeitenGesamt: compTotal,
+        testEinsatzzeitenGesamt: testTotal
+      };
+    });
+  }, [players, competitiveMinutes, testMinutes]);
+
+  const sortedPlayers = useMemo(() => sortPlayers(playersWithMinutes), [playersWithMinutes]);
+
+  useEffect(() => {
+    const handleStateChange = (e: any) => {
+      const key = e.detail.key;
+
+      const tabName = KEY_TO_TAB[key] || 'Daten';
+      const timeStr = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const dateStr = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      setToast({
+        message: `Änderung gespeichert: ${tabName} (${dateStr}, ${timeStr} Uhr)`,
+        id: Date.now()
+      });
+    };
+
+    window.addEventListener('fca_state_changed', handleStateChange);
+
+    // Clean up and optimize localStorage space on startup
+    try {
+      const legacyKeys = [
+        'players', 'training', 'spiele', 'financeData', 'attendance', 
+        'competitiveMatches', 'competitiveMinutes', 'testMatches', 'testMinutes', 
+        'cardRecords', 'scoutingCandidates', 'meetingsData', 'trainingSessions', 
+        'individualTrainingData', 'runRecords', 'physioEntries', 'summerPrep', 'winterPrep',
+        'yearlyPlan'
+      ];
+      let clearedCount = 0;
+      let clearedBytes = 0;
+      
+      for (const key of legacyKeys) {
+        const fullKey = `fca_${key}`;
+        const val = localStorage.getItem(fullKey);
+        if (val !== null) {
+          clearedCount++;
+          clearedBytes += val.length * 2; // Approximate byte size for UTF-16
+          localStorage.removeItem(fullKey);
+        }
+      }
+      
+      if (clearedCount > 0) {
+        console.log(`[Storage Optimization] Cleaned up ${clearedCount} redundant legacy keys, freeing approx. ${(clearedBytes / 1024).toFixed(1)} KB.`);
+      }
+    } catch (e) {
+      console.warn('Error during localStorage optimization:', e);
+    }
+
+    return () => {
+      window.removeEventListener('fca_state_changed', handleStateChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && players.length === 0 && !localStorage.getItem('fca_bootstrapped')) {
+      void bootstrapData(true);
+      try {
+        localStorage.setItem('fca_bootstrapped', 'true');
+      } catch (e) {
+        console.warn('Failed to save fca_bootstrapped in localStorage', e);
+      }
+    }
+  }, [isLoading, players.length]);
+
+  useEffect(() => {
+    if (!isLoading && scoutingCandidates.length === 0 && !localStorage.getItem('fca_scouting_bootstrapped')) {
+      const seedScouting = async () => {
+        if (INITIAL_SCOUTING && INITIAL_SCOUTING.length > 0) {
+          for (let i = 0; i < INITIAL_SCOUTING.length; i++) {
+            const c = INITIAL_SCOUTING[i];
+            await saveScoutingCandidate({ ...c, createdAt: Date.now() + i } as any);
+          }
+        }
+        try {
+          localStorage.setItem('fca_scouting_bootstrapped', 'true');
+        } catch (e) {
+          console.warn('Failed to save fca_scouting_bootstrapped in localStorage', e);
+        }
+      };
+      void seedScouting();
+    }
+  }, [isLoading, scoutingCandidates.length, INITIAL_SCOUTING, saveScoutingCandidate]);
+
+  useEffect(() => {
+    if (!isLoading && !localStorage.getItem('fca_meetings_bootstrapped_v4')) {
+      const seedMeetings = async () => {
+        if (meetingsData.length === 0) {
+          if (INITIAL_MEETINGS_DATA && INITIAL_MEETINGS_DATA.length > 0) {
+            for (const m of INITIAL_MEETINGS_DATA) {
+              await saveMeetingEntry({ ...m, date: normalizeDate(m.date) } as any);
+            }
+          }
+        } else {
+          // Migration: add missing meetings from INITIAL_MEETINGS_DATA
+          for (const m of INITIAL_MEETINGS_DATA) {
+            const normalizedDateStr = normalizeDate(m.date);
+            const exists = meetingsData.some((existing: any) => 
+              existing.playerName === m.playerName && 
+              existing.date === normalizedDateStr && 
+              existing.time === m.time
+            );
+            if (!exists) {
+              await saveMeetingEntry({ ...m, date: normalizedDateStr } as any);
+            }
+          }
+        }
+        try {
+          localStorage.setItem('fca_meetings_bootstrapped_v4', 'true');
+        } catch (e) {
+          console.warn('Failed to save fca_meetings_bootstrapped_v4 in localStorage', e);
+        }
+      };
+      void seedMeetings();
+    }
+  }, [isLoading, meetingsData.length, INITIAL_MEETINGS_DATA, saveMeetingEntry]);
+
+  useEffect(() => {
+    if (!isLoading && !localStorage.getItem('fca_comp_matches_absolute_wipe_v4')) {
+      const wipeCompMatches = async () => {
+        try {
+          // Set flags first to prevent any multiple runs
+          localStorage.setItem('fca_comp_matches_bootstrapped', 'true');
+          localStorage.setItem('fca_comp_matches_wiped_v2', 'true');
+          localStorage.setItem('fca_comp_matches_absolute_wipe_v4', 'true');
+          
+          console.log("Unconditional on-load wipe of competitive matches requested by user...");
+          await handleWipeAllCompetitiveMatches();
+          console.log("Automated wipe completed.");
+        } catch (e) {
+          console.error("Error wiping competitive matches on load:", e);
+        }
+      };
+      void wipeCompMatches();
+    }
+  }, [isLoading, handleWipeAllCompetitiveMatches]);
+
+  const bootstrappingRef = React.useRef(false);
+
+  useEffect(() => {
+    if (!isLoading && !localStorage.getItem('fca_test_matches_bootstrapped_v3') && !bootstrappingRef.current) {
+      const bootstrapTestMatches = async () => {
+        if (TEST_MATCHES && TEST_MATCHES.length > 0) {
+          bootstrappingRef.current = true;
+          try {
+            // First set the flag to prevent other instances from starting
+            try {
+              localStorage.setItem('fca_test_matches_bootstrapped_v3', 'true');
+            } catch (e) {
+              console.warn('Failed to save fca_test_matches_bootstrapped_v3 in localStorage', e);
+            }
+            
+            // Clean up old IDs if they exist in the current state
+            const idsToDelete = [1, 2, '1', '2'];
+            for (const id of idsToDelete) {
+              const exists = testMatches.find(m => m.id === id);
+              if (exists) {
+                await deleteTestMatch(id);
+              }
+            }
+            
+            // Save the predefined test matches
+            for (const m of TEST_MATCHES) {
+              await saveTestMatch(m);
+            }
+            
+            try {
+              localStorage.setItem('fca_test_matches_bootstrapped', 'true');
+            } catch (e) {
+              console.warn('Failed to save fca_test_matches_bootstrapped in localStorage', e);
+            }
+          } catch (error) {
+            console.error("Bootstrapping failed:", error);
+            // Optionally remove the key so it tries again next time
+            try {
+              localStorage.removeItem('fca_test_matches_bootstrapped_v3');
+            } catch (e) {}
+            bootstrappingRef.current = false;
+          }
+        }
+      };
+      void bootstrapTestMatches();
+    }
+  }, [isLoading, testMatches, saveTestMatch, deleteTestMatch]);
+
+  useEffect(() => {
+    if (!isLoading && vorbereitungSommer.length > 0 && !localStorage.getItem('fca_summer_fix_1907')) {
+      const fixDate = async () => {
+        const targetDate = "2026-07-19";
+        const exists = vorbereitungSommer.some((d: any) => d.date === targetDate);
+        if (!exists) {
+          const date = new Date(targetDate);
+          const start = new Date("2026-07-06");
+          const kw = Math.ceil((date.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+          await saveVorbereitungSommer({
+            id: `fix-${targetDate}-${Date.now()}`,
+            kw,
+            te: vorbereitungSommer.length + 1,
+            date: targetDate,
+            day: "So",
+            start: "19:00",
+            end: "20:30",
+            time: "19:00",
+            type: "Frei",
+            content: "Frei",
+            intensity: "Niedrig",
+            location: "Auggen",
+            opponent: "",
+            ergebnis: "",
+            status: "Geplant",
+            notes: ""
+          });
+        }
+        try {
+          localStorage.setItem('fca_summer_fix_1907', 'true');
+        } catch (e) {
+          console.warn('Failed to save fca_summer_fix_1907 in localStorage', e);
+        }
+      };
+      void fixDate();
+    }
+  }, [isLoading, vorbereitungSommer, saveVorbereitungSommer]);
+
+  // Player minutes are computed dynamically in playersWithMinutes to prevent infinite write loops and save Firebase quotas.
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const [activeDetailTab, setActiveDetailTab] = useState<'analysis' | 'notes'>('analysis');
+  const [isEditing, setIsEditing] = useState(false);
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
+
+  useEffect(() => {
+    if (showAddPlayerModal) {
+      setModalCategory(editingPlayer?.category || 'player');
+    }
+  }, [showAddPlayerModal, editingPlayer]);
+  const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
+  const [showAddTrainingModal, setShowAddTrainingModal] = useState(false);
+  const [showAddFinanzModal, setShowAddFinanzModal] = useState(false);
+  const [showAddSpielModal, setShowAddSpielModal] = useState(false);
+  const [showAddVorbereitungModal, setShowAddVorbereitungModal] = useState(false);
+  const [showAddScoutingModal, setShowAddScoutingModal] = useState(false);
+
+  const [currentMonth, setCurrentMonth] = useState(new Date('2026-07-01'));
+  const [scoutingViewMode, setScoutingViewMode] = useState<'table' | 'field' | 'grid' | 'depth'>('table');
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [tacticInstructions, setTacticInstructions] = useSyncedState<string>('tacticInstructions', '', true);
+  const [selectedIndividualDate, setSelectedIndividualDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const [showRemoveScoutingModal, setShowRemoveScoutingModal] = useState(false);
+  const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
+  const [selectedMeetingPlayer, setSelectedMeetingPlayer] = useState<string>('');
+  const [showAddPhysioModal, setShowAddPhysioModal] = useState(false);
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success'>('idle');
+  const [isDevUnlocked, setIsDevUnlocked] = useState(false);
+  const [devPassword, setDevPassword] = useState('');
+
+  const handleResetScouting = async () => {
+    // Removed window.confirm
+    
+    setToast({ message: 'Scouting-Daten werden wiederhergestellt...', id: Date.now() });
+    try {
+      // Delete existing
+      for (const c of scoutingCandidates) {
+        await deleteScoutingCandidate(c.id);
+      }
+      // Add initial
+      if (INITIAL_SCOUTING && INITIAL_SCOUTING.length > 0) {
+        for (let i = 0; i < INITIAL_SCOUTING.length; i++) {
+          const c = INITIAL_SCOUTING[i];
+          await saveScoutingCandidate({ ...c, createdAt: Date.now() + i } as any);
+        }
+      }
+      setToast({ message: 'Scouting-Daten erfolgreich wiederhergestellt.', id: Date.now() });
+    } catch (err) {
+      console.error('Error resetting scouting data:', err);
+    }
+  };
+
+  const handleResetMeetings = async () => {
+    setToast({ message: 'Termine werden zurückgesetzt...', id: Date.now() });
+    try {
+      for (const m of meetingsData) {
+        await deleteMeetingEntry(m.id);
+      }
+      setToast({ message: 'Termine wurden geleert.', id: Date.now() });
+    } catch (err) {
+      console.error('Error resetting meetings:', err);
+    }
+  };
+
+  const handleImportMeetings = async () => {
+    setToast({ message: 'Standard-Termine werden importiert...', id: Date.now() });
+    try {
+      if (INITIAL_MEETINGS_DATA && INITIAL_MEETINGS_DATA.length > 0) {
+        for (const m of INITIAL_MEETINGS_DATA) {
+          await saveMeetingEntry({ ...m, id: Date.now().toString() + Math.random() });
+        }
+      }
+      setToast({ message: 'Standard-Termine erfolgreich importiert.', id: Date.now() });
+    } catch (err) {
+      console.error('Error importing meetings:', err);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(!isEditing);
+    const tabLabel = TABS.find(t => t.id === activeTab)?.label || activeTab;
+    setToast({ message: `Bearbeitungsmodus für ${tabLabel} ${!isEditing ? 'aktiviert' : 'deaktiviert'}.`, id: Date.now() });
+  };
+
+  const handleManualSave = () => {
+    setSaveStatus('saving');
+    // Most data is autosaved via useCollectionSync and useSyncedState.
+    // This button provides a manually triggered status check and visual feedback.
+    setTimeout(() => {
+      setSaveStatus('success');
+      setToast({ message: 'Alle Änderungen in allen Bereichen wurden erfolgreich in der Cloud gespeichert.', id: Date.now() });
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    }, 1000);
+  };
+
+  const handleReset = () => {
+    setToast({ message: 'Reset-Funktion ist im Cloud-Modus deaktiviert.', id: Date.now() });
+  };
+
+  const deduplicatePlayers = useCallback(async () => {
+    if (players.length < 2) return;
+
+    const seen = new Map<string, Spieler>();
+    const duplicates: { keep: Spieler, remove: Spieler }[] = [];
+
+    players.forEach(p => {
+      const key = `${(p.firstName || '').trim().toLowerCase()}_${(p.lastName || '').trim().toLowerCase()}`;
+      if (seen.has(key)) {
+        duplicates.push({ keep: seen.get(key)!, remove: p });
+      } else {
+        seen.set(key, p);
+      }
+    });
+
+    if (duplicates.length === 0) return;
+
+    setToast({ message: `${duplicates.length} Duplikate gefunden. Bereinigung läuft...`, id: Date.now() });
+
+    for (const { keep, remove } of duplicates) {
+      // 1. Merge data into 'keep'
+      const mergedPlayer: Spieler = {
+        ...remove,
+        ...keep,
+        notizen: keep.notizen || remove.notizen || '',
+        status: keep.status || remove.status || 'Aktiv',
+        geburtsdatum: keep.geburtsdatum || remove.geburtsdatum || '',
+        wochentag: keep.wochentag || remove.wochentag || '',
+        position: keep.position || remove.position || '',
+        category: keep.category || remove.category || 'player',
+        finance: {
+          baseSalary: 0,
+          bonusPerMatch: 0,
+          ist: 0,
+          ...(remove.finance || {}),
+          ...(keep.finance || {})
+        },
+        physical: { ...(remove.physical || {}), ...(keep.physical || {}) },
+        analysis: { ...(remove.analysis || {}), ...(keep.analysis || {}) },
+        diagnostics: { ...(remove.diagnostics || {}), ...(keep.diagnostics || {}) },
+      };
+
+      await saveSpieler(mergedPlayer);
+
+      // 2. Update references in all collections
+      const collectionsToUpdate = [
+        { data: attendance, save: saveAttendance, field: 'playerId' },
+        { data: cardRecords, save: saveCardRecord, field: 'playerId' },
+        { data: individualTrainingData, save: saveIndividualTraining, field: 'playerId' },
+        { data: runRecords, save: saveRunRecord, field: 'playerId' },
+        { data: physioEntries, save: savePhysioEntry, field: 'playerId' },
+      ];
+
+      for (const { data, save, field } of collectionsToUpdate) {
+        const itemsToUpdate = data.filter((item: any) => item[field] === remove.id);
+        for (const item of itemsToUpdate) {
+          await save({ ...item, [field]: keep.id });
+        }
+      }
+
+      // 3. Delete 'remove'
+      await deleteSpieler(remove.id);
+    }
+
+    setToast({ message: 'Datenbereinigung abgeschlossen.', id: Date.now() });
+  }, [players, attendance, cardRecords, individualTrainingData, runRecords, physioEntries, saveSpieler, deleteSpieler, saveAttendance, saveCardRecord, saveIndividualTraining, saveRunRecord, savePhysioEntry]);
+
+  useEffect(() => {
+    if (!isLoading && players.length > 0) {
+      const timer = setTimeout(() => {
+        const seen = new Set<string>();
+        let hasDuplicates = false;
+        players.forEach(p => {
+          const key = `${(p.firstName || '').trim().toLowerCase()}_${(p.lastName || '').trim().toLowerCase()}`;
+          if (seen.has(key)) hasDuplicates = true;
+          seen.add(key);
+        });
+        if (hasDuplicates) {
+          void deduplicatePlayers();
+        }
+      }, 5000); // Wait 5s before checking for duplicates automatically
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, players, deduplicatePlayers]);
+  const handleDeleteItem = async (collection: string, id: string, label: string = 'Eintrag') => {
+    try {
+      if (collection === 'spieler') await deleteSpieler(id);
+      else if (collection === 'training') await deleteTraining(id);
+      else if (collection === 'spiele') await deleteSpiel(id);
+      else if (collection === 'budget_finanz') await deleteFinanz(id);
+      else if (collection === 'scouting_candidates') await deleteScoutingCandidate(id);
+      else if (collection === 'training_sessions') await deleteTrainingSession(id);
+      else if (collection === 'meetings_data') await deleteMeetingEntry(id);
+      else if (collection === 'competitive_matches') await deleteCompMatch(id);
+      else if (collection === 'physio_entries') await deletePhysioEntry(id);
+      else if (collection === 'match_analyses') await deleteMatchAnalysis(id);
+      
+      setToast({ message: `${label} erfolgreich gelöscht.`, id: Date.now() });
+      
+      if (collection === 'spieler' && selectedPlayerId === id) {
+        setSelectedPlayerId(null);
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `${collection}/${id}`);
+    }
+  };
+
+  const allProfiles = sortedPlayers.map(p => ({ ...p, isScout: false }));
+
+  useEffect(() => {
+    if (selectedPlayerId && allProfiles.length > 0 && !allProfiles.find(p => p.id === selectedPlayerId)) {
+      setSelectedPlayerId(allProfiles[0].id);
+    }
+  }, [selectedPlayerId, players, allProfiles]);
+
+  // Check URL parameters on mount to deep-link to specific tabs/sessions (useful for iframe printing bypass)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    const sessionParam = params.get('session_id');
+
+    if (tabParam) {
+      setActiveTab(tabParam as any);
+    }
+    if (sessionParam) {
+      setSelectedSessionId(sessionParam);
+    }
+  }, []);
+
+  // Handle automatic printing once loading is complete
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const autoPrintParam = params.get('print');
+    
+    if (autoPrintParam === 'true' && !loadingSessions && trainingSessions.length > 0) {
+      const timer = setTimeout(() => {
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {
+          console.error("Auto print failed:", e);
+        }
+      }, 1000); // Wait 1 second to make sure React components are completely rendered
+      return () => clearTimeout(timer);
+    }
+  }, [loadingSessions, trainingSessions]);
+
+  // Auto-select first session if none selected
+  useEffect(() => {
+    if (!selectedSessionId && trainingSessions.length > 0) {
+      // Only auto-select if there is no session_id in URL
+      const params = new URLSearchParams(window.location.search);
+      if (!params.get('session_id')) {
+        setSelectedSessionId(trainingSessions[0].id);
+      }
+    }
+  }, [selectedSessionId, trainingSessions]);
+
+  // Auto-select first player if none selected
+  useEffect(() => {
+    if (!selectedPlayerId && allProfiles.length > 0) {
+      setSelectedPlayerId(allProfiles[0].id);
+    }
+  }, [selectedPlayerId, allProfiles]);
+
+  const selectedPlayer = allProfiles.find(p => p.id === selectedPlayerId) || allProfiles[0];
+
+  const handleUpdatePlayer = async (updatedPlayer: Spieler) => {
+    setSaveStatus('saving');
+    try {
+      await saveSpieler(updatedPlayer);
+      
+      // Update finance data if it exists
+      const financeEntry = budgetFinanz.find(f => f.id === updatedPlayer.id);
+      if (financeEntry) {
+        await saveFinanz({
+          ...financeEntry,
+          name: updatedPlayer.name,
+          pos: updatedPlayer.position,
+          baseSalary: updatedPlayer.finance?.baseSalary || 0,
+          bonusPerMatch: updatedPlayer.finance?.bonusPerMatch || 0,
+          sideAgreements: updatedPlayer.finance?.sideAgreements || '',
+        } as any);
+      }
+
+      // Return to player list after editing
+      setSelectedPlayerId(null);
+      setShowAddPlayerModal(false);
+      setEditingPlayer(null);
+      setSaveStatus('success');
+      setToast({ message: 'Person erfolgreich aktualisiert.', id: Date.now() });
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (err) {
+      setSaveStatus('idle');
+      handleFirestoreError(err, OperationType.UPDATE, `spieler/${updatedPlayer.id}`);
+    }
+  };
+
+  const handleDeletePlayer = async (id: string, skipConfirm = true) => {
+    if (!id) {
+      console.warn("Löschvorgang abgebrochen: Keine ID übergeben.");
+      return;
+    }
+
+    const player = players.find(p => p.id === id);
+    if (!player) {
+      console.warn(`Löschvorgang abgebrochen: Profil mit ID ${id} existiert nicht.`);
+      return;
+    }
+
+    const playerName = (player.name || `${player.firstName || ''} ${player.lastName || ''}`).trim();
+
+    const shouldSkip = skipConfirm === undefined ? true : skipConfirm;
+    
+    if (shouldSkip) {
+      try {
+        // 1. Hook-based local state deletions (offline-safe & instant UI update)
+        await deleteSpieler(id);
+        await deleteAttendance(id).catch((e) => console.warn(`deleteAttendance failed:`, e));
+        await deleteCompMinutes(id).catch((e) => console.warn(`deleteCompMinutes failed:`, e));
+        await deleteTestMinutes(id).catch((e) => console.warn(`deleteTestMinutes failed:`, e));
+        await deleteCardRecord(id).catch((e) => console.warn(`deleteCardRecord failed:`, e));
+        await deleteFinanz(id).catch((e) => console.warn(`deleteFinanz failed:`, e));
+
+        // 2. Query-based deletions in Firestore
+        const batch = writeBatch(db);
+        const queryColls = [
+          { name: 'individual_training', field: 'playerId' },
+          { name: 'run_records', field: 'playerId' },
+          { name: 'physio_entries', field: 'playerId' }
+        ];
+
+        for (const coll of queryColls) {
+          if (!isQueryParamValid(id)) {
+            console.warn(`Abgebrochen: Query-Parameter id für ${coll.name} ist ungültig.`);
+            continue;
+          }
+          const q = query(collection(db, coll.name), where(coll.field, '==', id));
+          const snapshot = await getDocs(q);
+          snapshot.forEach(d => batch.delete(d.ref));
+        }
+
+        // Special case for meetings (uses name)
+        if (playerName && isQueryParamValid(playerName)) {
+          const qM = query(collection(db, 'meetings_data'), where('playerName', '==', playerName));
+          const snapM = await getDocs(qM);
+          snapM.forEach(d => batch.delete(d.ref));
+        }
+
+        await batch.commit().catch((e) => console.warn("Firestore batch delete failed/skipped (offline/quota):", e));
+
+        // 3. Sync local state of query-based collections immediately for instant UI feedback
+        if (typeof removeIndividualTraining === 'function') {
+          const itemsToRemove = (individualTrainingData || []).filter((item: any) => item.playerId === id);
+          for (const item of itemsToRemove) {
+            await removeIndividualTraining(item.id).catch(() => {});
+          }
+        }
+        if (typeof deleteRunRecord === 'function') {
+          const itemsToRemove = (runRecords || []).filter((item: any) => item.playerId === id);
+          for (const item of itemsToRemove) {
+            await deleteRunRecord(item.id).catch(() => {});
+          }
+        }
+        if (typeof deletePhysioEntry === 'function') {
+          const itemsToRemove = (physioEntries || []).filter((item: any) => item.playerId === id);
+          for (const item of itemsToRemove) {
+            await deletePhysioEntry(item.id).catch(() => {});
+          }
+        }
+        if (typeof deleteMeetingEntry === 'function' && playerName) {
+          const itemsToRemove = (meetingsData || []).filter((item: any) => item.playerName === playerName);
+          for (const item of itemsToRemove) {
+            await deleteMeetingEntry(item.id).catch(() => {});
+          }
+        }
+
+        setToast({ message: 'Person und alle zugehörigen Daten erfolgreich gelöscht.', id: Date.now() });
+        if (selectedPlayerId === id) {
+          setSelectedPlayerId(null);
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, `spieler/${id}`);
+      }
+    }
+  };
+
+  const handleAddPlayer = async (newPlayer: Spieler) => {
+    console.log('Adding player:', newPlayer);
+    setSaveStatus('saving');
+    try {
+      const weekday = newPlayer.geburtsdatum ? getWeekdayLabel(newPlayer.geburtsdatum) : '';
+      const spieler: Spieler = {
+        ...newPlayer,
+        wochentag: weekday,
+      };
+      await saveSpieler(spieler);
+      
+      // Also save to finance
+      await saveFinanz({
+        id: newPlayer.id,
+        name: newPlayer.name,
+        pos: newPlayer.position,
+        baseSalary: newPlayer.finance?.baseSalary || 0,
+        bonusPerMatch: newPlayer.finance?.bonusPerMatch || 0,
+        sideAgreements: newPlayer.finance?.sideAgreements || '',
+        datum: new Date().toISOString().split('T')[0],
+        wochentag: getWeekdayLabel(new Date().toISOString().split('T')[0]),
+        kategorie: 'Gehalt',
+        einnahmen: 0,
+        ausgaben: 0,
+        aktuelles_budget: 0,
+        notiz: `Initialer Eintrag für ${newPlayer.name}`
+      } as any);
+
+      setShowAddPlayerModal(false);
+      setEditingPlayer(null);
+      setSelectedPlayerId(null);
+      setSaveStatus('success');
+      
+      const categoryLabel = newPlayer.category === 'player' ? 'Spielerkader' : 
+                          newPlayer.category === 'coach' ? 'Trainerteam' : 
+                          newPlayer.category === 'staff' ? 'Teammanagement / Funktionär' : 
+                          newPlayer.category === 'medical' ? 'Medizinische Abteilung (Physio / Arzt)' : 'Person';
+      
+      setToast({ message: `${categoryLabel} erfolgreich hinzugefügt`, id: Date.now() });
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      setSaveStatus('idle');
+      handleFirestoreError(error, OperationType.CREATE, 'spieler');
+    }
+  };
+
+  const handleUpdateAttendance = useCallback(async (playerId: string, session: number, status: string) => {
+    console.log(`Updating attendance for player ${playerId}, session ${session} to ${status}`);
+    try {
+      const docRef = doc(db, 'attendance', playerId);
+      const updateValue = status === '' ? deleteField() : status;
+      
+      try {
+        await updateDoc(docRef, {
+          [`sessions.${session}`]: updateValue
+        });
+      } catch (e: any) {
+        // If document doesn't exist (code 'not-found'), create it with setDoc
+        if (e.code === 'not-found') {
+          if (status !== '') {
+            await setDoc(docRef, {
+              playerId: playerId,
+              sessions: { [session]: status }
+            });
+          }
+        } else {
+          throw e;
+        }
+      }
+      
+      setToast({ message: 'Anwesenheit aktualisiert', id: Date.now() });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `attendance/${playerId}`);
+    }
+  }, []);
+
+  const handleUpdateDayPlan = (date: string, field: string, value: any) => {
+    const plan = yearlyPlan.find((p: any) => p.date === date) || { date };
+    
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      saveYearlyPlan({ 
+        ...(plan as any), 
+        [parent]: { 
+          ...((plan as any)[parent] || {}), 
+          [child]: value 
+        } 
+      });
+    } else {
+      saveYearlyPlan({ ...(plan as any), [field]: value });
+    }
+  };
+
+  // Handlers for Cloud Collections
+  const handleSaveSpieler = async (data: Partial<Spieler>) => {
+    const weekday = data.geburtsdatum ? getWeekdayLabel(data.geburtsdatum) : '';
+    await saveSpieler({ ...data, wochentag: weekday } as Spieler);
+    setToast({ message: 'Spieler gespeichert', id: Date.now() });
+  };
+
+  const handleSaveTraining = async (data: Partial<Training>) => {
+    const weekday = data.datum ? getWeekdayLabel(data.datum) : '';
+    await saveTraining({ ...data, wochentag: weekday } as Training);
+    setToast({ message: 'Training gespeichert', id: Date.now() });
+  };
+
+  const handleSaveSpiel = async (data: Partial<Spiel>) => {
+    const weekday = data.datum ? getWeekdayLabel(data.datum) : '';
+    await saveSpiel({ ...data, wochentag: weekday } as Spiel);
+    setToast({ message: 'Spiel gespeichert', id: Date.now() });
+  };
+
+  const handleSaveFinanz = async (data: Partial<Finanz>) => {
+    const weekday = data.datum ? getWeekdayLabel(data.datum) : '';
+    await saveFinanz({ ...data, wochentag: weekday } as Finanz);
+    setToast({ message: 'Finanzdaten gespeichert', id: Date.now() });
+  };
+
+  const seasonDates = React.useMemo(() => {
+    const dates: string[] = [];
+    let current = new Date(2026, 6, 1); // 01.07.2026
+    const end = new Date(2027, 4, 30); // 30.05.2027
+    
+    while (current <= end) {
+      const day = current.getDay();
+      // 1: Montag, 3: Mittwoch, 5: Freitag
+      if (day === 1 || day === 3 || day === 5) {
+        dates.push(current.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }, []);
+
+  const handleUpdateTrainingSession = (id: string, field: string, value: any) => {
+    const session = trainingSessions.find((s: any) => s.id === id);
+    if (!session) return;
+    
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      saveTrainingSession({ ...session, [parent]: { ...(session as any)[parent], [child]: value } });
+    } else {
+      saveTrainingSession({ ...session, [field]: value });
+    }
+  };
+
+  const handleUpdateIndividualTraining = (playerId: string, field: keyof IndividualTrainingRecord, value: string) => {
+    const existing = individualTrainingData.find(d => d.playerId === playerId && d.date === selectedIndividualDate);
+    if (existing) {
+      saveIndividualTraining({ ...existing, [field]: value });
+    } else {
+      saveIndividualTraining({ 
+        id: `${playerId}_${selectedIndividualDate}`,
+        date: selectedIndividualDate, 
+        playerId, 
+        focus: '',
+        goals: '',
+        status: '',
+        load: 'Normal',
+        targetDate: '',
+        ek: '', o: '', t: '', p: '', s: '', a: '', w: '', notes: '', 
+        [field]: value 
+      } as any);
+    }
+  };
+
+  const handleAddTrainingSession = () => {
+    const newSession: TrainingSession = {
+      id: `ts${Date.now()}`,
+      date: new Date().toLocaleDateString('de-DE'),
+      weekday: new Intl.DateTimeFormat('de-DE', { weekday: 'long' }).format(new Date()),
+      group: 'FC Auggen',
+      load: 'Mittel',
+      duration: '90 Min',
+      weeklyFocus: '',
+      sessionFocus: '',
+      trainer: 'Amin',
+      intensity: 'Mittel',
+      players: sortPlayers(players)
+        .map(p => ({ name: p.lastName, position: p.position, status: 'Aktiv' })),
+      content: { warmup: '', main1: '', main2: '', closing: '' },
+      importantInfo: '',
+      remarks: ''
+    };
+    saveTrainingSession(newSession);
+    setSelectedSessionId(newSession.id);
+  };
+
+  const handleSyncSquadToTraining = (sessionId: string) => {
+    const session = trainingSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    
+    // Removed window.confirm
+    // Use INITIAL_PLAYERS as fallback if current players state is empty or outdated
+    const sourcePlayers = (players.length > 0 ? players : INITIAL_PLAYERS) as any[];
+    const squadPlayers = sortPlayers(sourcePlayers)
+      .map(p => ({ 
+        name: p.lastName, 
+        position: p.position, 
+        status: 'Aktiv' 
+      }));
+    handleUpdateTrainingSession(sessionId, 'players', squadPlayers);
+  };
+
+  const generateSeasonSessions = async (options?: {
+    startDate?: string;
+    endDate?: string;
+    trainingDays?: number[]; // Day numbers: 0 for Sunday, 1 for Monday, etc.
+    skipHolidays?: boolean;
+    breakStart?: string;
+    breakEnd?: string;
+  }) => {
+    const opts = {
+      startDate: '2026-07-06',
+      endDate: '2027-05-30',
+      trainingDays: [2, 4], // Default to Tuesday & Thursday (typical for amateur club)
+      skipHolidays: true,
+      breakStart: '2026-12-15',
+      breakEnd: '2027-01-15',
+      ...options
+    };
+
+    const start = new Date(opts.startDate);
+    const end = new Date(opts.endDate);
+    const breakS = new Date(opts.breakStart);
+    const breakE = new Date(opts.breakEnd);
+    const sessions: TrainingSession[] = [];
+    const yearlyPlanEntries: any[] = [];
+    
+    let current = new Date(start);
+    while (current <= end) {
+      const dateKey = current.toISOString().split('T')[0];
+      const dateStr = current.toLocaleDateString('de-DE');
+      const year = current.getFullYear();
+      const holidays = getHolidays(year);
+      const customHoliday = yearlyPlan.find((p: any) => p.date === dateKey)?.customHolidayName;
+      const isHoliday = customHoliday !== undefined ? (customHoliday !== "") : (holidays[dateKey] !== undefined);
+      const holidayName = customHoliday !== undefined ? (customHoliday || null) : holidays[dateKey];
+
+      // 1. Winter break check
+      if (current >= breakS && current <= breakE) {
+        yearlyPlanEntries.push({
+          date: dateKey,
+          type: 'Frei',
+          activity: 'WINTERPAUSE',
+          time: '',
+          phase: 'break'
+        });
+        current.setDate(current.getDate() + 1);
+        continue;
+      }
+
+      // 2. Check if holiday should be skipped/marked as Frei
+      if (isHoliday && opts.skipHolidays) {
+        yearlyPlanEntries.push({
+          date: dateKey,
+          type: 'Frei',
+          activity: holidayName,
+          time: '',
+          phase: (current >= new Date('2026-07-06') && current <= new Date('2026-08-15')) ? 'summer' : 'season'
+        });
+        current.setDate(current.getDate() + 1);
+        continue;
+      }
+
+      const dayOfWeek = current.getDay(); // 0 is Sunday, 1 is Monday...
+      
+      // 3. Check if this is a selected training day
+      if (opts.trainingDays.includes(dayOfWeek)) {
+        // Check if session already exists for this date
+        const exists = trainingSessions.some(s => s.date === dateStr);
+        if (!exists) {
+          const newSession: TrainingSession = {
+            id: `ts${current.getTime()}`,
+            date: dateStr,
+            weekday: new Intl.DateTimeFormat('de-DE', { weekday: 'long' }).format(current),
+            group: 'FC Auggen',
+            load: 'Mittel',
+            duration: '90 Min',
+            weeklyFocus: '',
+            sessionFocus: '',
+            trainer: 'Amin',
+            intensity: 'Mittel',
+            players: sortPlayers((players.length > 0 ? players : INITIAL_PLAYERS) as any[])
+              .filter(p => (p.category || 'player') === 'player')
+              .map(p => ({ name: p.lastName, position: p.position, status: '1' })),
+            content: { warmup: '', main1: '', main2: '', closing: '' },
+            importantInfo: '',
+            remarks: ''
+          };
+          sessions.push(newSession);
+          
+          yearlyPlanEntries.push({
+            date: dateKey,
+            type: 'Training',
+            time: '19:00',
+            activity: 'Training',
+            phase: (current >= new Date('2026-07-06') && current <= new Date('2026-08-15')) ? 'summer' : 'season',
+            training: { start: '19:00', end: '20:30', notes: '' }
+          });
+        }
+      } else {
+        // All other days are marked as "Frei" (Spielfrei / Trainingsfrei) in the yearly plan
+        yearlyPlanEntries.push({
+          date: dateKey,
+          type: 'Frei',
+          activity: 'SPIELFREI',
+          time: '',
+          phase: (current >= new Date('2026-07-06') && current <= new Date('2026-08-15')) ? 'summer' : 'season'
+        });
+      }
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    if (sessions.length > 0 || yearlyPlanEntries.length > 0) {
+      // Save sessions
+      for (const s of sessions) {
+        await saveTrainingSession(s);
+      }
+      
+      // Save yearly plans
+      for (const entry of yearlyPlanEntries) {
+        const existingPlan = yearlyPlan.find((p: any) => p.date === entry.date);
+        if (!existingPlan) {
+          await saveYearlyPlan(entry);
+        } else {
+          // If existing plan is a placeholder or can be updated
+          if (existingPlan.type === 'Frei' && entry.type === 'Training') {
+            await saveYearlyPlan({ ...existingPlan, ...entry });
+          } else if (entry.activity === 'WINTERPAUSE' || (entry.activity && !existingPlan.activity)) {
+            await saveYearlyPlan({ ...existingPlan, ...entry });
+          }
+        }
+      }
+
+      alert(`${sessions.length} Trainingseinheiten und freie Tage wurden erfolgreich generiert.`);
+    } else {
+      alert('Keine neuen Einheiten zu generieren (alle Daten bereits belegt).');
+    }
+  };
+
+  // Attach to window for the view to call
+  useEffect(() => {
+    (window as any).generateSeasonSessions = generateSeasonSessions;
+    (window as any).saveTrainingSession = saveTrainingSession;
+    return () => { 
+      delete (window as any).generateSeasonSessions;
+      delete (window as any).saveTrainingSession;
+    };
+  }, [trainingSessions, players, saveTrainingSession, yearlyPlan, saveYearlyPlan]);
+
+  const handleAddYouthPlayer = (sessionId: string, team: 'U23' | 'U19') => {
+    const session = trainingSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    
+    const newPlayers = [...session.players, { name: `NEUER ${team} SPIELER`, position: team, status: 'Aktiv' }];
+    handleUpdateTrainingSession(sessionId, 'players', newPlayers);
+  };
+
+  const getShareText = () => {
+    let text = `FC AUGGEN - ${TABS.find(t => t.id === activeTab)?.label}\n\n`;
+    
+    if (activeTab === 'scouting') {
+      scoutingCandidates.forEach((c, i) => {
+        text += `${i + 1}. ${c.name.toUpperCase()} (${c.club})\n`;
+        text += `   Pos: ${c.position} | Alter: ${c.age} | MW: ${c.marketValue}\n`;
+        text += `   Empfehlung: ${c.recommendation}\n`;
+        if (c.conversationNotes) text += `   Gespräch: ${c.conversationNotes}\n`;
+        if (c.waitingTime) text += `   Antwort bis: ${c.waitingTime}\n`;
+        text += `\n`;
+      });
+    } else if (activeTab === 'personnel') {
+      players.forEach((p) => {
+        text += `#${p.number} ${p.lastName} (${p.position})`;
+        if (p.telefon) text += ` | Tel: ${p.telefon}`;
+        if (p.email) text += ` | Mail: ${p.email}`;
+        text += `\n`;
+      });
+    } else if (activeTab === 'meetings_calendar') {
+      meetingsData.forEach((m) => {
+        const name = m.playerName === 'EXTERN' ? m.manualName || 'Unbekannt' : m.playerName;
+        text += `${m.date} ${m.time} - ${name}\n`;
+        text += `Ort: ${m.location}\n`;
+        if (m.notes) text += `Notiz: ${m.notes}\n\n`;
+      });
+    } else if (activeTab === 'attendance') {
+      text += `Anwesenheit Übersicht:\n`;
+      players.forEach(p => {
+        const record = attendance.find(a => a.playerId === p.id);
+        const total = record ? Object.values(record.sessions).filter(s => s === 'P').length : 0;
+        text += `${p.lastName}: ${total} Einheiten\n`;
+      });
+    } else if (activeTab === 'budget_finance') {
+      players.forEach(p => {
+        text += `${p.lastName} (${p.position}): ${p.finance?.baseSalary || 0}€`;
+        if (p.finance?.transferFeeIn) text += ` | Ablöse Z: ${p.finance.transferFeeIn}€`;
+        if (p.finance?.transferFeeOut) text += ` | Ablöse A: ${p.finance.transferFeeOut}€`;
+        text += `\n`;
+      });
+    } else if (activeTab === 'yearly') {
+      text += "PLANUNG NÄCHSTE 7 TAGE:\n\n";
+      const today = new Date();
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        const plan = yearlyPlan.find((p: any) => p.date === dateStr);
+        if (plan) {
+          text += `${dateStr}: ${plan.type} | ${plan.time} | ${plan.location}\n`;
+          if (plan.activity) text += `   Aktivität: ${plan.activity}\n`;
+          if (plan.treffpunkt) text += `   Treffpunkt: ${plan.treffpunkt}\n`;
+          text += `\n`;
+        }
+      }
+      if (text.endsWith("PLANUNG NÄCHSTE 7 TAGE:\n\n")) {
+        text += "Keine Einträge für die nächsten 7 Tage.";
+      }
+    } else if (activeTab === 'physio_plan') {
+      physioEntries.filter(e => e.playerId).forEach(e => {
+        const p = players.find(pl => pl.id === e.playerId);
+        text += `${e.date} (${e.day}) - ${p?.lastName || 'Unbekannt'}\n`;
+        text += `Typ: ${e.type} | Bereich: ${e.area}\n`;
+        if (e.remarks) text += `Bemerkung: ${e.remarks}\n\n`;
+      });
+    } else if (activeTab === 'runs_sw') {
+      runRecords.forEach(r => {
+        const p = players.find(pl => pl.id === r.playerId);
+        const completed = Object.values(r.runs).filter(v => v === 'OK').length;
+        text += `${p?.lastName}: ${completed}/15 Läufe\n`;
+      });
+    } else if (activeTab === 'cards') {
+      cardRecords.forEach(r => {
+        const p = players.find(pl => pl.id === r.playerId);
+        const cards = Object.values(r.cards).filter(v => v !== '').length;
+        text += `${p?.lastName}: ${cards} Karten gesamt\n`;
+      });
+    } else if (activeTab === 'individual_control') {
+      individualTrainingData.filter(d => d.date === selectedIndividualDate).forEach(d => {
+        const p = players.find(pl => pl.id === d.playerId);
+        text += `${p?.lastName}: EK:${d.ek} O:${d.o} T:${d.t} P:${d.p} S:${d.s} A:${d.a} W:${d.w}\n`;
+      });
+    } else if (activeTab === 'trainer_view') {
+      text += `FORMATION: ${formation}\n\n`;
+      const savedLineup = localStorage.getItem(`fca_lineup_${formation}`);
+      if (savedLineup) {
+        const assignments = JSON.parse(savedLineup);
+        const savedPos = localStorage.getItem(`fca_posData_${formation}`);
+        if (savedPos) {
+          const posData = JSON.parse(savedPos);
+          posData.forEach((pos: any) => {
+            const assignment = assignments[pos.id];
+            let name = 'Nicht besetzt';
+            if (assignment?.startsWith('manual:')) {
+              name = assignment.replace('manual:', '') + ' (GAST)';
+            } else if (assignment) {
+              const p = players.find(player => player.id === assignment);
+              if (p) name = `${p.lastName} (#${p.number})`;
+            }
+            text += `${pos.label}: ${name}\n`;
+          });
+        } else {
+          text += "Aufstellung vorhanden, aber Positionsdaten fehlen.";
+        }
+      } else {
+        text += "Keine Aufstellung für dieses System gespeichert.";
+      }
+    } else if (activeTab === 'training_planning') {
+      const session = trainingSessions.find(s => s.id === selectedSessionId);
+      if (session) {
+        text += `TRAININGSEINHEIT: ${new Date(session.date).toLocaleDateString('de-DE')} (${session.weekday})\n`;
+        text += `Schwerpunkt: ${session.sessionFocus || '-'}\n`;
+        text += `Dauer: ${session.duration} | Belastung: ${session.load}\n`;
+        text += `Trainer: ${session.trainer || 'Amin, marcel'}\n`;
+        if (session.opponent) text += `Gegner: ${session.opponent}\n`;
+        if (session.location) text += `Ort: ${session.location}\n`;
+        
+        const fieldPlayers = session.players.filter((p: any) => (p.category === 'player' || p.category === 'spieler') && (p.position || '').toUpperCase() !== 'TW');
+        const keepers = session.players.filter((p: any) => (p.category === 'player' || p.category === 'spieler') && (p.position || '').toUpperCase() === 'TW');
+        const staff = session.players.filter((p: any) => p.category !== 'player' && p.category !== 'spieler');
+        
+        const presentPlayers = fieldPlayers.filter((p: any) => p.status === '1');
+        const presentKeepers = keepers.filter((p: any) => p.status === '1');
+        
+        text += `\nTEILNEHMER:\n`;
+        text += `Spieler: ${presentPlayers.length}/${fieldPlayers.length}\n`;
+        text += `TW: ${presentKeepers.length}/${keepers.length}\n`;
+        text += `Staff: ${staff.filter((p: any) => p.status === '1').length}/${staff.length}\n`;
+        
+        text += `\nINHALT:\n`;
+        text += `Aufwärmen: ${session.content.warmup}\n`;
+        text += `Hauptteil 1: ${session.content.main1}\n`;
+        text += `Hauptteil 2: ${session.content.main2}\n`;
+        text += `Schluss: ${session.content.closing}\n`;
+        if (session.importantInfo) text += `\nWichtig: ${session.importantInfo}\n`;
+        if (session.remarks) text += `Bemerkungen: ${session.remarks}\n`;
+      } else {
+        text += "Keine Trainingseinheit ausgewählt.";
+      }
+    } else if (activeTab === 'competitive_planning' || activeTab === 'test_planning') {
+      const matches = activeTab === 'competitive_planning' ? competitiveMatches : testMatches;
+      text += `${activeTab === 'competitive_planning' ? 'PFLICHTSPIELE' : 'TESTSPIELE'}:\n\n`;
+      matches.forEach(m => {
+        text += `${m.date || ''} ${m.kickOff} - ${m.opponent} (${m.isHome ? 'H' : 'A'})\n`;
+        text += `Treffpunkt: ${m.meetingTime} | Ort: ${m.location}\n`;
+        if (m.result) text += `Ergebnis: ${m.result}\n`;
+        text += `\n`;
+      });
+    } else if (activeTab === 'tacticboard') {
+      text += `TAKTIKBOARD - ANWEISUNGEN:\n\n${tacticInstructions || 'Keine Anweisungen vorhanden.'}`;
+    } else if (activeTab === 'team_list') {
+      text += "TEAMLISTE:\n\n";
+      players.forEach(p => {
+        text += `${p.lastName}, ${p.firstName} (#${p.number}) - ${p.position}\n`;
+      });
+    } else if (activeTab === 'summer_prep' || activeTab === 'winter_prep') {
+      const data = activeTab === 'summer_prep' ? vorbereitungSommer : vorbereitungWinter;
+      text += `${activeTab === 'summer_prep' ? 'SOMMERVORBEREITUNG' : 'WINTER-VORBEREITUNG'}:\n\n`;
+      data.forEach((unit: any) => {
+        text += `${unit.date} (${unit.day}) - ${unit.type}\n`;
+        if (unit.activity) text += `Aktivität: ${unit.activity}\n`;
+        if (unit.time) text += `Zeit: ${unit.time}\n`;
+        if (unit.location) text += `Ort: ${unit.location}\n`;
+        text += `\n`;
+      });
+    } else if (activeTab === 'developer_tasks') {
+      text += "DEVELOPER ROADMAP: Interne Entwicklungsdaten.";
+    } else {
+      text += "Daten für diesen Reiter können aktuell nur als Datei exportiert werden.";
+    }
+    return text;
+  };
+
+  const handleShareText = async () => {
+    const text = getShareText();
+    const tabLabel = TABS.find(t => t.id === activeTab)?.label || activeTab;
+    
+    // Prioritize direct WhatsApp if in AI Studio area to avoid iframe share restrictions
+    if (!navigator.share || window.location.href.includes('google.com') || window.location.href.includes('ais-')) {
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: `FC Auggen - ${tabLabel}`,
+        text: text
+      });
+    } catch (e) {
+      console.log('Share failed, falling back to api.whatsapp.com', e);
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleEmail = () => {
+    const text = getShareText();
+    const subject = `FC Auggen - ${TABS.find(t => t.id === activeTab)?.label}`;
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.assign(mailtoUrl);
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const handleMigrateCloudData = async () => {
+    setToast({ message: 'Cloud-Migration gestartet...', id: Date.now() });
+    try {
+      await migrateFirestoreData();
+      setToast({ message: 'Cloud-Migration erfolgreich abgeschlossen.', id: Date.now() });
+    } catch (err) {
+      console.error('Migration error:', err);
+      setToast({ message: 'Fehler bei der Cloud-Migration.', id: Date.now() });
+    }
+  };
+  
+  const handleMigrateLocalData = async () => {
+    // Removed window.confirm
+    
+    setToast({ message: 'Migration gestartet...', id: Date.now() });
+    try {
+      const collections = [
+        { lsKey: 'players', save: saveSpieler },
+        { lsKey: 'training', save: saveTraining },
+        { lsKey: 'spiele', save: saveSpiel },
+        { lsKey: 'financeData', save: saveFinanz },
+        { lsKey: 'attendance', save: saveAttendance },
+        { lsKey: 'competitiveMatches', save: saveCompMatch },
+        { lsKey: 'competitiveMinutes', save: saveCompMinutes },
+        { lsKey: 'testMatches', save: saveTestMatch },
+        { lsKey: 'testMinutes', save: saveTestMinutes },
+        { lsKey: 'cardRecords', save: saveCardRecord },
+        { lsKey: 'scoutingCandidates', save: saveScoutingCandidate },
+        { lsKey: 'meetingsData', save: saveMeetingEntry },
+        { lsKey: 'trainingSessions', save: saveTrainingSession },
+        { lsKey: 'individualTrainingData', save: saveIndividualTraining },
+        { lsKey: 'runRecords', save: saveRunRecord },
+        { lsKey: 'physioEntries', save: savePhysioEntry },
+        { lsKey: 'summerPrep', save: saveVorbereitungSommer },
+        { lsKey: 'winterPrep', save: saveVorbereitungWinter },
+      ];
+
+      let count = 0;
+      for (const col of collections) {
+        const data = localStorage.getItem(`fca_${col.lsKey}`);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              await col.save(item);
+              count++;
+            }
+          }
+        }
+      }
+      
+      // Special case for yearlyPlan (object)
+      const yearlyData = localStorage.getItem('fca_yearlyPlan');
+      if (yearlyData) {
+        const parsed = JSON.parse(yearlyData);
+        for (const [date, plan] of Object.entries(parsed)) {
+          await saveYearlyPlan({ ...(plan as any), id: date, date });
+          count++;
+        }
+      }
+
+      setToast({ message: `Migration abgeschlossen! ${count} Einträge übertragen.`, id: Date.now() });
+    } catch (err) {
+      console.error('Migration error:', err);
+      setToast({ message: 'Fehler bei der Daten-Migration.', id: Date.now() });
+    }
+  };
+
+  const handleCloudSync = async () => {
+    setToast({ message: 'Cloud-Synchronisierung gestartet...', id: Date.now() });
+    try {
+      const updatedCount = await migrateFirestoreData();
+      setToast({ message: `Cloud-Synchronisierung abgeschlossen! ${updatedCount} Einträge normalisiert.`, id: Date.now() });
+    } catch (err) {
+      console.error('Cloud Sync error:', err);
+      setToast({ message: 'Fehler bei der Cloud-Synchronisierung.', id: Date.now() });
+    }
+  };
+
+  const handleTabClick = (tabId: TabId) => {
+    setActiveTab(tabId);
+    setSelectedPlayerId(null);
+  };
+
+  const normalizeDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('.')) {
+      const [d, m, y] = dateStr.split('.');
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    return dateStr;
+  };
+
+  const bootstrapData = async (silent = false) => {
+    // Removed window.confirm
+    
+    setToast({ message: 'Daten werden wiederhergestellt...', id: Date.now() });
+    try {
+      // Players
+      if (INITIAL_PLAYERS && INITIAL_PLAYERS.length > 0) {
+        for (const p of INITIAL_PLAYERS) {
+          const playerAny = p as any;
+          const playerData = {
+            ...p,
+            physical: playerAny.physical || { height: 0, weight: 0, fat: 0, muscle: 0, water: 0 },
+            analysis: playerAny.analysis || '',
+            finance: {
+              baseSalary: 0,
+              bonusPerMatch: 0,
+              ist: 0,
+              sideAgreements: '',
+              ...playerAny.finance
+            }
+          };
+          await saveSpieler(playerData as any);
+        }
+      }
+      
+      // Competitive Matches are managed manually and not restored from defaults.
+
+      // Test Matches
+      if (TEST_MATCHES && TEST_MATCHES.length > 0) {
+        for (const m of TEST_MATCHES) {
+          await saveTestMatch({ ...m, id: m.id.toString() } as any);
+        }
+      }
+
+      // Scouting
+      if (INITIAL_SCOUTING && INITIAL_SCOUTING.length > 0) {
+        for (const c of INITIAL_SCOUTING) {
+          await saveScoutingCandidate(c as any);
+        }
+      }
+
+      // Yearly Plan
+      if (YEARLY_PLAN && Object.keys(YEARLY_PLAN).length > 0) {
+        for (const [date, plan] of Object.entries(YEARLY_PLAN)) {
+          const normalizedDate = normalizeDate(date);
+          await saveYearlyPlan({ ...(plan as any), id: normalizedDate, date: normalizedDate });
+        }
+      }
+
+      // Depth Chart
+      if (DEPTH_CHART && Object.keys(DEPTH_CHART).length > 0) {
+        await saveDepthChart({ id: 'main', ...DEPTH_CHART });
+      }
+
+      // Finance Meta
+      if (FINANCE_META && Object.keys(FINANCE_META).length > 0) {
+        await saveFinanceMeta({ id: 'current', ...FINANCE_META });
+      }
+
+      // Finance Data
+      if (INITIAL_FINANCE_DATA && INITIAL_FINANCE_DATA.length > 0) {
+        for (const f of INITIAL_FINANCE_DATA) {
+          await saveFinanz(f as any);
+        }
+      }
+
+      // Card Records
+      if (CARD_RECORDS && CARD_RECORDS.length > 0) {
+        for (const r of CARD_RECORDS) {
+          await saveCardRecord(r as any);
+        }
+      }
+
+      // Competitive Minutes
+      if (COMPETITIVE_MINUTES && COMPETITIVE_MINUTES.length > 0) {
+        for (const r of COMPETITIVE_MINUTES) {
+          await saveCompMinutes(r as any);
+        }
+      }
+
+      // Test Minutes
+      if (TEST_MINUTES && TEST_MINUTES.length > 0) {
+        for (const r of TEST_MINUTES) {
+          await saveTestMinutes(r as any);
+        }
+      }
+
+      // Meetings Data
+      if (INITIAL_MEETINGS_DATA && INITIAL_MEETINGS_DATA.length > 0) {
+        for (const m of INITIAL_MEETINGS_DATA) {
+          await saveMeetingEntry({ ...m, date: normalizeDate(m.date) } as any);
+        }
+      }
+
+      // Training Sessions
+      if (INITIAL_TRAINING_SESSIONS && INITIAL_TRAINING_SESSIONS.length > 0) {
+        for (const s of INITIAL_TRAINING_SESSIONS) {
+          await saveTrainingSession(s as any);
+        }
+      }
+
+      // Summer Preparation
+      if (INITIAL_SUMMER_PREP && INITIAL_SUMMER_PREP.length > 0) {
+        for (const s of INITIAL_SUMMER_PREP) {
+          await saveVorbereitungSommer(s as any);
+        }
+      }
+
+      // Winter Preparation
+      if (INITIAL_WINTER_PREP && INITIAL_WINTER_PREP.length > 0) {
+        for (const w of INITIAL_WINTER_PREP) {
+          await saveVorbereitungWinter(w as any);
+        }
+      }
+
+      // Formation
+      if (INITIAL_FORMATION) {
+        await saveFormation({ id: 'current', value: INITIAL_FORMATION });
+      }
+
+      setToast({ message: 'Daten erfolgreich wiederhergestellt!', id: Date.now() });
+    } catch (error) {
+      console.error('Bootstrap error:', error);
+      setToast({ message: 'Fehler beim Wiederherstellen der Daten', id: Date.now() });
+    }
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'personnel':
+        return (
+          <PersonnelView 
+            players={sortedPlayers}
+            sessionLogs={playerSessionLogs || []}
+            onEditPlayer={(p) => {
+              setEditingPlayer(p);
+              setShowAddPlayerModal(true);
+            }}
+            onDeletePlayer={handleDeletePlayer}
+            onUpdatePlayer={(id, field, val) => {
+              const player = players.find(p => p.id === id);
+              if (player) {
+                const updated = { ...player, [field]: val };
+                if (field === 'firstName' || field === 'lastName') {
+                  updated.name = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
+                }
+                saveSpieler(updated);
+              }
+            }}
+            onAddPlayer={() => {
+              setEditingPlayer(null);
+              setShowAddPlayerModal(true);
+            }}
+            isEditing={isEditing}
+          />
+        );
+      case 'summer_prep':
+        return (
+          <SummerPreparationView 
+            data={vorbereitungSommer} 
+            onAddOrUpdate={handleSaveVorbereitungSommer} 
+            onDelete={handleRemoveVorbereitungSommer}
+            isEditing={isEditing} 
+            setToast={setToast}
+            opponents={opponents}
+          />
+        );
+      case 'winter_prep':
+        return (
+          <WinterPreparationView 
+            data={vorbereitungWinter} 
+            onAddOrUpdate={saveVorbereitungWinter} 
+            onDelete={removeVorbereitungWinter}
+            isEditing={isEditing} 
+            setToast={setToast}
+            opponents={opponents}
+          />
+        );
+      case 'attendance':
+        return (
+          <TrainingAttendanceView 
+            players={sortedPlayers}
+            attendance={attendance}
+            onUpdateAttendance={handleUpdateAttendance}
+            onUpdatePlayer={(id, field, val) => {
+              const player = players.find(p => p.id === id);
+              if (player) saveSpieler({ ...player, [field]: val });
+            }}
+            onEditPlayer={(p) => {
+              setEditingPlayer(p);
+              setShowAddPlayerModal(true);
+            }}
+            onDeletePlayer={handleDeletePlayer}
+            onAddPlayer={() => {
+              setEditingPlayer(null);
+              setShowAddPlayerModal(true);
+            }}
+            onClearRangeSessions={async (start, end) => {
+              try {
+                const batch = writeBatch(db);
+                let hasUpdates = false;
+                attendance.forEach((record) => {
+                  const updates: any = {};
+                  let recordHasUpdates = false;
+                  for (let num = start; num <= end; num++) {
+                    const isNested = record.sessions && record.sessions[num] !== undefined;
+                    const isFlat = record[`sessions.${num}`] !== undefined;
+                    if (isNested || isFlat) {
+                      updates[`sessions.${num}`] = deleteField();
+                      recordHasUpdates = true;
+                    }
+                  }
+                  if (recordHasUpdates) {
+                    const docRef = doc(db, 'attendance', record.playerId);
+                    batch.update(docRef, updates);
+                    hasUpdates = true;
+                  }
+                });
+                if (hasUpdates) {
+                  await batch.commit();
+                }
+                setToast({ message: `Einheiten ${start} bis ${end} wurden gelöscht`, id: Date.now() });
+              } catch (err) {
+                handleFirestoreError(err, OperationType.UPDATE, `attendance/clear/range-${start}-${end}`);
+              }
+            }}
+            onClearAllSessions={async () => {
+              try {
+                const batch = writeBatch(db);
+                let hasUpdates = false;
+                attendance.forEach((record) => {
+                  const docRef = doc(db, 'attendance', record.playerId);
+                  batch.update(docRef, {
+                    sessions: deleteField()
+                  });
+                  hasUpdates = true;
+                });
+                if (hasUpdates) {
+                  await batch.commit();
+                }
+                setToast({ message: `Alle Trainingseinheiten wurden gelöscht`, id: Date.now() });
+              } catch (err) {
+                handleFirestoreError(err, OperationType.UPDATE, `attendance/clear/all`);
+              }
+            }}
+            onClearSession={async (sessionNum) => {
+              try {
+                const batch = writeBatch(db);
+                let hasUpdates = false;
+                attendance.forEach((record) => {
+                  const isNested = record.sessions && record.sessions[sessionNum] !== undefined;
+                  const isFlat = record[`sessions.${sessionNum}`] !== undefined;
+                  if (isNested || isFlat) {
+                    const docRef = doc(db, 'attendance', record.playerId);
+                    batch.update(docRef, {
+                      [`sessions.${sessionNum}`]: deleteField()
+                    });
+                    hasUpdates = true;
+                  }
+                });
+                if (hasUpdates) {
+                  await batch.commit();
+                }
+                setToast({ message: `Trainingseinheit ${sessionNum} geleert`, id: Date.now() });
+              } catch (err) {
+                handleFirestoreError(err, OperationType.UPDATE, `attendance/clear/${sessionNum}`);
+              }
+            }}
+            isEditing={isEditing}
+          />
+        );
+      case 'yearly':
+        const yearlyPlanRecord = yearlyPlan.reduce((acc: any, p: any) => {
+          acc[p.date] = p;
+          return acc;
+        }, {});
+        
+        return (
+          <YearlyPlanView 
+            yearlyPlan={yearlyPlanRecord} 
+            players={sortedPlayers}
+            trainingSessions={trainingSessions}
+            summerPrep={vorbereitungSommer}
+            testMatches={testMatches}
+            competitiveMatches={competitiveMatches}
+            currentMonth={currentMonth} 
+            setCurrentMonth={setCurrentMonth} 
+            handleUpdateDayPlan={async (dateKey, field, val) => {
+              try {
+                const docRef = doc(db, 'yearly_plan', dateKey);
+                try {
+                  await updateDoc(docRef, {
+                    [field]: val
+                  });
+                } catch (e: any) {
+                  if (e.code === 'not-found') {
+                    // If field has dots, we need to expand it for setDoc
+                    const data: any = { date: dateKey };
+                    if (field.includes('.')) {
+                      const [parent, child] = field.split('.');
+                      data[parent] = { [child]: val };
+                    } else {
+                      data[field] = val;
+                    }
+                    await setDoc(docRef, data);
+                  } else {
+                    throw e;
+                  }
+                }
+                setToast({ message: 'Plan aktualisiert', id: Date.now() });
+              } catch (err) {
+                console.error('Error updating plan:', err);
+                setToast({ message: 'Fehler beim Speichern des Plans', id: Date.now() });
+              }
+            }} 
+            isEditing={isEditing}
+          />
+        );
+      case 'cards':
+        return (
+          <CardStatisticsSheet 
+            players={sortedPlayers}
+            competitiveMatches={competitiveMatches}
+            cardRecords={cardRecords}
+            handleUpdateCard={async (playerId, matchId, card) => {
+              try {
+                const docRef = doc(db, 'card_records', playerId);
+                try {
+                  await updateDoc(docRef, {
+                    [`cards.${matchId}`]: card
+                  });
+                } catch (e: any) {
+                  if (e.code === 'not-found') {
+                    await setDoc(docRef, {
+                      playerId: playerId,
+                      cards: { [matchId]: card }
+                    });
+                  } else {
+                    throw e;
+                  }
+                }
+                setToast({ message: 'Karten aktualisiert', id: Date.now() });
+              } catch (err) {
+                console.error('Error updating cards:', err);
+                setToast({ message: 'Fehler beim Speichern der Karten', id: Date.now() });
+              }
+            }}
+            onUpdatePlayer={(id, field, val) => {
+              const player = players.find(p => p.id === id);
+              if (player) saveSpieler({ ...player, [field]: val });
+            }}
+            onDeletePlayer={handleDeletePlayer}
+            setShowAddPlayerModal={setShowAddPlayerModal}
+            isEditing={isEditing}
+          />
+        );
+      case 'scouting':
+        return (
+          <ScoutingView 
+            scoutingCandidates={scoutingCandidates}
+            scoutingViewMode={scoutingViewMode}
+            setScoutingViewMode={setScoutingViewMode}
+            setShowAddScoutingModal={setShowAddScoutingModal}
+            handleUpdateScoutingCandidate={(id, field, val) => {
+              const candidate = scoutingCandidates.find((c: any) => c.id === id);
+              if (candidate) saveScoutingCandidate({ ...candidate, [field]: val });
+            }}
+            handleRemoveScoutingCandidate={(id) => handleDeleteItem('scouting_candidates', id, 'Kandidat')}
+            setShowRemoveScoutingModal={setShowRemoveScoutingModal}
+            onAddScoutingCandidate={(candidate) => {
+              saveScoutingCandidate({ ...candidate, id: Date.now().toString(), createdAt: Date.now() });
+              setToast({ message: 'Scouting-Kandidat erfolgreich angelegt.', id: Date.now() });
+            }}
+            handleResetScouting={handleResetScouting}
+            depthChart={depthChart[0] || {}}
+            setDepthChart={(chart) => {
+              const currentChart = depthChart[0] || { id: 'current' };
+              void saveDepthChart({ ...currentChart, ...chart, id: 'current' });
+            }}
+            players={sortedPlayers}
+            isEditing={isEditing}
+          />
+        );
+      case 'budget_finance':
+        return (
+          <BudgetFinanceView 
+            players={sortedPlayers}
+            financeMeta={financeMeta[0] || { month: '2026-07', wins: 0, draws: 0, bonusPerPoint: 0 }}
+            setFinanceMeta={(meta) => {
+              const currentMeta = financeMeta[0] || { id: 'current', month: '2026-07', wins: 0, draws: 0, bonusPerPoint: 0 };
+              const newMeta = typeof meta === 'function' ? meta(currentMeta) : meta;
+              saveFinanceMeta({ ...newMeta, id: 'current' });
+            }}
+            handleUpdateFinance={(playerId, field, value) => {
+              const player = players.find(p => p.id === playerId);
+              if (player) {
+                const updatedPlayer = {
+                  ...player,
+                  finance: {
+                    ...player.finance,
+                    [field]: value
+                  }
+                };
+                saveSpieler(updatedPlayer);
+              }
+            }}
+            currentMonth={currentMonth}
+            setCurrentMonth={setCurrentMonth}
+            isEditing={isEditing}
+          />
+        );
+      case 'meetings_calendar':
+        return (
+          <MeetingsCalendarView 
+            players={sortedPlayers}
+            scoutingCandidates={scoutingCandidates}
+            meetingsData={meetingsData}
+            handleAddMeetingEntry={() => setShowAddMeetingModal(true)}
+            handleUpdateMeetingEntry={(id, field, val) => {
+              const entry = meetingsData.find((m: any) => m.id === id);
+              void saveMeetingEntry({ ...entry, [field]: val });
+            }}
+            handleRemoveMeetingEntry={(id) => handleDeleteItem('meetings_data', id, 'Termin')}
+            handleResetMeetings={handleResetMeetings}
+            handleImportMeetings={handleImportMeetings}
+            onAddScoutingCandidate={(candidate) => {
+              saveScoutingCandidate({ ...candidate, id: Date.now().toString(), createdAt: Date.now() });
+              setToast({ message: 'Scouting-Kandidat erfolgreich angelegt.', id: Date.now() });
+            }}
+            isEditing={isEditing}
+          />
+        );
+      case 'individual_control':
+        return (
+          <IndividualSteuerungView 
+            players={sortedPlayers}
+            individualTrainingData={individualTrainingData}
+            selectedIndividualDate={selectedIndividualDate}
+            setSelectedIndividualDate={setSelectedIndividualDate}
+            handleUpdateIndividualTraining={(playerId, field, val) => {
+              const id = `${playerId}_${selectedIndividualDate}`;
+              const existingRecord = individualTrainingData.find((r: any) => r.id === id);
+              
+              if (field === 'delete' && existingRecord) {
+                removeIndividualTraining(existingRecord.id)
+                  .then(() => {
+                    setToast({ message: 'Eintrag gelöscht', id: Date.now() });
+                  })
+                  .catch((err) => {
+                    console.error('Error deleting individual training:', err);
+                    setToast({ message: 'Fehler beim Löschen', id: Date.now() });
+                  });
+                return;
+              }
+
+              const record = existingRecord || { 
+                id, 
+                playerId, 
+                date: selectedIndividualDate,
+                focus: '',
+                goals: '',
+                status: '',
+                load: 'Normal',
+                targetDate: selectedIndividualDate,
+                ek: '', o: '', t: '', p: '', s: '', a: '', w: ''
+              };
+              
+              saveIndividualTraining({ ...record, [field]: val })
+                .then(() => {
+                  console.log(`Updated individual training for ${playerId} on ${selectedIndividualDate}: ${field} = ${val}`);
+                })
+                .catch((err) => {
+                  console.error('Error updating individual training:', err);
+                  setToast({ message: 'Fehler beim Speichern der Daten', id: Date.now() });
+                });
+            }}
+            onUpdatePlayer={(id, field, val) => {
+              const player = players.find(p => p.id === id);
+              if (player) {
+                const updated = { ...player, [field]: val };
+                if (field === 'firstName' || field === 'lastName') {
+                  updated.name = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
+                }
+                saveSpieler(updated);
+              }
+            }}
+            onDeletePlayer={handleDeletePlayer}
+            onAddPlayer={() => setShowAddPlayerModal(true)}
+            onAddPlayerDirect={handleAddPlayer}
+            isEditing={isEditing}
+          />
+        );
+      case 'runs_sw':
+        return (
+          <RunsSWView 
+            players={sortedPlayers}
+            runRecords={runRecords}
+            runMeta={runMeta}
+            onUpdateRunRecord={(record) => {
+              saveRunRecord(record)
+                .then(() => {
+                  console.log('Lauf-Datensatz aktualisiert:', record.id);
+                })
+                .catch((err) => {
+                  console.error('Fehler beim Aktualisieren des Lauf-Datensatzes:', err);
+                  setToast({ message: 'Fehler beim Speichern der Daten', id: Date.now() });
+                });
+            }}
+            onUpdateRunMeta={(meta) => {
+              saveRunMeta(meta)
+                .then(() => {
+                  setToast({ message: 'Lauf-Konfiguration gespeichert', id: Date.now() });
+                })
+                .catch((err) => {
+                  console.error('Fehler beim Speichern der Lauf-Meta:', err);
+                });
+            }}
+            onUpdatePlayer={(id, field, val) => {
+              const player = players.find(p => p.id === id);
+              if (player) {
+                const updated = { ...player, [field]: val };
+                if (field === 'firstName' || field === 'lastName') {
+                  updated.name = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
+                }
+                saveSpieler(updated);
+              }
+            }}
+            isEditing={isEditing}
+          />
+        );
+      case 'physio_plan':
+        return (
+          <PhysioPlanView 
+            players={sortedPlayers}
+            physioEntries={physioEntries}
+            onAddPhysioEntry={() => setShowAddPhysioModal(true)}
+            onUpdatePhysioEntry={(entry) => {
+              savePhysioEntry(entry)
+                .then(() => {
+                  console.log('Physio-Eintrag aktualisiert:', entry.id);
+                })
+                .catch((err) => {
+                  console.error('Fehler beim Aktualisieren des Physio-Eintrags:', err);
+                  setToast({ message: 'Fehler beim Speichern der Daten', id: Date.now() });
+                });
+            }}
+            onUpdatePlayer={(id, field, val) => {
+              const player = players.find(p => p.id === id);
+              if (player) {
+                const updated = { ...player, [field]: val };
+                if (field === 'firstName' || field === 'lastName') {
+                  updated.name = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
+                }
+                saveSpieler(updated);
+              }
+            }}
+            onDeletePlayer={handleDeletePlayer}
+            onDeletePhysioEntry={(id) => handleDeleteItem('physio_entries', id, 'Physio-Eintrag')}
+            setShowAddPlayerModal={setShowAddPlayerModal}
+            isEditing={isEditing}
+          />
+        );
+      case 'tacticboard':
+        return (
+          <TacticBoard 
+            players={sortedPlayers.filter(isPlayer)} 
+            isEditing={isEditing} 
+            instructions={tacticInstructions}
+            onInstructionsChange={setTacticInstructions}
+          />
+        );
+      case 'trainer_view':
+        return (
+          <FormationView 
+            players={sortedPlayers.filter(isPlayer)} 
+            scoutingCandidates={scoutingCandidates}
+            formation={formation.find(f => f.id === 'current')?.value || '4-4-2'} 
+            onFormationChange={(f) => saveFormation({ id: 'current', value: f })} 
+            isEditing={isEditing}
+          />
+        );
+      case 'training_planning':
+        return (
+          <TrainingPlanningView 
+            players={sortedPlayers} 
+            selectedSessionId={selectedSessionId}
+            onSelectSession={setSelectedSessionId}
+            onEmail={handleEmail}
+            onWhatsApp={handleShareText}
+          />
+        );
+      case 'developer_tasks':
+        if (!isDevUnlocked) {
+          return (
+            <div className="flex flex-col items-center justify-center h-full bg-gray-100 p-8">
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full">
+                <h2 className="text-2xl font-black uppercase tracking-tighter mb-4">Bereich Geschützt</h2>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-6">Bitte Passwort eingeben, um die Dev-Roadmap freizuschalten.</p>
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (devPassword === '2011') {
+                      setIsDevUnlocked(true);
+                      setToast({ message: 'Dev-Roadmap freigeschaltet!', id: Date.now() });
+                    } else {
+                      setToast({ message: 'Falsches Passwort!', id: Date.now() });
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <input 
+                    type="password" 
+                    value={devPassword}
+                    onChange={(e) => setDevPassword(e.target.value)}
+                    placeholder="PASSWORT..."
+                    className="w-full border-2 border-black p-3 font-black focus:outline-none uppercase text-sm"
+                    autoFocus
+                  />
+                  <button 
+                    type="submit"
+                    className="w-full bg-black text-white py-3 font-black uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
+                  >
+                    Freischalten
+                  </button>
+                </form>
+              </div>
+            </div>
+          );
+        }
+        return <DeveloperTasksView />;
+      case 'competitive_planning':
+        return (
+          <MatchPlanningView 
+            players={sortedPlayers}
+            matches={competitiveMatches}
+            matchMinutes={competitiveMinutes}
+            opponents={opponents}
+            onSaveMatch={saveCompMatch}
+            onDeleteMatch={deleteCompMatch}
+            onSaveMinutes={saveCompMinutes}
+            onSaveOpponent={saveOpponent}
+            onDeleteOpponent={deleteOpponent}
+            onWipeAllMatches={handleWipeAllCompetitiveMatches}
+            title="Pflichtspiel-Planung"
+          />
+        );
+      case 'test_planning':
+        return (
+          <MatchPlanningView 
+            players={sortedPlayers}
+            matches={testMatches}
+            matchMinutes={testMinutes}
+            opponents={opponents}
+            onSaveMatch={saveTestMatch}
+            onDeleteMatch={deleteTestMatch}
+            onSaveMinutes={saveTestMinutes}
+            onSaveOpponent={saveOpponent}
+            onDeleteOpponent={deleteOpponent}
+            title="Testspiel-Planung"
+          />
+        );
+      case 'match_report':
+        return (
+          <MatchReportView 
+            matches={competitiveMatches}
+            testMatches={testMatches}
+            analyses={matchAnalyses}
+            onSaveAnalysis={saveMatchAnalysis}
+            onDeleteAnalysis={(id) => handleDeleteItem('match_analyses', id, 'Spielbericht')}
+            opponents={opponents}
+            players={sortedPlayers}
+          />
+        );
+      case 'team_list':
+        return (
+          <TeamListView 
+            players={sortedPlayers} 
+            onEditPlayer={(p) => {
+              setEditingPlayer(p);
+              setShowAddPlayerModal(true);
+            }}
+            onAddPlayer={() => {
+              setEditingPlayer(null);
+              setShowAddPlayerModal(true);
+            }}
+            isEditing={isEditing}
+          />
+        );
+      case 'player_portal':
+        return (
+          <PlayerPortalView 
+            players={sortedPlayers}
+            sessionLogs={playerSessionLogs || []}
+            onSaveLog={async (log) => {
+              try {
+                await savePlayerSessionLog(log);
+                setToast({ message: 'Einheit erfolgreich gespeichert!', id: Date.now() });
+              } catch (err) {
+                console.error("Fehler beim Speichern des Logs:", err);
+                setToast({ message: 'Fehler beim Speichern der Einheit!', id: Date.now() });
+              }
+            }}
+            onDeleteLog={async (id) => {
+              try {
+                await deletePlayerSessionLog(id);
+                setToast({ message: 'Einheit erfolgreich gelöscht!', id: Date.now() });
+              } catch (err) {
+                console.error("Fehler beim Löschen des Logs:", err);
+                setToast({ message: 'Fehler beim Löschen der Einheit!', id: Date.now() });
+              }
+            }}
+            onUpdatePlayerDiagnostics={async (playerId, diagnostics) => {
+              try {
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                  const updatedDiagnostics = {
+                    ...(player.diagnostics || {}),
+                    ...diagnostics
+                  };
+                  await saveSpieler({
+                    ...player,
+                    diagnostics: updatedDiagnostics
+                  });
+                }
+              } catch (err) {
+                console.error("Fehler beim Aktualisieren der Diagnostics:", err);
+              }
+            }}
+            onUpdatePlayerStats={async (playerId, minutes, goals, assists) => {
+              try {
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                  const currentMinutes = player.einsatzzeitenGesamt || 0;
+                  await saveSpieler({
+                    ...player,
+                    einsatzzeitenGesamt: currentMinutes + minutes
+                  });
+                }
+              } catch (err) {
+                console.error("Fehler beim Aktualisieren der Spieler-Statistiken:", err);
+              }
+            }}
+            onUpdatePlayerDatenblatt={async (playerId, report) => {
+              try {
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                  await saveSpieler({
+                    ...player,
+                    datenblattReport: report
+                  });
+                  setToast({ message: 'Datenblatt erfolgreich gespeichert!', id: Date.now() });
+                }
+              } catch (err) {
+                console.error("Fehler beim Aktualisieren des Datenblatts:", err);
+                setToast({ message: 'Fehler beim Speichern des Datenblatts!', id: Date.now() });
+              }
+            }}
+            onUpdatePlayerTracker={async (playerId, trackerData) => {
+              try {
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                  const existingHistory = player.trackerHistory || [];
+                  const newHistoryItem = {
+                    id: `tracker_${Date.now()}`,
+                    fileName: trackerData.fileName || 'Tracker_Data',
+                    fileUrl: trackerData.fileUrl || '',
+                    matchName: trackerData.matchName || 'Spielanalyse',
+                    uploadDate: trackerData.uploadDate || new Date().toISOString().split('T')[0],
+                    totalDistanceKm: trackerData.totalDistanceKm || 0,
+                    highSpeedDistanceM: trackerData.highSpeedDistanceM || 0,
+                    sprintDistanceM: trackerData.sprintDistanceM || 0,
+                    maxSpeedKmh: trackerData.maxSpeedKmh || 0,
+                    sprintCount: trackerData.sprintCount || 0,
+                    tacticalSummary: trackerData.tacticalSummary || ''
+                  };
+
+                  await saveSpieler({
+                    ...player,
+                    trackerAnalysis: trackerData,
+                    trackerHistory: [newHistoryItem, ...existingHistory]
+                  });
+                  setToast({ message: 'GPS / Tracker-Analyse erfolgreich im Spielerordner gespeichert!', id: Date.now() });
+                }
+              } catch (err) {
+                console.error("Fehler beim Speichern der Tracker-Analyse:", err);
+                setToast({ message: 'Fehler beim Speichern der Tracker-Analyse!', id: Date.now() });
+              }
+            }}
+          />
+        );
+      case 'access_control':
+        return (
+          <AccessControlView 
+            ownerEmail={ownerEmail}
+            securityLockActive={securityLockActive}
+            onToggleSecurityLock={setSecurityLockActive}
+          />
+        );
+      default:
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-4">
+            <div className="w-20 h-20 border-4 border-dashed border-gray-300 rounded-full flex items-center justify-center">
+              <Clock size={32} />
+            </div>
+            <p className="font-black uppercase tracking-[0.3em] text-sm">Modul in Vorbereitung...</p>
+          </div>
+        );
+    }
+  };
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    const handleSyncError = (e: any) => {
+      if (e.detail?.error === null) {
+        setQuotaError(false);
+        setLastError(null);
+        setToast({ message: 'Datenbankverbindung wiederhergestellt. Daten erfolgreich synchronisiert!', id: Date.now() });
+        return;
+      }
+      const errMessage = e.detail?.error || '';
+      console.warn("Sync error caught in UI:", errMessage);
+      if (errMessage.includes('Quota limit exceeded') || errMessage.toLowerCase().includes('quota')) {
+        setQuotaError(true);
+        setLastError('Datenbank-Limit erreicht (Tageskontingent überschritten). Offline-Modus aktiv – Änderungen werden lokal gespeichert.');
+      } else {
+        setLastError(errMessage || 'Synchronisierungsfehler');
+      }
+      setTimeout(() => setLastError(null), 10000);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('fca_sync_error', handleSyncError);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('fca_sync_error', handleSyncError);
+    };
+  }, []);
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="h-screen w-screen flex-col flex items-center justify-center bg-black text-white p-8">
+        <div className="w-16 h-16 border-4 border-white border-t-[#C00000] rounded-full animate-spin mb-8" />
+        <h1 className="font-black uppercase tracking-[0.2em] text-2xl">FC AUGGEN</h1>
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-40 mt-4">
+          Daten werden synchronisiert...
+        </p>
+      </div>
+    );
+  }
+
+
+
+  return (
+      <div className="flex flex-col h-screen bg-gray-100 font-sans overflow-hidden selection:bg-[#C00000] selection:text-white print:h-auto print:overflow-visible print:bg-white">
+        {quotaError && (
+          <div className="bg-amber-400 border-b-2 border-black text-black px-4 py-3 text-xs font-bold flex flex-wrap items-center justify-between gap-3 z-50 print:hidden shrink-0">
+            <div className="flex items-start gap-2 max-w-3xl">
+              <span className="text-base mt-0.5">⚠️</span>
+              <div>
+                <p className="font-extrabold uppercase tracking-wider text-[10px] text-amber-950 mb-0.5">Firestore Quota erreicht (Tageslimit überschritten)</p>
+                <p className="font-medium text-amber-900 leading-relaxed">
+                  Das kostenlose Tageslimit an Datenbank-Lesevorgängen/Schreibvorgängen ist aufgebraucht. 
+                  <strong className="font-bold text-black"> Die App läuft vollkommen offline weiter!</strong> Deine Änderungen (wie z.B. Einheiten, Aufstellungen) werden sicher lokal in deinem Browser gespeichert.
+                </p>
+                <p className="font-medium text-amber-950 mt-1 flex items-center gap-1.5 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 w-fit">
+                  <span>🕒</span>
+                  <span><strong>Wie lange dauert das?</strong> Das Limit wird von Google jeden Tag automatisch um <strong>09:00 Uhr deutscher Zeit</strong> (Mitternacht US-Pazifikzeit) zurückgesetzt. Danach synchronisiert sich alles wieder von selbst!</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <a 
+                href="https://console.firebase.google.com/project/gen-lang-client-0951111843/firestore/databases/ai-studio-20b6fe19-5950-4d1f-9c88-e7f55ed9a819/data?openUpgradeDialog=true"
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-black text-white px-3 py-1.5 text-[9px] uppercase font-black tracking-wider hover:bg-gray-800 transition-colors border border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+              >
+                In Firebase Console upgraden
+              </a>
+              <button 
+                onClick={() => setQuotaError(false)}
+                className="bg-amber-500/30 text-amber-950 hover:bg-amber-500/50 rounded p-1 font-black leading-none text-xs transition-colors"
+                title="Schließen"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Bar */}
+        <nav className="bg-gray-900 text-white flex overflow-x-auto border-b-2 border-black shrink-0 no-scrollbar print:hidden">
+          {TABS.filter(tab => {
+            if (tab.id === 'access_control') {
+              return isOwner;
+            }
+            return true;
+          }).map(tab => {
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-r border-white/10 flex items-center gap-2
+                  ${activeTab === tab.id ? 'bg-[#C00000] text-white' : 'text-gray-400 hover:bg-white/5'}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+          <div className="ml-auto flex items-center px-3 gap-2 bg-black">
+            <button 
+              onClick={handleMigrateLocalData}
+              className="bg-amber-500 text-black px-2 py-1 text-[8px] font-black uppercase border border-black hover:bg-amber-400 transition-all flex items-center gap-1"
+              title="Lokale Daten importieren"
+            >
+              <Upload size={10} /> Local Import
+            </button>
+            <button 
+              onClick={handleCloudSync}
+              className="bg-blue-600 text-white px-2 py-1 text-[8px] font-black uppercase border border-black hover:bg-blue-500 transition-all flex items-center gap-1"
+              title="Firestore Daten bereinigen und normalisieren"
+            >
+              <RefreshCw size={10} /> Daten-Wartung
+            </button>
+            <button 
+              onClick={() => void bootstrapData()}
+              className="bg-[#C00000] text-white px-2 py-1 text-[8px] font-black uppercase border border-white/20 hover:bg-red-700 transition-all flex items-center gap-1"
+              title="Initialdaten wiederherstellen"
+            >
+              <RefreshCw size={10} /> Restore
+            </button>
+            <div className="h-4 w-[1px] bg-white/20 mx-1" />
+            <span className="text-[9px] font-bold opacity-60 pr-2">FC AUGGEN</span>
+          </div>
+        </nav>
+
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 overflow-hidden bg-[#DEDEDE] print:p-0 print:overflow-visible print:bg-white">
+        <UniformMask 
+          title={TABS.find(t => t.id === activeTab)?.label || ''}
+          onShareText={handleShareText}
+          onEmail={handleEmail}
+          onEdit={handleEdit}
+          isEditing={isEditing}
+          onSave={handleManualSave}
+          onReset={handleReset}
+          onManageSquad={() => handleTabClick('personnel')}
+          onAddPlayer={() => {
+            if (activeTab === 'scouting') setShowAddScoutingModal(true);
+            else if (activeTab === 'attendance' || activeTab === 'yearly') setShowAddTrainingModal(true);
+            else if (activeTab === 'budget_finance') setShowAddFinanzModal(true);
+            else if (activeTab === 'meetings_calendar') setShowAddMeetingModal(true);
+            else if (activeTab === 'physio_plan') setShowAddPhysioModal(true);
+            else if (activeTab === 'summer_prep') {
+              const lastTE = vorbereitungSommer.length > 0 ? Math.max(...vorbereitungSommer.map((d: any) => typeof d.te === 'number' ? d.te : 0)) : 0;
+              handleSaveVorbereitungSommer({
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                kw: 1,
+                te: lastTE + 1,
+                date: '2026-07-06',
+                day: 'Mo',
+                time: '19:00',
+                type: 'Training',
+                content: 'NEUE EINHEIT',
+                location: 'Auggen',
+                intensity: 'Mittel'
+              });
+              setToast({ message: 'Einheit zur Sommervorbereitung hinzugefügt.', id: Date.now() });
+            }
+            else if (activeTab === 'winter_prep') {
+              const lastTE = vorbereitungWinter.length > 0 ? Math.max(...vorbereitungWinter.map((d: any) => typeof d.te === 'number' ? d.te : 0)) : 0;
+              saveVorbereitungWinter({
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                kw: 1,
+                te: lastTE + 1,
+                date: '2027-01-16',
+                day: 'Sa',
+                time: '10:30',
+                type: 'Training',
+                content: 'NEUE EINHEIT',
+                location: 'Auggen',
+                intensity: 'Mittel'
+              });
+              setToast({ message: 'Einheit zur Wintervorbereitung hinzugefügt.', id: Date.now() });
+            }
+            else {
+              setEditingPlayer(null);
+              setShowAddPlayerModal(true);
+            }
+          }}
+          onRemovePlayer={() => {
+            if (activeTab === 'scouting') setShowRemoveScoutingModal(true);
+            else if (activeTab === 'summer_prep' || activeTab === 'winter_prep') {
+              setToast({ message: 'Nutzen Sie das Löschen-Symbol (Mülleimer) in der Tabelle im Bearbeiten-Modus.', id: Date.now() });
+            }
+            else setShowRemovePlayerModal(true);
+          }}
+          onMigrate={handleMigrateCloudData}
+          saveStatus={saveStatus}
+        >
+          {renderContent()}
+        </UniformMask>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-black text-white text-[9px] px-6 py-2 flex justify-between items-center uppercase tracking-widest font-bold border-t-2 border-black print:hidden">
+        <div className="flex items-center gap-4">
+          <span className="text-[#C00000] font-black">FC AUGGEN 1921 e.V.</span>
+          <span className="opacity-30">|</span>
+          <span className="opacity-60">Team Management System 2026/2027</span>
+        </div>
+        <div className="flex items-center gap-4">
+          {lastError && (
+            <span className="text-red-500 text-[10px] font-black animate-pulse px-2.5 py-1 border border-red-500 bg-red-950/50 rounded mr-2 uppercase">
+              ⚠️ {lastError}
+            </span>
+          )}
+          <div className="flex items-center gap-4 opacity-75">
+            <span>Status: <span className={isOnline ? "text-green-500" : "text-red-500"}>{isOnline ? 'Online' : 'Offline'}</span></span>
+            <span className="opacity-30">|</span>
+            {authUser ? (
+              <div className="flex items-center gap-2">
+                <span>
+                  User: <span className="text-amber-400 font-extrabold">{authUser.displayName || authUser.email}</span>
+                  {isOwner && (
+                    <span className="ml-2 bg-amber-500 text-black px-1.5 py-0.5 text-[8px] font-black rounded uppercase tracking-wider shadow-sm border border-black animate-pulse">
+                      OWNER
+                    </span>
+                  )}
+                </span>
+                <button 
+                  onClick={handleLogout}
+                  className="bg-[#C00000] text-white px-2 py-0.5 text-[8px] font-black uppercase border border-black hover:bg-red-700 transition"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span>
+                  User: <span className="text-amber-400 font-extrabold hover:underline cursor-pointer" onClick={() => setShowLocalProfileModal(true)}>{localName}</span>
+                  {isOwner && (
+                    <span className="ml-2 bg-amber-500 text-black px-1.5 py-0.5 text-[8px] font-black rounded uppercase tracking-wider shadow-sm border border-black animate-pulse">
+                      OWNER
+                    </span>
+                  )}
+                </span>
+                <button 
+                  onClick={() => setShowLocalProfileModal(true)}
+                  className="bg-gray-800 text-white px-2 py-0.5 text-[8px] font-black uppercase border border-white hover:bg-gray-700 transition"
+                >
+                  Name/Rolle ändern
+                </button>
+                {isOnline && (
+                  <button 
+                    onClick={() => setShowLoginModal(true)}
+                    className="bg-green-600 text-white px-2 py-0.5 text-[8px] font-black uppercase border border-black hover:bg-green-500 transition flex items-center gap-1"
+                  >
+                    <User size={10} /> Anmelden
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </footer>
+
+      {/* Local Profile Configuration Modal */}
+      {showLocalProfileModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md my-auto">
+            <div className="bg-black text-white p-4 border-b-4 border-black flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                👤 Benutzerprofil bearbeiten
+              </h3>
+              <button onClick={() => setShowLocalProfileModal(false)} className="hover:rotate-90 transition-transform font-black">✕</button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const name = (formData.get('profile_name') as string || '').trim();
+              const email = (formData.get('profile_email') as string || '').trim();
+              
+              localStorage.setItem('fca_local_name', name || 'Gast');
+              localStorage.setItem('fca_local_email', email);
+              
+              setLocalName(name || 'Gast');
+              setLocalEmail(email);
+              setShowLocalProfileModal(false);
+              setToast({ message: 'Profil erfolgreich gespeichert!', id: Date.now() });
+            }}>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider mb-1 text-black">Anzeigename</label>
+                <input 
+                  type="text" 
+                  name="profile_name"
+                  defaultValue={localName}
+                  className="w-full border-2 border-black p-2 font-bold text-sm bg-gray-50 focus:bg-white focus:outline-none"
+                  placeholder="Z.B. Samer Khaleel"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider mb-1 text-black">E-Mail-Adresse (Optional)</label>
+                <input 
+                  type="email" 
+                  name="profile_email"
+                  defaultValue={localEmail}
+                  className="w-full border-2 border-black p-2 font-bold text-sm bg-gray-50 focus:bg-white focus:outline-none"
+                  placeholder="Z.B. name@example.com"
+                />
+                <p className="text-[9px] text-gray-500 font-bold mt-1 uppercase tracking-wide">
+                  TIPP: Trage '{ownerEmail}' ein, um direkt als OWNER freigeschaltet zu werden!
+                </p>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('fca_local_name', 'Samer (Owner)');
+                    localStorage.setItem('fca_local_email', ownerEmail);
+                    setLocalName('Samer (Owner)');
+                    setLocalEmail(ownerEmail);
+                    setShowLocalProfileModal(false);
+                    setToast({ message: 'Als Owner angemeldet!', id: Date.now() });
+                  }}
+                  className="flex-1 py-2 px-3 border-2 border-amber-500 bg-amber-50 text-amber-900 text-[10px] font-black uppercase hover:bg-amber-100 transition shadow-[2px_2px_0px_0px_rgba(245,158,11,1)]"
+                >
+                  ⚡ Als Owner freischalten
+                </button>
+              </div>
+
+              <div className="pt-4 border-t-2 border-black flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLocalProfileModal(false)}
+                  className="py-2 px-4 border-2 border-black bg-white text-black text-xs font-black uppercase hover:bg-gray-100 transition"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="submit"
+                  className="py-2 px-4 bg-black text-white text-xs font-black uppercase hover:bg-gray-800 transition shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                >
+                  Speichern
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md my-auto">
+            <div className="bg-[#C00000] text-white p-4 border-b-4 border-black flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                ⚽ FC AUGGEN - ANMELDUNG
+              </h3>
+              <button onClick={() => setShowLoginModal(false)} className="hover:rotate-90 transition-transform font-black">✕</button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Email / Password Form */}
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const email = (formData.get('login_email') as string || '').trim();
+                const pass = (formData.get('login_password') as string || '').trim();
+                handleEmailPasswordLogin(email, pass);
+              }} className="space-y-4">
+                <div className="bg-amber-50 border-2 border-amber-500 p-3 text-amber-900 text-xs font-bold uppercase tracking-wider rounded">
+                  💡 Hinweis für Kollegen:<br/>
+                  Nutzt eure E-Mail & das Passwort <span className="bg-amber-200 text-black px-1.5 py-0.5 rounded font-black">0000</span>, um euch direkt anzumelden und gemeinsam live zu arbeiten!
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1 text-black">E-Mail-Adresse</label>
+                  <input 
+                    type="email" 
+                    name="login_email"
+                    id="modal_login_email"
+                    required
+                    className="w-full border-2 border-black p-2 font-bold text-sm bg-gray-50 focus:bg-white focus:outline-none text-black"
+                    placeholder="name@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1 text-black">Passwort</label>
+                  <input 
+                    type="password" 
+                    name="login_password"
+                    required
+                    className="w-full border-2 border-black p-2 font-bold text-sm bg-gray-50 focus:bg-white focus:outline-none text-black"
+                    placeholder="****"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full py-3 bg-black text-white text-xs font-black uppercase hover:bg-gray-800 transition shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
+                >
+                  {authLoading ? 'Verbinde...' : '🔑 Als Kollege Anmelden'}
+                </button>
+              </form>
+
+              {/* Quick Login Profiles */}
+              <div className="border-t-2 border-dashed border-gray-300 pt-4">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2 text-black">Schnellauswahl für Kollegen</span>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { email: 'a.jungkeit@ernst-koenig.de', label: 'A. Jungkeit (Co-Trainer)' },
+                    { email: 'marcelkobus@gmx.de', label: 'Marcel Kobus' },
+                    { email: 'samerkhaleel720@gmail.com', label: 'Samer Khaleel (Owner)' }
+                  ].map((profile) => (
+                    <button
+                      key={profile.email}
+                      type="button"
+                      onClick={() => {
+                        const emailInput = document.getElementById('modal_login_email') as HTMLInputElement;
+                        if (emailInput) {
+                          emailInput.value = profile.email;
+                          setToast({ message: `E-Mail ${profile.email} ausgewählt. Bitte Passwort 0000 eingeben!`, id: Date.now() });
+                        }
+                      }}
+                      className="text-left py-2 px-3 border border-black bg-gray-50 hover:bg-amber-100 font-bold text-xs uppercase tracking-wide transition flex items-center justify-between text-black"
+                    >
+                      <span>👤 {profile.label}</span>
+                      <span className="text-[9px] text-gray-400 font-mono">Wählen</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Google Sign-In Option */}
+              <div className="border-t-2 border-black pt-4">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2 text-center">Oder über Drittanbieter</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleLogin();
+                    setShowLoginModal(false);
+                  }}
+                  className="w-full py-2.5 px-4 border-2 border-black bg-white text-black text-xs font-black uppercase hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.64l3.15-3.15C17.45 1.68 14.93 1 12 1 7.35 1 3.39 3.68 1.48 7.62l3.78 2.93c.92-2.76 3.51-4.51 6.74-4.51z"/>
+                    <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.73 2.89c2.18-2.01 3.7-4.99 3.7-8.63z"/>
+                    <path fill="#FBBC05" d="M5.26 14.12c-.24-.72-.38-1.5-.38-2.31s.14-1.59.38-2.31L1.48 6.57C.53 8.44 0 10.53 0 12.75s.53 4.31 1.48 6.18l3.78-2.93z"/>
+                    <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.73-2.89c-1.1.74-2.51 1.18-4.23 1.18-3.23 0-5.82-1.75-6.74-4.51L1.48 16.8C3.39 20.32 7.35 23 12 23z"/>
+                  </svg>
+                  Mit Google Anmelden
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Player Modal */}
+      {showAddPlayerModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl my-auto">
+            <div className="bg-black text-white p-4 border-b-4 border-black flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                <UserPlus size={20} /> {editingPlayer ? 'Spieler bearbeiten' : 'Neuer Spieler'}
+              </h3>
+              <button onClick={() => {
+                setShowAddPlayerModal(false);
+                setEditingPlayer(null);
+              }} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <form className="p-6 space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const birthDate = formData.get('geburtsdatum') as string;
+              const num = parseInt(formData.get('number') as string) || 0;
+              
+              const firstName = formData.get('firstName') as string;
+              const lastName = formData.get('lastName') as string;
+              const name = `${firstName} ${lastName}`.trim();
+              
+              const p: Spieler = {
+                id: editingPlayer?.id || Date.now().toString(),
+                category: formData.get('category') as any,
+                number: num,
+                nummer: num,
+                name: name,
+                firstName: firstName,
+                lastName: lastName,
+                position: formData.get('position') as string,
+                geburtsdatum: birthDate,
+                wochentag: '', // Will be calculated in handleAddPlayer
+                status: formData.get('status') as any || 'Aktiv',
+                notizen: formData.get('notizen') as string,
+                adresse: formData.get('adresse') as string,
+                telefon: formData.get('telefon') as string,
+                email: formData.get('email') as string,
+                oberteil: formData.get('oberteil') as string,
+                kurze_hose: formData.get('kurze_hose') as string,
+                lange_hose: formData.get('lange_hose') as string,
+                schuhe: formData.get('schuhe') as string,
+                physical: {
+                  height: parseInt(formData.get('height') as string) || 0,
+                  weight: parseInt(formData.get('weight') as string) || 0,
+                  bodyFat: parseFloat(formData.get('bodyFat') as string) || 0,
+                  strongFoot: formData.get('strongFoot') as any,
+                },
+                finance: {
+                  baseSalary: parseInt(formData.get('baseSalary') as string) || 0,
+                  bonusPerMatch: parseInt(formData.get('bonusPerMatch') as string) || 0,
+                  months: isNaN(parseInt(formData.get('months') as string)) ? 12 : parseInt(formData.get('months') as string),
+                  transferFeeIn: parseInt(formData.get('transferFeeIn') as string) || 0,
+                  transferFeeOut: parseInt(formData.get('transferFeeOut') as string) || 0,
+                  ist: parseInt(formData.get('ist') as string) || 0,
+                  sideAgreements: formData.get('sideAgreements') as string,
+                },
+                analysis: {
+                  strengths: formData.get('strengths') as string,
+                  weaknesses: formData.get('weaknesses') as string,
+                  development: formData.get('development') as string,
+                },
+                injuryHistory: formData.get('injuryHistory') as string,
+                professionalStatus: formData.get('professionalStatus') as string,
+                education: formData.get('education') as string,
+                employer: formData.get('employer') as string,
+                diagnostics: {
+                  sprintwert: formData.get('sprintwert') as string,
+                  yoyotest: formData.get('yoyotest') as string,
+                }
+              };
+              if (editingPlayer) {
+                handleUpdatePlayer(p);
+              } else {
+                handleAddPlayer(p);
+              }
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Basisdaten */}
+                <div className="space-y-4">
+                  <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1">Basisdaten</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Kategorie</label>
+                      <select 
+                        name="category" 
+                        value={modalCategory} 
+                        onChange={(e) => setModalCategory(e.target.value as any)}
+                        className="w-full border-2 border-black p-2 font-black focus:outline-none"
+                      >
+                        <option value="player">Spielerkader</option>
+                        <option value="coach">Trainerteam</option>
+                        <option value="staff">Teammanagement / Funktionär</option>
+                        <option value="medical">Medizinische Abteilung (Physio / Arzt)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Nr</label>
+                      <input name="number" type="number" defaultValue={editingPlayer?.nummer} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Vorname</label>
+                      <input name="firstName" type="text" defaultValue={editingPlayer?.firstName} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Nachname</label>
+                      <input name="lastName" type="text" defaultValue={editingPlayer?.lastName} required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Position</label>
+                      <div className="flex flex-col gap-1">
+                        <input name="position" id="pos-input" type="text" defaultValue={editingPlayer?.position} required className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase" />
+                        <div className="flex flex-wrap gap-1">
+                          {['TW', 'IV', 'RV', 'LV', 'MD', 'ZDM', 'ZMD', 'ZOM', 'LM', 'RM', 'HS', 'ST'].map(p => (
+                            <button 
+                              key={p} 
+                              type="button" 
+                              onClick={() => {
+                                const input = document.getElementById('pos-input') as HTMLInputElement;
+                                if (input) {
+                                  input.value = p;
+                                }
+                              }}
+                              className="text-[7px] font-black uppercase border border-black px-1.5 py-0.5 hover:bg-black hover:text-white transition-colors"
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Status</label>
+                      <select name="status" defaultValue={editingPlayer?.status || 'Aktiv'} className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                        <option value="Aktiv">Aktiv</option>
+                        <option value="Inaktiv">Inaktiv</option>
+                        <option value="Verletzt">Verletzt</option>
+                        <option value="Abgang">Abgang</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Geburtsdatum</label>
+                      <input name="geburtsdatum" type="text" defaultValue={editingPlayer?.geburtsdatum} placeholder="TT.MM.JJJJ" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Beruflicher Status</label>
+                      <select name="professionalStatus" defaultValue={editingPlayer?.professionalStatus || ''} className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                        <option value="">- Wählen -</option>
+                        <option value="Student">Student</option>
+                        <option value="Schüler">Schüler</option>
+                        <option value="Ausbildung">Ausbildung</option>
+                        <option value="Angestellter">Angestellter</option>
+                        <option value="Selbstständig">Selbstständig</option>
+                        <option value="Arbeitslos">Arbeitslos</option>
+                        <option value="Arbeitssuchend">Arbeitssuchend</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Ausbildung</label>
+                      <input name="education" type="text" defaultValue={editingPlayer?.education || ''} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Arbeitgeber</label>
+                      <input name="employer" type="text" defaultValue={editingPlayer?.employer || ''} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase block mb-1">Verletzungshistorie</label>
+                    <textarea name="injuryHistory" defaultValue={editingPlayer?.injuryHistory || ''} className="w-full border-2 border-black p-2 font-black focus:outline-none min-h-[60px]" placeholder="Bisherige Verletzungen..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Telefon</label>
+                      <input name="telefon" type="text" defaultValue={editingPlayer?.telefon} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Email</label>
+                      <input name="email" type="email" defaultValue={editingPlayer?.email} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Adresse</label>
+                      <input name="adresse" type="text" defaultValue={editingPlayer?.adresse} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physische Daten & Ausrüstung */}
+                {modalCategory === 'player' && (
+                  <div className="space-y-4">
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1">Physische Daten</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Größe (cm)</label>
+                        <input name="height" type="number" defaultValue={editingPlayer?.physical?.height} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Gewicht (kg)</label>
+                        <input name="weight" type="number" defaultValue={editingPlayer?.physical?.weight} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Körperfett (%)</label>
+                        <input name="bodyFat" type="number" step="0.1" defaultValue={editingPlayer?.physical?.bodyFat} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Starker Fuß</label>
+                        <select name="strongFoot" defaultValue={editingPlayer?.physical?.strongFoot || 'Rechts'} className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                          <option value="Rechts">Rechts</option>
+                          <option value="Links">Links</option>
+                          <option value="Beidfüßig">Beidfüßig</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Sprintwert</label>
+                        <input name="sprintwert" type="text" defaultValue={editingPlayer?.diagnostics?.sprintwert} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Yoyo-Test</label>
+                        <input name="yoyotest" type="text" defaultValue={editingPlayer?.diagnostics?.yoyotest} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                    </div>
+
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 pt-2">Ausrüstung</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Oberteil</label>
+                        <input name="oberteil" type="text" defaultValue={editingPlayer?.oberteil} placeholder="Größe" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Schuhe</label>
+                        <input name="schuhe" type="text" defaultValue={editingPlayer?.schuhe} placeholder="Größe" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Kurze Hose</label>
+                        <input name="kurze_hose" type="text" defaultValue={editingPlayer?.kurze_hose} placeholder="Größe" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black uppercase block mb-1">Lange Hose</label>
+                        <input name="lange_hose" type="text" defaultValue={editingPlayer?.lange_hose} placeholder="Größe" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Analyse & Finanzen */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {modalCategory === 'player' && (
+                  <div className="space-y-4">
+                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1">Analyse</h4>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Stärken</label>
+                      <textarea name="strengths" defaultValue={editingPlayer?.analysis?.strengths} className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={2}></textarea>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Schwächen</label>
+                      <textarea name="weaknesses" defaultValue={editingPlayer?.analysis?.weaknesses} className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={2}></textarea>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Entwicklungspotenzial</label>
+                      <textarea name="development" defaultValue={editingPlayer?.analysis?.development} className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={2}></textarea>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Allgemeine Notizen</label>
+                      <textarea name="notizen" defaultValue={editingPlayer?.notizen} className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={2}></textarea>
+                    </div>
+                  </div>
+                )}
+                <div className={`space-y-4 ${modalCategory !== 'player' ? 'md:col-span-2' : ''}`}>
+                  <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1">Finanzen</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Grundgehalt</label>
+                      <input name="baseSalary" type="number" defaultValue={editingPlayer?.finance?.baseSalary} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Prämie/Spiel</label>
+                      <input name="bonusPerMatch" type="number" defaultValue={editingPlayer?.finance?.bonusPerMatch} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1 text-blue-600">Monate Aktiv (0-12)</label>
+                      <input name="months" type="number" min="0" max="12" defaultValue={editingPlayer?.finance?.months ?? 12} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Ablöse (Zugang)</label>
+                      <input name="transferFeeIn" type="number" defaultValue={editingPlayer?.finance?.transferFeeIn} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase block mb-1">Ablöse (Abgang)</label>
+                      <input name="transferFeeOut" type="number" defaultValue={editingPlayer?.finance?.transferFeeOut} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase block mb-1">Nebenvereinbarungen</label>
+                    <textarea name="sideAgreements" defaultValue={editingPlayer?.finance?.sideAgreements} className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={2}></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-4">
+                <button type="button" onClick={() => {
+                  setShowAddPlayerModal(false);
+                  setEditingPlayer(null);
+                }} className="flex-1 bg-white text-black py-3 font-black uppercase tracking-widest hover:bg-gray-100 transition-colors border-2 border-black">
+                  Abbrechen
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={saveStatus === 'saving'}
+                  className={`flex-1 text-white py-3 font-black uppercase tracking-widest transition-colors border-2 border-black flex items-center justify-center gap-2 ${
+                    saveStatus === 'saving' ? 'bg-gray-600 cursor-wait' : 
+                    saveStatus === 'success' ? 'bg-green-500' : 'bg-black hover:bg-gray-800'
+                  }`}
+                >
+                  {saveStatus === 'saving' ? 'WIRD GESPEICHERT...' : 
+                   saveStatus === 'success' ? 'GESPEICHERT!' : 
+                   (editingPlayer ? 'Speichern' : 'Anlegen')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Player Modal */}
+      {showRemovePlayerModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg">
+            <div className="bg-[#C00000] text-white p-4 border-b-4 border-black flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                <UserMinus size={20} /> Spieler entfernen
+              </h3>
+              <button onClick={() => setShowRemovePlayerModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <div className="p-6">
+              <p className="text-[10px] font-bold uppercase opacity-60 mb-4 italic">Wählen Sie einen Spieler aus, den Sie aus dem Kader entfernen möchten:</p>
+              <div className="max-h-96 overflow-y-auto custom-scrollbar border-2 border-black">
+                {players.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-3 border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-black border border-black group-hover:bg-[#C00000] group-hover:text-white transition-colors">
+                        #{p.number}
+                      </span>
+                      <div>
+                        <p className="font-black uppercase text-sm leading-none">{p.lastName}</p>
+                        <p className="text-[9px] font-bold uppercase opacity-40 mt-1">{p.position}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDeletePlayer(p.id, true)}
+                      className="bg-white text-[#C00000] p-2 border-2 border-[#C00000] hover:bg-[#C00000] hover:text-white transition-all"
+                      title="Spieler löschen"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                {players.length === 0 && (
+                  <div className="p-8 text-center font-black uppercase opacity-20 italic">Keine Spieler im Kader</div>
+                )}
+              </div>
+              <div className="mt-6">
+                <button 
+                  onClick={() => setShowRemovePlayerModal(false)}
+                  className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black"
+                >
+                  Schließen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Scouting Modal */}
+      {showAddScoutingModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md">
+            <div className="bg-black text-white p-4 border-b-4 border-black flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                <Plus size={20} /> Neuer Scouting-Kandidat
+              </h3>
+              <button onClick={() => setShowAddScoutingModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newCandidate: ScoutingEntry = {
+                id: `s${Date.now()}`,
+                createdAt: Date.now(),
+                name: formData.get('name') as string,
+                age: parseInt(formData.get('age') as string) || 0,
+                position: formData.get('position') as string,
+                club: formData.get('club') as string,
+                marketValue: formData.get('marketValue') as string,
+                recommendation: (formData.get('recommendation') as any) || 'Beobachten',
+                category: (formData.get('category') as any) || 'Sonstige',
+                status: (formData.get('status') as string) || 'Offen',
+                date: formData.get('date') as string,
+                conversationNotes: formData.get('conversationNotes') as string,
+                waitingTime: formData.get('waitingTime') as string
+              };
+              console.log('Saving new candidate:', newCandidate);
+              saveScoutingCandidate(newCandidate).then(() => {
+                console.log('Scouting candidate saved successfully');
+                setShowAddScoutingModal(false);
+                setToast({ message: 'Scouting-Kandidat erfolgreich angelegt.', id: Date.now() });
+              }).catch(err => {
+                console.error('Error saving scouting candidate:', err);
+                setToast({ message: 'Fehler beim Speichern des Kandidaten.', id: Date.now() });
+              });
+            }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Name</label>
+                  <input name="name" type="text" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
+                  <input name="date" type="text" defaultValue={new Date().toLocaleDateString('de-DE')} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Alter</label>
+                  <input name="age" type="number" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Position</label>
+                  <input name="position" type="text" required className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Verein</label>
+                <input name="club" type="text" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Kategorie</label>
+                  <select name="category" className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase">
+                    <option value="Abwehr">Abwehr</option>
+                    <option value="Mittelfeld">Mittelfeld</option>
+                    <option value="Flügel">Flügel</option>
+                    <option value="Sturm">Sturm</option>
+                    <option value="Sonstige">Sonstige</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Empfehlung</label>
+                  <select name="recommendation" className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase">
+                    <option value="Beobachten">Beobachten</option>
+                    <option value="Verpflichten">Verpflichten</option>
+                    <option value="Kein Interesse">Kein Interesse</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Marktwert</label>
+                  <input name="marketValue" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" placeholder="z.B. 500k€" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Status</label>
+                  <input name="status" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" placeholder="z.B. Offen" defaultValue="Offen" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Gesprächsinhalt</label>
+                <textarea name="conversationNotes" className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={2} placeholder="Was wurde besprochen?"></textarea>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Wartezeit auf Antwort</label>
+                <input name="waitingTime" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" placeholder="z.B. 2 Wochen / Datum" />
+              </div>
+              <div className="pt-4">
+                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black">
+                  Kandidat anlegen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Scouting Modal */}
+      {showRemoveScoutingModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg">
+            <div className="bg-[#C00000] text-white p-4 border-b-4 border-black flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
+                <UserMinus size={20} /> Kandidat entfernen
+              </h3>
+              <button onClick={() => setShowRemoveScoutingModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <div className="p-6">
+              <p className="text-[10px] font-bold uppercase opacity-60 mb-4 italic">Wählen Sie einen Kandidaten aus, den Sie von der Liste entfernen möchten:</p>
+              <div className="max-h-96 overflow-y-auto custom-scrollbar border-2 border-black">
+                {scoutingCandidates.map((c) => (
+                  <div key={c.id} className="flex items-center justify-between p-3 border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-black border border-black group-hover:bg-[#C00000] group-hover:text-white transition-colors">
+                        {c.name.substring(0, 1)}
+                      </div>
+                      <div>
+                        <p className="font-black uppercase text-sm leading-none">{c.name}</p>
+                        <p className="text-[9px] font-bold uppercase opacity-40 mt-1">{c.position} • {c.club}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={async () => {
+                        try {
+                          await deleteScoutingCandidate(c.id);
+                          setToast({ message: 'Kandidat erfolgreich entfernt.', id: Date.now() });
+                        } catch (err) {
+                          console.error('Error removing candidate:', err);
+                          setToast({ message: 'Fehler beim Entfernen des Kandidaten.', id: Date.now() });
+                        }
+                      }}
+                      className="bg-white text-[#C00000] p-2 border-2 border-[#C00000] hover:bg-[#C00000] hover:text-white transition-all"
+                      title="Kandidat löschen"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                {scoutingCandidates.length === 0 && (
+                  <div className="p-8 text-center font-black uppercase opacity-20 italic">Keine Kandidaten auf der Liste</div>
+                )}
+              </div>
+              <div className="mt-6">
+                <button 
+                  onClick={() => setShowRemoveScoutingModal(false)}
+                  className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black"
+                >
+                  Schließen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Add Meeting Modal */}
+      {showAddMeetingModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-black text-white p-4 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest text-sm">Gespräch hinzufügen</h3>
+              <button onClick={() => { setShowAddMeetingModal(false); setSelectedMeetingPlayer(''); }} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const playerName = selectedMeetingPlayer === 'NEUER SPIELER' 
+                ? formData.get('customPlayerName') as string 
+                : selectedMeetingPlayer;
+              const isScout = scoutingCandidates.some(c => c.name === playerName);
+              
+              const newMeeting: MeetingEntry = {
+                id: `m${Date.now()}`,
+                playerName,
+                date: formData.get('date') as string,
+                time: formData.get('time') as string,
+                location: formData.get('location') as string,
+                notes: formData.get('notes') as string,
+                status: formData.get('status') as any || 'Offen',
+                isScout
+              };
+              console.log('Creating new meeting:', newMeeting);
+              saveMeetingEntry(newMeeting).then(() => {
+                console.log('Meeting saved successfully');
+                setShowAddScoutingModal(false);
+                setShowAddMeetingModal(false);
+                setSelectedMeetingPlayer('');
+                setToast({ message: 'Termin erfolgreich angelegt', id: Date.now() });
+              }).catch(err => {
+                console.error('Error saving meeting:', err);
+                setToast({ message: 'Fehler beim Speichern des Termins', id: Date.now() });
+              });
+            }}>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Spieler / Kontakt</label>
+                <select 
+                  name="playerType" 
+                  required 
+                  className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase text-xs"
+                  value={selectedMeetingPlayer}
+                  onChange={(e) => setSelectedMeetingPlayer(e.target.value)}
+                >
+                  <option value="">Wähle einen Spieler...</option>
+                  <option value="NEUER SPIELER">NEUER SPIELER</option>
+                  <optgroup label="KADER">
+                    {sortPlayers(players).map(p => (
+                      <option key={p.id} value={p.lastName}>{p.lastName} (#{p.number})</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="SCOUTING">
+                    {scoutingCandidates.map(c => (
+                      <option key={c.id} value={c.name}>{c.name} ({c.club})</option>
+                    ))}
+                  </optgroup>
+                </select>
+                {selectedMeetingPlayer === 'NEUER SPIELER' && (
+                  <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
+                    <label className="text-[10px] font-black uppercase block mb-1">Name des neuen Spielers</label>
+                    <input 
+                      name="customPlayerName" 
+                      type="text" 
+                      required 
+                      className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase text-xs" 
+                      placeholder="NAME EINGEBEN..."
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
+                  <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Uhrzeit</label>
+                  <input name="time" type="time" required defaultValue="18:00" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Ort</label>
+                <input name="location" type="text" required defaultValue="Sportheim" className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Status</label>
+                <select name="status" className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase text-xs">
+                  <option value="Offen">Offen</option>
+                  <option value="Zusage">Zusage</option>
+                  <option value="Absage">Absage</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Notizen</label>
+                <textarea name="notes" className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={3} placeholder="Themen, Ziele..."></textarea>
+              </div>
+              <div className="pt-4">
+                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)]">
+                  Termin speichern
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Training Modal */}
+      {showAddTrainingModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl my-auto">
+            <div className="bg-black text-white p-4 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest text-sm">Trainingseinheit hinzufügen</h3>
+              <button onClick={() => setShowAddTrainingModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newSession: TrainingSession = {
+                id: Date.now().toString(),
+                date: formData.get('date') as string,
+                weekday: getWeekdayLabel(formData.get('date') as string),
+                group: formData.get('group') as string,
+                load: formData.get('load') as string,
+                duration: formData.get('duration') as string,
+                weeklyFocus: formData.get('weeklyFocus') as string,
+                sessionFocus: formData.get('sessionFocus') as string,
+                trainer: formData.get('trainer') as string,
+                intensity: formData.get('intensity') as string,
+                players: players.map(p => ({ name: p.name, position: p.position, status: 'Aktiv' })),
+                content: { warmup: '', main1: '', main2: '', closing: '' },
+                importantInfo: '',
+                remarks: ''
+              };
+              try {
+                await saveTrainingSession(newSession);
+                setShowAddTrainingModal(false);
+                setToast({ message: 'Trainingseinheit erfolgreich hinzugefügt', id: Date.now() });
+              } catch (err) {
+                handleFirestoreError(err, OperationType.CREATE, 'training_sessions');
+              }
+            }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
+                  <input name="date" type="date" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Trainer</label>
+                  <input name="trainer" type="text" defaultValue="Trainerteam" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Gruppe</label>
+                  <input name="group" type="text" defaultValue="Gesamtkader" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Dauer (Min)</label>
+                  <input name="duration" type="text" defaultValue="90" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Belastung</label>
+                  <select name="load" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                    <option value="Gering">Gering</option>
+                    <option value="Mittel">Mittel</option>
+                    <option value="Hoch">Hoch</option>
+                    <option value="Maximal">Maximal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase block mb-1">Intensität</label>
+                  <select name="intensity" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                    <option value="Regenerativ">Regenerativ</option>
+                    <option value="Extensiv">Extensiv</option>
+                    <option value="Intensiv">Intensiv</option>
+                    <option value="Wettkampf">Wettkampf</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Wochenschwerpunkt</label>
+                <input name="weeklyFocus" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Einheitsschwerpunkt</label>
+                <input name="sessionFocus" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+              </div>
+              <div className="pt-4">
+                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)]">
+                  Einheit speichern
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Physio Modal */}
+      {showAddPhysioModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md my-auto">
+            <div className="bg-black text-white p-4 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-widest text-sm">Physio-Eintrag hinzufügen</h3>
+              <button onClick={() => setShowAddPhysioModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newEntry = {
+                id: Date.now().toString(),
+                playerId: formData.get('playerId') as string,
+                date: formData.get('date') as string,
+                type: formData.get('type') as string,
+                diagnosis: formData.get('diagnosis') as string,
+                status: formData.get('status') as string,
+                remarks: formData.get('remarks') as string
+              };
+              try {
+                await savePhysioEntry(newEntry);
+                setShowAddPhysioModal(false);
+                setToast({ message: 'Physio-Eintrag erfolgreich hinzugefügt', id: Date.now() });
+              } catch (err) {
+                handleFirestoreError(err, OperationType.CREATE, 'physio_entries');
+              }
+            }}>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Spieler</label>
+                <select name="playerId" required className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                  <option value="">-- Spieler wählen --</option>
+                  {sortedPlayers.map(p => (
+                    <option key={p.id} value={p.id}>{p.lastName} {p.firstName}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
+                <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Typ</label>
+                <select name="type" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                  <option value="Behandlung">Behandlung</option>
+                  <option value="Check-Up">Check-Up</option>
+                  <option value="Reha">Reha</option>
+                  <option value="Massage">Massage</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Diagnose / Grund</label>
+                <input name="diagnosis" type="text" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Status</label>
+                <select name="status" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                  <option value="In Behandlung">In Behandlung</option>
+                  <option value="Eingeschränkt">Eingeschränkt</option>
+                  <option value="Spielfähig">Spielfähig</option>
+                  <option value="Reha">Reha</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase block mb-1">Bemerkungen</label>
+                <textarea name="remarks" className="w-full border-2 border-black p-2 font-black focus:outline-none min-h-[60px]" />
+              </div>
+              <div className="pt-4">
+                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)]">
+                  Eintrag speichern
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div key={toast.id} className="fixed bottom-6 right-6 z-[200] bg-black text-white px-4 py-3 border-2 border-white shadow-[4px_4px_0px_0px_rgba(192,0,0,1)] animate-in slide-in-from-bottom-5 fade-in duration-300 flex items-center gap-3">
+          <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <span className="text-[10px] font-black uppercase tracking-widest">{toast.message}</span>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default App;

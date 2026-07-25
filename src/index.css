@@ -1,0 +1,357 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@1,700;1,900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-serif: "Playfair Display", serif;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-white;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#E2001A] rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-[#E2001A]/20 rounded-full;
+  }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    @apply bg-[#E2001A]/40;
+  }
+}
+
+@layer components {
+  .watermark-bg {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .watermark-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: url('https://storage.googleapis.com/static.aistudio.google.com/content/file-0-22');
+    background-repeat: no-repeat;
+    background-position: center 60%;
+    background-size: 50%;
+    filter: grayscale(100%) opacity(0.08);
+    pointer-events: none;
+  }
+
+  /* Ensure content stays above watermark */
+  .watermark-bg > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .data-grid-header {
+    @apply font-serif italic text-[11px] text-[#E2001A] uppercase tracking-widest;
+  }
+  
+  .brutalist-card {
+    @apply bg-white border border-[#E2001A] shadow-[4px_4px_0px_0px_rgba(226,0,26,1)];
+    /* Use standard CSS instead of @apply for custom class to avoid Vite error */
+    position: relative;
+    isolation: isolate;
+  }
+
+  .brutalist-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: url('https://storage.googleapis.com/static.aistudio.google.com/content/file-0-22');
+    background-repeat: no-repeat;
+    background-position: center 60%;
+    background-size: 50%;
+    filter: grayscale(100%) opacity(0.08);
+    pointer-events: none;
+  }
+
+  .brutalist-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 1.2cm !important;
+  }
+  
+  html, body, #root {
+    zoom: 1 !important;
+    transform: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-size: 11pt !important;
+    color: black !important;
+    background: white !important;
+  }
+
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Force background colors and borders in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    border-color: black !important;
+  }
+
+  /* Optimize the main training plan card to break naturally across multiple pages */
+  #training-plan-card {
+    border: 3px solid black !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: visible !important;
+    display: block !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Prevent split-column layout from squeezing side-by-side on print */
+  #training-plan-card > div.flex,
+  #training-plan-card > div:nth-child(2),
+  #training-plan-card .flex.flex-1.min-h-\[600px\] {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Stack main sections vertically */
+  #training-plan-card .w-1\/3,
+  #training-plan-card div[class*="w-1/3"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-right: none !important;
+    border-bottom: 3px solid black !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  #training-plan-card .flex-1.flex.flex-col,
+  #training-plan-card div[class*="flex-1"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Compact text content inside print card (at least 12pt for text) */
+  #training-plan-card .p-4 {
+    padding: 8px 12px !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+  }
+
+  #training-plan-card .p-6 {
+    padding: 12px 16px !important;
+  }
+
+  #training-plan-card .p-2 {
+    padding: 4px 8px !important;
+  }
+
+  /* Inside warmup, main parts, and closing sections:
+     Stack the text and the images vertically instead of side-by-side */
+  #training-plan-card .flex-1.flex.min-h-0 {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  #training-plan-card .flex-1.flex.min-h-0 > div:first-child {
+    width: 100% !important;
+    border-bottom: 1px dashed black !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Make images during printing highly visible, crisp, and readable */
+  #training-plan-card img {
+    max-height: 200px !important;
+    height: 200px !important; /* Force a consistent readable height */
+    width: auto !important;
+    object-fit: contain !important;
+    border: 2px solid black !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    background: white !important;
+    display: block !important;
+    margin: 4px !important;
+  }
+
+  /* Custom wrapping container for images inside each section during print */
+  #training-plan-card .print\:flex-wrap {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: white !important;
+    padding: 8px !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure the ImageUpload container and its parent overflow-hidden wrappers
+     do not constrain or clip images in print layout */
+  #training-plan-card .print\:flex-wrap > div {
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    border: none !important;
+  }
+
+  #training-plan-card .print\:flex-wrap > div > div {
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+  }
+
+  /* Convert the player attendance list into a highly readable full-width grid */
+  .player-list-print-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* 3 balanced columns across the wide space */
+    align-content: start !important;
+    gap: 4px !important;
+    padding: 8px !important;
+    background-color: white !important;
+    border: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Style each player cell in the grid */
+  .player-list-print-grid > div {
+    padding: 4px 8px !important;
+    border: 1.5px solid black !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    font-size: 10pt !important;
+    height: 36px !important;
+    box-sizing: border-box !important;
+    background: white !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure background colors of attendance states (1, A, B) are printed correctly */
+  .player-list-print-grid .bg-green-500 {
+    background-color: #22c55e !important;
+    color: white !important;
+  }
+  .player-list-print-grid .bg-yellow-400 {
+    background-color: #facc15 !important;
+    color: black !important;
+  }
+  .player-list-print-grid .bg-red-600 {
+    background-color: #dc2626 !important;
+    color: white !important;
+  }
+
+  /* Fix for separator rows to span all columns */
+  .player-list-print-grid .bg-gray-200,
+  .player-list-print-grid .print\:col-span-2 {
+    grid-column: 1 / -1 !important; /* Span across all 3 columns */
+    height: auto !important;
+    padding: 6px 12px !important;
+    background-color: #f3f4f6 !important;
+    border: 1.5px solid black !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+  }
+
+  /* Compact player avatar and status badges */
+  .player-list-print-grid span {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 9pt !important;
+    border-width: 1.5px !important;
+    line-height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .player-list-print-grid p {
+    font-size: 10pt !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    color: black !important;
+  }
+
+  .player-list-print-grid .w-6.h-6 {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .player-list-print-grid .w-14 {
+    display: block !important; /* Keep positions printed so they are readable! */
+    border-left: 1px solid #ccc !important;
+    padding-left: 6px !important;
+  }
+
+  /* Keep important sections from breaking awkwardly across pages */
+  .print\:avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
