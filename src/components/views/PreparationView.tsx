@@ -427,14 +427,14 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
   }, [data]);
 
   const typeColors: Record<string, string> = {
-    'Training': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Spiel': 'bg-red-50 text-red-700 border-red-200',
-    'Frei': 'bg-gray-100 text-gray-400 border-gray-200',
-    'Event': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    'Pflichtspiel': 'bg-red-100 text-red-800 border-red-300',
-    'Testspiel': 'bg-orange-50 text-orange-700 border-orange-200',
-    'Turnier': 'bg-purple-50 text-purple-700 border-purple-200',
-    'Meeting': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    'Training': 'bg-sky-950/80 text-sky-300 border-sky-800',
+    'Spiel': 'bg-rose-950/80 text-rose-300 border-rose-800',
+    'Frei': 'bg-slate-800/80 text-slate-400 border-slate-700',
+    'Event': 'bg-amber-950/80 text-amber-300 border-amber-800',
+    'Pflichtspiel': 'bg-red-950/80 text-red-300 border-red-800',
+    'Testspiel': 'bg-orange-950/80 text-orange-300 border-orange-800',
+    'Turnier': 'bg-purple-950/80 text-purple-300 border-purple-800',
+    'Meeting': 'bg-emerald-950/80 text-emerald-300 border-emerald-800',
   };
 
   const typeIcons: Record<string, React.ReactNode> = {
@@ -449,69 +449,68 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-hidden print:bg-white">
+    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden print:bg-white print:text-black">
       {/* Header */}
-      <div className="p-2 border-b-2 border-black bg-white flex flex-col gap-2 shrink-0">
+      <div className="p-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex flex-col gap-3 shrink-0 rounded-t-2xl">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-black border border-black flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-white">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-md">
               {icon}
             </div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xs font-black uppercase tracking-tighter leading-none">{title}</h2>
-              <span className="text-black/20 text-xs">|</span>
-              <p className="text-[8px] font-bold uppercase tracking-widest opacity-40">{subtitle}</p>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-wider text-amber-400 leading-tight">{title}</h2>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{subtitle}</p>
             </div>
           </div>
           <div className="flex gap-2 items-center print:hidden">
             {feedback && (
-              <div className={`px-2 py-1 text-[8px] font-black uppercase tracking-widest animate-pulse border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${feedback.includes('Fehler') ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+              <div className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg animate-pulse border ${feedback.includes('Fehler') ? 'bg-rose-950 text-rose-300 border-rose-800' : 'bg-emerald-950 text-emerald-300 border-emerald-800'}`}>
                 {feedback}
               </div>
             )}
             <button 
               type="button"
               onClick={handleExportPDF}
-              className="bg-[#C00000] text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest border-2 border-black hover:bg-red-700 transition-colors flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:brightness-110 transition-all flex items-center gap-1.5 shadow-md"
             >
-              <Download size={10} /> PDF Download
+              <Download size={12} /> PDF Download
             </button>
             <button 
               type="button"
               onClick={handleEmailPlan}
-              className="bg-white text-black px-2 py-1 text-[8px] font-black uppercase tracking-widest border-2 border-black hover:bg-gray-100 transition-colors flex items-center gap-1"
+              className="bg-slate-900 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-colors flex items-center gap-1.5"
             >
-              <Mail size={10} /> Per E-Mail
+              <Mail size={12} /> Per E-Mail
             </button>
             <button 
               type="button"
               onClick={handleWhatsAppPlan}
-              className="bg-white text-black px-2 py-1 text-[8px] font-black uppercase tracking-widest border-2 border-black hover:bg-gray-100 transition-colors flex items-center gap-1"
+              className="bg-slate-900 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-colors flex items-center gap-1.5"
             >
-              <MessageSquare size={10} /> WhatsApp
+              <MessageSquare size={12} /> WhatsApp
             </button>
             <button 
               type="button"
               onClick={handlePrint}
-              className="bg-white text-black px-2 py-1 text-[8px] font-black uppercase tracking-widest border-2 border-black hover:bg-gray-100 transition-colors flex items-center gap-1"
+              className="bg-slate-900 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-colors flex items-center gap-1.5"
             >
-              <FileText size={10} /> Drucken
+              <FileText size={12} /> Drucken
             </button>
             {isEditing && (
               <button 
                 onClick={() => handleAddEntry(0)}
-                className="bg-black text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest border-2 border-black hover:bg-gray-800 transition-colors flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                className="bg-amber-500 text-slate-950 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-amber-400 transition-colors flex items-center gap-1.5 shadow-md active:scale-95"
               >
-                <Plus size={10} /> + Einheit
+                <Plus size={12} /> + Einheit
               </button>
             )}
           </div>
         </div>
 
         {onDateRangeChange && isEditing && (
-          <div className="flex items-center gap-4 bg-gray-50 p-2 border border-black/10 rounded-sm print:hidden">
+          <div className="flex items-center gap-4 bg-slate-950 p-2.5 border border-slate-800 rounded-xl print:hidden">
             <div className="flex items-center gap-2">
-              <label className="text-[8px] font-black uppercase tracking-widest opacity-60">Start:</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Start:</label>
               <input 
                 type="date" 
                 value={localStartDate}
@@ -519,11 +518,11 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                   setLocalStartDate(e.target.value);
                   onDateRangeChange(e.target.value, localEndDate);
                 }}
-                className="text-[10px] font-bold border border-black/20 px-1 py-0.5 focus:outline-none focus:border-black"
+                className="text-xs font-bold bg-slate-900 text-slate-100 border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-[8px] font-black uppercase tracking-widest opacity-60">Ende:</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ende:</label>
               <input 
                 type="date" 
                 value={localEndDate}
@@ -531,10 +530,10 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                   setLocalEndDate(e.target.value);
                   onDateRangeChange(localStartDate, e.target.value);
                 }}
-                className="text-[10px] font-bold border border-black/20 px-1 py-0.5 focus:outline-none focus:border-black"
+                className="text-xs font-bold bg-slate-900 text-slate-100 border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400"
               />
             </div>
-            <div className="text-[8px] font-black uppercase tracking-widest opacity-40 ml-auto">
+            <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 ml-auto">
               {weekCount} Wochen Planung
             </div>
           </div>
@@ -542,43 +541,43 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
       </div>
 
       <div className="flex-1 overflow-auto custom-scrollbar p-4 print:p-0 print:overflow-visible print:bg-white">
-        <div ref={tableRef} id="prep-table-container" className="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] min-w-[1000px] print:shadow-none print:border-gray-300 print:min-w-0 print:w-full">
-          <table className="w-full border-collapse text-[10px] print:text-[8px]">
+        <div ref={tableRef} id="prep-table-container" className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden min-w-[1000px] print:shadow-none print:border-gray-300 print:min-w-0 print:w-full print:bg-white print:text-black">
+          <table className="w-full border-collapse text-xs print:text-[8px] text-slate-100">
             <thead>
-              <tr className="bg-black text-white uppercase font-black tracking-widest text-[9px]">
-                <th className="p-2 border border-white/20 text-left w-8">KW</th>
-                <th className="p-2 border border-white/20 text-left w-8">TE</th>
-                <th className="p-2 border border-white/20 text-left w-24">Datum</th>
-                <th className="p-2 border border-white/20 text-left w-12">Tag</th>
+              <tr className="bg-slate-950 text-amber-400 uppercase font-black tracking-wider text-[11px] border-b border-slate-800">
+                <th className="p-3 border-r border-slate-800/80 text-left w-10">KW</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-10">TE</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-28">Datum</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-14">Tag</th>
                 {config.showStartEnd ? (
                   <>
-                    <th className="p-2 border border-white/20 text-left w-16">Start</th>
-                    <th className="p-2 border border-white/20 text-left w-16">Ende</th>
+                    <th className="p-3 border-r border-slate-800/80 text-left w-20">Start</th>
+                    <th className="p-3 border-r border-slate-800/80 text-left w-20">Ende</th>
                   </>
                 ) : (
-                  <th className="p-2 border border-white/20 text-left w-16">Zeit</th>
+                  <th className="p-3 border-r border-slate-800/80 text-left w-20">Zeit</th>
                 )}
-                <th className="p-2 border border-white/20 text-left w-16">Treff</th>
-                <th className="p-2 border border-white/20 text-left w-24">Typ</th>
-                <th className="p-2 border border-white/20 text-left">Inhalt / Aktivität</th>
-                <th className="p-2 border border-white/20 text-left w-24">Ort</th>
-                {config.showOpponent && <th className="p-2 border border-white/20 text-left w-32">Gegner</th>}
-                <th className="p-2 border border-white/20 text-left w-20">Ergebnis</th>
-                <th className="p-2 border border-white/20 text-left w-24">Status</th>
-                <th className="p-2 border border-white/20 text-left w-32">Notizen</th>
-                {isEditing && <th className="p-2 border border-white/20 text-center w-10 print:hidden"></th>}
+                <th className="p-3 border-r border-slate-800/80 text-left w-20">Treff</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-28">Typ</th>
+                <th className="p-3 border-r border-slate-800/80 text-left">Inhalt / Aktivität</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-28">Ort</th>
+                {config.showOpponent && <th className="p-3 border-r border-slate-800/80 text-left w-36">Gegner</th>}
+                <th className="p-3 border-r border-slate-800/80 text-left w-24">Ergebnis</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-28">Status</th>
+                <th className="p-3 border-r border-slate-800/80 text-left w-36">Notizen</th>
+                {isEditing && <th className="p-3 text-center w-12 print:hidden"></th>}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-800/60 bg-slate-950">
               {sortedData.length === 0 ? (
-                <tr className="border-b border-black/5 italic opacity-30">
+                <tr className="border-b border-slate-800 text-slate-500 italic">
                   <td colSpan={config.showOpponent ? (config.showStartEnd ? 15 : 14) : (config.showStartEnd ? 14 : 13)} className="p-12 text-center">
                     <div className="flex flex-col items-center gap-4">
-                      <p className="text-[11px]">Keine Einheiten vorhanden</p>
+                      <p className="text-xs font-bold text-slate-400">Keine Einheiten vorhanden</p>
                       {isEditing && (
                         <button 
                           onClick={handleGeneratePlan}
-                          className="flex items-center gap-2 bg-black text-white px-6 py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] text-[10px]"
+                          className="flex items-center gap-2 bg-amber-500 text-slate-950 px-5 py-2.5 rounded-xl font-black uppercase tracking-wider hover:bg-amber-400 transition-all shadow-lg text-xs"
                         >
                           <RefreshCw size={14} />
                           Plan für Zeitraum generieren
@@ -589,34 +588,34 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                 </tr>
               ) : (
                 sortedData.map((entry) => (
-                  <tr key={entry.id} className={`border-b border-black/10 hover:bg-gray-50 transition-colors ${entry.type === 'Frei' ? 'opacity-60 bg-gray-50' : ''}`}>
-                    <td className="p-2 border-r border-black/10 font-black">{entry.kw}</td>
-                    <td className="p-2 border-r border-black/10 font-black">{entry.te}</td>
-                    <td className="p-2 border-r border-black/10">
+                  <tr key={entry.id} className={`hover:bg-slate-900/90 transition-colors ${entry.type === 'Frei' ? 'opacity-50 bg-slate-950/60' : ''}`}>
+                    <td className="p-2.5 border-r border-slate-800/60 font-black text-amber-400">{entry.kw}</td>
+                    <td className="p-2.5 border-r border-slate-800/60 font-black text-slate-200">{entry.te}</td>
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <EditableCell 
                         type="date" 
-                        className="bg-transparent w-full focus:outline-none font-bold"
+                        className="bg-transparent w-full focus:outline-none font-bold text-slate-100"
                         value={entry.date}
                         onSave={(val) => handleUpdate(entry.id, 'date', val)}
                         disabled={!isEditing}
                       />
                     </td>
-                    <td className="p-2 border-r border-black/10 font-bold uppercase">{entry.day}</td>
+                    <td className="p-2.5 border-r border-slate-800/60 font-bold uppercase text-slate-300">{entry.day}</td>
                     {config.showStartEnd ? (
                       <>
-                        <td className="p-2 border-r border-black/10">
+                        <td className="p-2.5 border-r border-slate-800/60">
                           <EditableCell 
                             type="text" 
-                            className="bg-transparent w-full focus:outline-none font-black"
+                            className="bg-transparent w-full focus:outline-none font-bold text-slate-100"
                             value={entry.start || ''}
                             onSave={(val) => handleUpdate(entry.id, 'start', val)}
                             disabled={!isEditing}
                           />
                         </td>
-                        <td className="p-2 border-r border-black/10">
+                        <td className="p-2.5 border-r border-slate-800/60">
                           <EditableCell 
                             type="text" 
-                            className="bg-transparent w-full focus:outline-none font-black"
+                            className="bg-transparent w-full focus:outline-none font-bold text-slate-100"
                             value={entry.end || ''}
                             onSave={(val) => handleUpdate(entry.id, 'end', val)}
                             disabled={!isEditing}
@@ -624,30 +623,30 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                         </td>
                       </>
                     ) : (
-                      <td className="p-2 border-r border-black/10">
+                      <td className="p-2.5 border-r border-slate-800/60">
                         <EditableCell 
                           type="text" 
-                          className="bg-transparent w-full focus:outline-none font-black"
+                          className="bg-transparent w-full focus:outline-none font-bold text-slate-100"
                           value={entry.time || entry.start || ''}
                           onSave={(val) => handleUpdate(entry.id, 'time', val)}
                           disabled={!isEditing}
                         />
                       </td>
                     )}
-                    <td className="p-2 border-r border-black/10">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <EditableCell 
                         type="text" 
-                        className="bg-transparent w-full focus:outline-none font-black opacity-60"
+                        className="bg-transparent w-full focus:outline-none font-medium text-slate-400"
                         value={entry.treffpunkt || ''}
                         onSave={(val) => handleUpdate(entry.id, 'treffpunkt', val)}
                         disabled={!isEditing}
                         placeholder="-"
                       />
                     </td>
-                    <td className="p-2 border-r border-black/10">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <div className="flex items-center gap-1">
                         <select 
-                          className={`px-1.5 py-0.5 rounded-sm border text-[8px] font-black uppercase inline-flex items-center gap-1 appearance-none cursor-pointer print:hidden ${typeColors[entry.type] || 'bg-gray-100'}`}
+                          className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase inline-flex items-center gap-1 appearance-none cursor-pointer print:hidden ${typeColors[entry.type] || 'bg-slate-800 text-slate-200 border-slate-700'}`}
                           value={entry.type}
                           onChange={(e) => handleUpdate(entry.id, 'type', e.target.value)}
                           disabled={!isEditing}
@@ -659,33 +658,33 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                         </span>
                       </div>
                     </td>
-                    <td className="p-2 border-r border-black/10">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <div className="flex flex-col">
                         <EditableCell 
                           type="text" 
-                          className="bg-transparent w-full focus:outline-none font-black uppercase text-[11px]"
+                          className="bg-transparent w-full focus:outline-none font-bold text-slate-100 text-xs"
                           value={entry.content || entry.inhalt || ''}
                           onSave={(val) => handleUpdate(entry.id, 'content', val)}
                           disabled={!isEditing}
                         />
                       </div>
                     </td>
-                    <td className="p-2 border-r border-black/10">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <EditableCell 
                         type="text" 
-                        className="bg-transparent w-full focus:outline-none uppercase opacity-60"
+                        className="bg-transparent w-full focus:outline-none text-slate-300 font-medium text-xs"
                         value={entry.location || entry.ort || ''}
                         onSave={(val) => handleUpdate(entry.id, 'location', val)}
                         disabled={!isEditing}
                       />
                     </td>
                     {config.showOpponent && (
-                      <td className="p-2 border-r border-black/10">
+                      <td className="p-2.5 border-r border-slate-800/60">
                         {(entry.type === 'Testspiel' || entry.type === 'Pflichtspiel' || entry.type === 'Spiel' || entry.type === 'Pokal') ? (
                           <div className="relative group">
                             <input 
                               list="opponents-list-prep"
-                              className="w-full bg-transparent focus:outline-none italic opacity-60 uppercase font-bold print:hidden"
+                              className="w-full bg-transparent focus:outline-none text-amber-400 uppercase font-bold text-xs print:hidden"
                               defaultValue={entry.opponent || entry.gegner || ''}
                               onBlur={(e) => handleUpdate(entry.id, 'opponent', e.target.value)}
                               disabled={!isEditing}
@@ -696,43 +695,43 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                                 <option key={opp.id} value={opp.name} />
                               ))}
                             </datalist>
-                            <span className="hidden print:block italic opacity-60 uppercase font-bold">
+                            <span className="hidden print:block text-slate-200 uppercase font-bold">
                               {entry.opponent || entry.gegner || "-"}
                             </span>
                           </div>
                         ) : (
-                          <span className="opacity-20">-</span>
+                          <span className="text-slate-600">-</span>
                         )}
                       </td>
                     )}
-                    <td className="p-2 border-r border-black/10">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       {(entry.type === 'Testspiel' || entry.type === 'Pflichtspiel' || entry.type === 'Spiel' || entry.type === 'Pokal') ? (
                         <EditableCell 
                           type="text" 
-                          className="bg-transparent w-full focus:outline-none font-black text-center"
+                          className="bg-transparent w-full focus:outline-none font-black text-center text-amber-400 text-xs"
                           value={entry.ergebnis || ''}
                           onSave={(val) => handleUpdate(entry.id, 'ergebnis', val)}
                           disabled={!isEditing}
                           placeholder="-:-"
                         />
                       ) : (
-                        <span className="opacity-20 text-center block">-</span>
+                        <span className="text-slate-600 text-center block">-</span>
                       )}
                     </td>
-                    <td className="p-2 border-r border-black/10">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <EditableCell 
                         type="text" 
-                        className="bg-transparent w-full focus:outline-none font-bold text-[9px]"
+                        className="bg-transparent w-full focus:outline-none font-bold text-slate-300 text-xs"
                         value={entry.status || ''}
                         onSave={(val) => handleUpdate(entry.id, 'status', val)}
                         disabled={!isEditing}
                         placeholder="Status..."
                       />
                     </td>
-                    <td className="p-2">
+                    <td className="p-2.5 border-r border-slate-800/60">
                       <EditableCell 
                         type="text" 
-                        className="bg-transparent w-full focus:outline-none italic opacity-60 text-[9px]"
+                        className="bg-transparent w-full focus:outline-none text-slate-400 text-xs font-medium"
                         value={entry.notes || entry.remarks || ''}
                         onSave={(val) => handleUpdate(entry.id, 'notes', val)}
                         disabled={!isEditing}
@@ -740,12 +739,13 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                       />
                     </td>
                     {isEditing && (
-                      <td className="p-2 text-center print:hidden">
+                      <td className="p-2.5 text-center print:hidden">
                         <button 
                           onClick={() => handleDelete(entry.id)}
-                          className="text-red-500 hover:text-red-700 transition-colors"
+                          className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                          title="Löschen"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={13} />
                         </button>
                       </td>
                     )}
@@ -756,7 +756,7 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
           </table>
         </div>
         
-        <div className="mt-8 text-center opacity-40 text-[10px] font-black uppercase tracking-widest print:mt-4">
+        <div className="mt-8 text-center text-slate-500 text-xs font-bold uppercase tracking-widest print:mt-4">
           FC AUGGEN 1921 e.V. | Team Management System 2026/2027
         </div>
       </div>

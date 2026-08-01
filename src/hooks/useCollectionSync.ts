@@ -18,7 +18,8 @@ import {
   INITIAL_FORMATION,
   CARD_RECORDS,
   COMPETITIVE_MINUTES,
-  TEST_MINUTES
+  TEST_MINUTES,
+  INITIAL_MATCH_ANALYSES
 } from '../constants';
 
 // Wrapper to ensure that Firestore Quota errors always have 'Quota limit exceeded' in their message for firebase.ts and App.tsx UI
@@ -112,7 +113,7 @@ function getInitialFallback(collectionName: string): any[] {
     case 'spieler':
       return INITIAL_PLAYERS || [];
     case 'competitive_matches':
-      return [];
+      return COMPETITIVE_MATCHES || [];
     case 'test_matches':
       return TEST_MATCHES || [];
     case 'scouting_candidates':
@@ -141,6 +142,8 @@ function getInitialFallback(collectionName: string): any[] {
       return COMPETITIVE_MINUTES || [];
     case 'test_minutes':
       return TEST_MINUTES || [];
+    case 'match_analyses':
+      return INITIAL_MATCH_ANALYSES || [];
     default:
       return [];
   }

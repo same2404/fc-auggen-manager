@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { VideoSection } from '../VideoSection';
+
 interface MatchReportViewProps {
   matches: Match[];
   testMatches: Match[];
@@ -336,7 +338,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
   players = []
 }) => {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>(analyses[0]?.id || '');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredAnalyses = useMemo(() => {
@@ -396,21 +398,32 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
     };
     onSaveAnalysis(newAnalysis);
     setSelectedAnalysisId(newId);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
   };
 
   return (
-    <div className="flex h-full bg-white overflow-hidden">
+    <div className="flex h-full bg-white overflow-hidden relative">
       {/* Sidebar - List of reports */}
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div 
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
+            animate={{ width: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="border-r-4 border-black flex flex-col shrink-0 bg-gray-50"
+            className="border-r-4 border-black flex flex-col shrink-0 bg-gray-50 absolute md:relative inset-y-0 left-0 z-40 h-full w-full md:w-auto"
           >
             <div className="p-4 bg-black text-white shrink-0">
-              <h3 className="text-[10px] font-black uppercase tracking-widest mb-3">ALLE ANALYSEN</h3>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-[10px] font-black uppercase tracking-widest">ALLE ANALYSEN</h3>
+                <button 
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="md:hidden text-white/60 hover:text-white"
+                >
+                  <X size={16} />
+                </button>
+              </div>
               <div className="relative mb-3">
                 <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 opacity-40" />
                 <input 
@@ -436,7 +449,12 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 filteredAnalyses.map(a => (
                   <button 
                     key={a.id}
-                    onClick={() => setSelectedAnalysisId(a.id)}
+                    onClick={() => {
+                      setSelectedAnalysisId(a.id);
+                      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                        setIsSidebarOpen(false);
+                      }
+                    }}
                     className={`w-full text-left p-3 border-b-2 border-black/5 hover:bg-black/5 transition-all relative ${selectedAnalysisId === a.id ? 'bg-amber-50 border-l-4 border-l-black' : ''}`}
                   >
                     <div className="flex justify-between items-start mb-1">
@@ -473,12 +491,12 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
         </button>
 
         {currentAnalysis ? (
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-white">
-            <div className="max-w-4xl mx-auto space-y-8 pb-12">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 bg-white">
+            <div className="max-w-6xl mx-auto space-y-10 pb-16">
               
               {/* Header Section (Editable) */}
-              <div className="border-4 border-black p-6 relative watermark-bg overflow-hidden bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <div className="absolute top-0 right-0 p-2">
+              <div className="border-4 border-black p-6 sm:p-8 relative watermark-bg overflow-hidden bg-white shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
+                <div className="absolute top-0 right-0 p-3">
                   <button 
                     onClick={() => {
                       if (window.confirm('Sollen dieser Bericht wirklich gelöscht werden?')) {
@@ -486,24 +504,24 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                         setSelectedAnalysisId(analyses.find(a => a.id !== currentAnalysis.id)?.id || '');
                       }
                     }}
-                    className="text-red-600 hover:text-red-800 p-2 bg-white/80 border-2 border-black"
+                    className="text-red-600 hover:text-red-800 p-2.5 bg-white/80 border-2 border-black font-bold shadow-sm"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
                 
                 <div className="flex flex-col gap-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                    <div className="flex-1 flex items-center">
-                      <span className="text-2xl font-black uppercase italic mr-3">SPIEL – FC AUGGEN vs.</span>
+                    <div className="w-3.5 h-3.5 bg-green-500 rounded-full animate-pulse" />
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight">SPIEL – FC AUGGEN vs.</span>
                       <EditableArea 
                         isTextArea={false}
                         listId="opponent-list-report"
                         value={currentAnalysis.opponent || ''}
                         onSave={(val) => handleUpdate('opponent', val)}
                         placeholder="GEGNERNAME..."
-                        className="flex-1 bg-transparent border-b-4 border-black text-3xl font-black uppercase italic focus:outline-none focus:border-green-500"
+                        className="flex-1 bg-transparent border-b-4 border-black text-2xl sm:text-4xl font-black uppercase italic focus:outline-none focus:border-green-500 min-w-0"
                       />
                       <datalist id="opponent-list-report">
                         {opponents.map((opp) => (
@@ -513,28 +531,28 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     <div className="flex flex-col gap-2">
-                      <span className="text-[9px] font-black uppercase opacity-40 flex items-center gap-1">
-                        <Calendar size={10} /> Datum
+                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
+                        <Calendar size={14} /> Datum
                       </span>
                       <EditableArea 
                         isTextArea={false}
                         type="date"
                         value={currentAnalysis.date || ''}
                         onSave={(val) => handleUpdate('date', val)}
-                        className="text-[11px] font-black uppercase border-2 border-black p-2 focus:outline-none focus:border-green-500"
+                        className="text-sm sm:text-base font-bold uppercase border-2 border-black p-2.5 focus:outline-none focus:border-green-500 bg-gray-50/50"
                       />
                     </div>
                     
                     <div className="flex flex-col gap-2">
-                      <span className="text-[9px] font-black uppercase opacity-40 flex items-center gap-1">
-                        <Trophy size={10} /> Wettbewerb
+                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
+                        <Trophy size={14} /> Wettbewerb
                       </span>
                       <select 
                         value={currentAnalysis.category || 'Pflichtspiel'}
                         onChange={(e) => handleUpdate('category', e.target.value)}
-                        className="text-[11px] font-black uppercase border-2 border-black p-2 focus:outline-none focus:border-green-500"
+                        className="text-sm sm:text-base font-bold uppercase border-2 border-black p-2.5 focus:outline-none focus:border-green-500 bg-gray-50/50"
                       >
                         <option value="Pflichtspiel">Pflichtspiel</option>
                         <option value="Testspiel">Testspiel</option>
@@ -543,19 +561,19 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <span className="text-[9px] font-black uppercase opacity-40 flex items-center gap-1">
-                        <MapPin size={10} /> Heim / Auswärts
+                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
+                        <MapPin size={14} /> Heim / Auswärts
                       </span>
                       <div className="flex border-2 border-black">
                         <button 
                           onClick={() => handleUpdate('isHome', true)}
-                          className={`flex-1 p-2 text-[10px] font-black uppercase ${currentAnalysis.isHome ? 'bg-black text-white' : 'bg-white text-black'}`}
+                          className={`flex-1 p-2.5 text-xs sm:text-sm font-black uppercase ${currentAnalysis.isHome ? 'bg-black text-white' : 'bg-white text-black'}`}
                         >
                           Heim
                         </button>
                         <button 
                           onClick={() => handleUpdate('isHome', false)}
-                          className={`flex-1 p-2 text-[10px] font-black uppercase ${!currentAnalysis.isHome ? 'bg-black text-white' : 'bg-white text-black'}`}
+                          className={`flex-1 p-2.5 text-xs sm:text-sm font-black uppercase ${!currentAnalysis.isHome ? 'bg-black text-white' : 'bg-white text-black'}`}
                         >
                           Auswärts
                         </button>
@@ -563,15 +581,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <span className="text-[9px] font-black uppercase opacity-40 flex items-center gap-1">
-                        <Star size={10} /> Ergebnis
+                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
+                        <Star size={14} /> Ergebnis
                       </span>
                       <EditableArea 
                         isTextArea={false}
                         value={currentAnalysis.result || ''}
                         onSave={(val) => handleUpdate('result', val)}
                         placeholder="Z.B. 3:1"
-                        className="text-[11px] font-black uppercase border-2 border-black p-2 focus:outline-none focus:border-green-500 text-green-600"
+                        className="text-sm sm:text-base font-black uppercase border-2 border-black p-2.5 focus:outline-none focus:border-green-500 text-green-700 bg-gray-50/50"
                       />
                     </div>
                   </div>
@@ -580,9 +598,9 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Lineup Section */}
               <section className="space-y-4">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                  <ImageIcon size={18} className="text-green-600" />
-                  <h3 className="text-sm font-black uppercase tracking-widest">AUFSTELLUNG (BILDER)</h3>
+                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                  <ImageIcon size={22} className="text-green-600" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">AUFSTELLUNG (BILDER)</h3>
                 </div>
                 <ImageGallery 
                   images={currentAnalysis.lineupImages || (currentAnalysis.lineupImage ? [currentAnalysis.lineupImage] : [])}
@@ -593,15 +611,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Presentations Section */}
               <section className="space-y-4">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                  <Presentation size={18} className="text-indigo-600" />
-                  <h3 className="text-sm font-black uppercase tracking-widest">SPIEL-PRÄSENTATIONEN (LINKS)</h3>
+                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                  <Presentation size={22} className="text-indigo-600" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">SPIEL-PRÄSENTATIONEN (LINKS)</h3>
                 </div>
-                <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest leading-normal italic">
+                <p className="text-xs font-bold opacity-60 uppercase tracking-wider leading-relaxed italic">
                   HIER KÖNNEN LINKS ZU EXTERNEN PRÄSENTATIONEN ODER WEITERE DOKUMENTE HINTERLEGT WERDEN.
                 </p>
                 <EditableArea 
-                  className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[80px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                  className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[100px] leading-relaxed focus:outline-none focus:border-green-500 bg-gray-50/50"
                   placeholder="PRÄSENTATIONSLINKS ODER NOTIZEN..."
                   value={currentAnalysis.presentations || ''}
                   onSave={(val) => handleUpdate('presentations', val)}
@@ -610,15 +628,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Opening Play */}
               <section className="space-y-4">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                  <Zap size={18} className="text-amber-500" />
-                  <h3 className="text-sm font-black uppercase tracking-widest">SPIELERÖFFNUNG</h3>
+                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                  <Zap size={22} className="text-amber-500" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">SPIELERÖFFNUNG</h3>
                 </div>
-                <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest leading-normal italic">
+                <p className="text-xs font-bold opacity-60 uppercase tracking-wider leading-relaxed italic">
                   ANALYSE DER ERSTEN SPIELPHASE, AUFBAU UND TAKTISCHE GRUNDORDNUNG BEI BALLBESITZ.
                 </p>
                 <EditableArea 
-                  className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[140px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                  className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[180px] focus:outline-none focus:border-green-500 bg-gray-50/50"
                   placeholder="DETAILS ZUR SPIELERÖFFNUNG..."
                   value={currentAnalysis.openingPlay || ''}
                   onSave={(val) => handleUpdate('openingPlay', val)}
@@ -631,18 +649,18 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Transition Play */}
               <section className="space-y-5">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                  <ArrowRightLeft size={18} className="text-blue-500" />
-                  <h3 className="text-sm font-black uppercase tracking-widest">UMSCHALTSPIEL</h3>
+                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                  <ArrowRightLeft size={22} className="text-blue-500" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">UMSCHALTSPIEL</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <span className="w-2 h-2 bg-green-500 rotate-45" />
-                       <span className="text-[11px] font-black uppercase tracking-widest">UMSCHALTEN OFFENSIV:</span>
+                       <span className="w-2.5 h-2.5 bg-green-500 rotate-45" />
+                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider">UMSCHALTEN OFFENSIV:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[120px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[150px] focus:outline-none focus:border-green-500 bg-gray-50/50"
                       placeholder="KONTERVERHALTEN..."
                       value={currentAnalysis.transitionOffensive || ''}
                       onSave={(val) => handleUpdate('transitionOffensive', val)}
@@ -654,11 +672,11 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <span className="w-2 h-2 bg-red-500 rotate-45" />
-                       <span className="text-[11px] font-black uppercase tracking-widest">UMSCHALTEN DEFENSIV:</span>
+                       <span className="w-2.5 h-2.5 bg-red-500 rotate-45" />
+                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider">UMSCHALTEN DEFENSIV:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[120px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[150px] focus:outline-none focus:border-green-500 bg-gray-50/50"
                       placeholder="GEGENPRESSING..."
                       value={currentAnalysis.transitionDefensive || ''}
                       onSave={(val) => handleUpdate('transitionDefensive', val)}
@@ -671,18 +689,18 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 </div>
               </section>
 
-              <div className="grid grid-cols-2 gap-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Goal Chances */}
                 <section className="space-y-5">
-                  <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                    <Target size={18} className="text-red-500" />
-                    <h3 className="text-sm font-black uppercase tracking-widest">TORCHANCEN</h3>
+                  <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                    <Target size={22} className="text-red-500" />
+                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">TORCHANCEN</h3>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div className="space-y-3">
-                      <span className="text-[10px] font-black uppercase opacity-60 text-green-600">UNSERE CHANCEN:</span>
+                      <span className="text-xs font-black uppercase opacity-70 text-green-600 tracking-wider">UNSERE CHANCEN:</span>
                       <EditableArea 
-                        className="w-full border-2 border-black p-3 text-[10px] font-black uppercase min-h-[120px] focus:outline-none focus:border-green-500"
+                        className="w-full border-2 border-black p-4 text-sm font-semibold leading-relaxed uppercase min-h-[140px] focus:outline-none focus:border-green-500"
                         placeholder="MINUTE, AKTION, SPIELER..."
                         value={currentAnalysis.goalChancesOwn || ''}
                         onSave={(val) => handleUpdate('goalChancesOwn', val)}
@@ -693,9 +711,9 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                       />
                     </div>
                     <div className="space-y-3">
-                      <span className="text-[10px] font-black uppercase opacity-60 text-red-600">GEGNER CHANCEN:</span>
+                      <span className="text-xs font-black uppercase opacity-70 text-red-600 tracking-wider">GEGNER CHANCEN:</span>
                       <EditableArea 
-                        className="w-full border-2 border-black p-3 text-[10px] font-black uppercase min-h-[120px] focus:outline-none focus:border-green-500"
+                        className="w-full border-2 border-black p-4 text-sm font-semibold leading-relaxed uppercase min-h-[140px] focus:outline-none focus:border-green-500"
                         placeholder="GEFÄHRLICHE AKTIONEN..."
                         value={currentAnalysis.goalChancesOpponent || ''}
                         onSave={(val) => handleUpdate('goalChancesOpponent', val)}
@@ -710,25 +728,25 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
                 {/* Match Progression */}
                 <section className="space-y-5">
-                  <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                    <BookOpen size={18} className="text-purple-500" />
-                    <h3 className="text-sm font-black uppercase tracking-widest">SPIELVERLAUF</h3>
+                  <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                    <BookOpen size={22} className="text-purple-500" />
+                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">SPIELVERLAUF</h3>
                   </div>
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <span className="text-[10px] font-black uppercase opacity-60">TORE FC AUGGEN:</span>
+                        <span className="text-xs font-black uppercase opacity-60 tracking-wider">TORE FC AUGGEN:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-2 text-[10px] font-black uppercase min-h-[60px] focus:outline-none"
+                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[90px] leading-relaxed focus:outline-none"
                           placeholder="ZEIT | NAME..."
                           value={currentAnalysis.goalsOwn}
                           onSave={(val) => handleUpdate('goalsOwn', val)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <span className="text-[10px] font-black uppercase opacity-60">GEGENTORE:</span>
+                        <span className="text-xs font-black uppercase opacity-60 tracking-wider">GEGENTORE:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-2 text-[10px] font-black uppercase min-h-[60px] focus:outline-none"
+                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[90px] leading-relaxed focus:outline-none"
                           placeholder="ZEIT | NAME..."
                           value={currentAnalysis.goalsOpponent}
                           onSave={(val) => handleUpdate('goalsOpponent', val)}
@@ -736,20 +754,20 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <span className="text-[10px] font-black uppercase opacity-60 text-green-600">POSITIVE AKTIONEN:</span>
+                        <span className="text-xs font-black uppercase opacity-70 text-green-600 tracking-wider">POSITIVE AKTIONEN:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-2 text-[10px] font-black uppercase min-h-[80px] focus:outline-none"
+                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[110px] leading-relaxed focus:outline-none"
                           placeholder="ZERRALTE AKTIONEN..."
                           value={currentAnalysis.goodActions}
                           onSave={(val) => handleUpdate('goodActions', val)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <span className="text-[10px] font-black uppercase opacity-60 text-red-600">NEGATIVE AKTIONEN:</span>
+                        <span className="text-xs font-black uppercase opacity-70 text-red-600 tracking-wider">NEGATIVE AKTIONEN:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-2 text-[10px] font-black uppercase min-h-[80px] focus:outline-none"
+                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[110px] leading-relaxed focus:outline-none"
                           placeholder="FEHLER, LÜCKEN..."
                           value={currentAnalysis.badActions}
                           onSave={(val) => handleUpdate('badActions', val)}
@@ -762,15 +780,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Standards */}
               <section className="space-y-5">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-1">
-                  <PieChart size={18} className="text-cyan-500" />
-                  <h3 className="text-sm font-black uppercase tracking-widest">STANDARDSITUATIONEN</h3>
+                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
+                  <PieChart size={22} className="text-cyan-500" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">STANDARDSITUATIONEN</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="p-4 border-2 border-black bg-gray-50 flex flex-col gap-3">
-                    <span className="text-[11px] font-black uppercase text-green-600">STANDARDS OFFENSIV (FÜR UNS):</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-5 border-2 border-black bg-gray-50 flex flex-col gap-3">
+                    <span className="text-xs sm:text-sm font-black uppercase text-green-600 tracking-wider">STANDARDS OFFENSIV (FÜR UNS):</span>
                     <EditableArea 
-                      className="w-full border-2 border-black p-3 text-[10px] font-black uppercase min-h-[80px] focus:outline-none focus:border-green-500"
+                      className="w-full border-2 border-black p-4 text-sm font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
                       placeholder="ECKEN, FREISTÖSSE..."
                       value={currentAnalysis.standardsOwn || ''}
                       onSave={(val) => handleUpdate('standardsOwn', val)}
@@ -780,10 +798,10 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                       onUpdate={(imgs) => handleUpdate('standardsOwnImages', imgs)}
                     />
                   </div>
-                  <div className="p-4 border-2 border-black bg-gray-50 flex flex-col gap-3">
-                    <span className="text-[11px] font-black uppercase text-red-600">STANDARDS DEFENSIV (GEGEN UNS):</span>
+                  <div className="p-5 border-2 border-black bg-gray-50 flex flex-col gap-3">
+                    <span className="text-xs sm:text-sm font-black uppercase text-red-600 tracking-wider">STANDARDS DEFENSIV (GEGEN UNS):</span>
                     <EditableArea 
-                      className="w-full border-2 border-black p-3 text-[10px] font-black uppercase min-h-[80px] focus:outline-none focus:border-green-500"
+                      className="w-full border-2 border-black p-4 text-sm font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
                       placeholder="VERTEIDIGUNG BEI ECKEN..."
                       value={currentAnalysis.standardsOpponent || ''}
                       onSave={(val) => handleUpdate('standardsOpponent', val)}
@@ -796,21 +814,33 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 </div>
               </section>
 
+              {/* Video-Analyse Hub (Spiel, Gegner & Spieler-Momente) */}
+              <section className="space-y-4">
+                <VideoSection 
+                  title="VIDEO-ANALYSE & HIGHLIGHT-SZENEN"
+                  subtitle="Spielanalysen, Gegner-Videos und individuelle Spieler-Momente"
+                  clips={currentAnalysis.videoClips || []}
+                  onUpdateClips={(clips) => handleUpdate('videoClips', clips)}
+                  players={players}
+                  defaultCategory="Spiel-Analyse"
+                />
+              </section>
+
               {/* Trainer Analysis Footer */}
-              <section className="space-y-8 mt-12 bg-gray-100 p-8 border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+              <section className="space-y-8 mt-12 bg-gray-100 p-8 sm:p-10 border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
                 <div className="flex items-center gap-3">
-                  <Clipboard size={24} className="text-[#C00000]" />
-                  <h2 className="text-xl font-black uppercase tracking-tighter">TRAINER-FAZIT & ENTSCHEIDUNGEN</h2>
+                  <Clipboard size={28} className="text-[#C00000]" />
+                  <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight">TRAINER-FAZIT & ENTSCHEIDUNGEN</h2>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 size={16} />
-                      <span className="text-xs font-black uppercase tracking-widest">POSITIVE ANALYSE:</span>
+                      <CheckCircle2 size={18} />
+                      <span className="text-xs sm:text-sm font-black uppercase tracking-wider">POSITIVE ANALYSE:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[140px] focus:outline-none focus:border-green-500 bg-white"
+                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[160px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
                       placeholder="WAS HAT FUNKTIONIERT?..."
                       value={currentAnalysis.trainerGood || ''}
                       onSave={(val) => handleUpdate('trainerGood', val)}
@@ -822,11 +852,11 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-red-600">
-                      <XCircle size={16} />
-                      <span className="text-xs font-black uppercase tracking-widest">KRITISCHE ANALYSE:</span>
+                      <XCircle size={18} />
+                      <span className="text-xs sm:text-sm font-black uppercase tracking-wider">KRITISCHE ANALYSE:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[140px] focus:outline-none focus:border-green-500 bg-white"
+                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[160px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
                       placeholder="VERBESSERUNGSPOTENTIAL..."
                       value={currentAnalysis.trainerBad || ''}
                       onSave={(val) => handleUpdate('trainerBad', val)}
@@ -839,9 +869,9 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <span className="text-xs font-black uppercase tracking-widest opacity-60">ABSCHLIESSENDES TRAINER-FAZIT:</span>
+                  <span className="text-xs sm:text-sm font-black uppercase tracking-wider opacity-60">ABSCHLIESSENDES TRAINER-FAZIT:</span>
                   <EditableArea 
-                    className="w-full border-2 border-black p-4 text-xs font-black uppercase min-h-[80px] focus:outline-none focus:border-green-500 bg-white"
+                    className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
                     placeholder="WICHTIGSTE ERKENNTNISSE AUS DEM SPIEL..."
                     value={currentAnalysis.trainerFazit || ''}
                     onSave={(val) => handleUpdate('trainerFazit', val)}
@@ -852,7 +882,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                   <div className="bg-black p-5 flex items-center justify-between border-2 border-black">
                     <div className="flex items-center gap-4">
                       <Star size={20} className="text-yellow-400" />
@@ -913,7 +943,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                           <div className="flex items-center justify-between border-b border-gray-700 pb-2">
                             <div>
                               <h4 className="font-black text-sm uppercase text-white">
-                                #{player.number} {player.firstName} {player.lastName} ({player.position})
+                                #{player.number} {player.lastName} ({player.position})
                               </h4>
                               <p className="text-[10px] font-mono text-blue-300">
                                 Ordner-Datei: {tr.fileName}

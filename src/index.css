@@ -9,7 +9,42 @@
 
 @layer base {
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-slate-950 text-slate-100 antialiased font-sans;
+    color: #f8fafc;
+    background-color: #020617;
+  }
+
+  /* Ensure text in light backgrounds defaults to dark slate/black */
+  .bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-slate-50, .bg-slate-100, .bg-amber-50, .bg-amber-100 {
+    color: #0f172a;
+  }
+
+  /* Global input, select, textarea legibility and contrast */
+  input, select, textarea {
+    color: inherit;
+    border-color: #334155;
+    font-weight: 600;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #fbbf24;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
+  }
+
+  option {
+    background-color: #0f172a;
+    color: #f8fafc;
+  }
+
+  select.bg-white option, .bg-white select option, select.text-slate-900 option, select.text-black option {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  ::placeholder {
+    color: #94a3b8;
+    opacity: 0.85;
   }
 
   /* Custom Scrollbar */
@@ -18,20 +53,20 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-white;
+    @apply bg-slate-950;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-[#E2001A] rounded-full;
+    @apply bg-amber-500/40 rounded-full hover:bg-amber-500/70;
   }
   
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-[#E2001A]/20 rounded-full;
+    @apply bg-amber-500/30 rounded-full;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    @apply bg-[#E2001A]/40;
+    @apply bg-amber-500/60;
   }
 }
 
@@ -355,3 +390,108 @@
     page-break-inside: avoid !important;
   }
 }
+
+/* ==========================================
+   AUTOMATIC MOBILE RESPONSIVENESS BOOSTER
+   ========================================== */
+@media (max-width: 1024px) {
+  /* Tables auto-scrollable and responsive */
+  table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Make sure columns do not wrap and squeeze unreadably */
+  table th, 
+  table td {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Compact button paddings and sizes on mobile */
+  button, 
+  .button, 
+  a[class*="bg-"],
+  button[class*="bg-"] {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    font-size: 11px !important;
+  }
+
+  /* Sizing down the titles slightly for mobile */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  h3 {
+    font-size: 1.1rem !important;
+  }
+
+  /* Compact spacing for cards and grids */
+  .p-8 {
+    padding: 1rem !important;
+  }
+  .p-6 {
+    padding: 0.85rem !important;
+  }
+  .p-4 {
+    padding: 0.75rem !important;
+  }
+
+  /* Compact spacing utilities */
+  .space-y-8 > * + * {
+    margin-top: 1rem !important;
+  }
+  .space-y-6 > * + * {
+    margin-top: 0.75rem !important;
+  }
+  .gap-8 {
+    gap: 1rem !important;
+  }
+  .gap-6 {
+    gap: 0.75rem !important;
+  }
+
+  /* Mobile text sizes */
+  .text-xs {
+    font-size: 10px !important;
+  }
+  .text-sm {
+    font-size: 12px !important;
+  }
+  .text-base {
+    font-size: 14px !important;
+  }
+
+  /* Forms optimization */
+  input, 
+  select, 
+  textarea {
+    font-size: 12px !important;
+    padding: 0.4rem 0.6rem !important;
+  }
+}
+
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Show print report element if printing */
+  #runs-pdf-report {
+    display: block !important;
+    width: 100% !important;
+  }
+}
+

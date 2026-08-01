@@ -1,5 +1,126 @@
-export type TabId = 'personnel' | 'attendance' | 'trainer_view' | 'yearly' | 'cards' | 
-                   'scouting' | 'budget_finance' | 'meetings_calendar' | 'tacticboard' | 'individual_control' | 'runs_sw' | 'physio_plan' | 'summer_prep' | 'winter_prep' | 'team_list' | 'developer_tasks' | 'training_planning' | 'competitive_planning' | 'test_planning' | 'match_report' | 'access_control' | 'player_portal';
+export type TabId = 'dashboard' | 'personnel' | 'attendance' | 'trainer_view' | 'yearly' | 'cards' | 
+                   'scouting' | 'budget_finance' | 'meetings_calendar' | 'tacticboard' | 'individual_control' | 'runs_sw' | 'physio_plan' | 'summer_prep' | 'winter_prep' | 'team_list' | 'developer_tasks' | 'training_planning' | 'competitive_planning' | 'test_planning' | 'match_report' | 'access_control' | 'player_portal' | 'academy_analysis' | 'champions_cup' | 'video_analysis';
+
+export interface AcademyPlayerEvaluation {
+  spieler: string;
+  note: number;
+  begründung: string;
+  fokus: string;
+  kognitiveFaehigkeiten?: string[];
+}
+
+export interface AcademySessionEvaluation {
+  id?: string;
+  datum: string;
+  bezeichnung?: string;
+  typ: 'Training' | 'Spiel' | string;
+  bewertungen: AcademyPlayerEvaluation[];
+  createdAt?: number;
+  weekNumber?: number;
+  rawInputNotes?: string;
+}
+
+export interface AcademyPlayerWeeklySummary {
+  spieler: string;
+  durchschnitt: number;
+  entwicklung: 'positiv' | 'neutral' | 'negativ' | string;
+  fokus_naechste_woche: string;
+}
+
+export interface AcademyWeeklyReport {
+  id?: string;
+  kwLabel?: string;
+  createdAt?: number;
+  wochenbericht: AcademyPlayerWeeklySummary[];
+  top_spieler: string[];
+  kritisch: string[];
+  empfehlungen: string;
+}
+
+export interface TrackedPerson {
+  id: string; // e.g. "P-01"
+  team: 'FC Auggen' | 'Gegner' | 'Schiedsrichter';
+  jerseyNumber?: string;
+  mappedPlayerId?: string; // Linked FC Auggen squad player ID
+  mappedPlayerName?: string;
+  xPercent: number; // 0-100% position on pitch
+  yPercent: number; // 0-100% position on pitch
+  intensity: 'Gehen' | 'Trab' | 'Sprint';
+  speedKmh: number;
+}
+
+export interface TrackedBall {
+  xPercent: number;
+  yPercent: number;
+  heightLevel: 'Boden' | 'Halbhoch' | 'Hochball';
+  speedKmh: number;
+}
+
+export interface PitchZoneDetection {
+  currentZone: 'Auggen Abwehr' | 'Mittelfeld' | 'Angriffszone' | 'Flügel Links' | 'Flügel Rechts' | 'Strafraum';
+  ballPossessionTeam: 'FC Auggen' | 'Gegner' | 'Neutral / Zweikampf';
+  pressingDensityIndex: number; // 0 to 100
+}
+
+export interface TimelineEvent {
+  id: string;
+  timestampSeconds: number; // exact second in video e.g. 15, 64, 128
+  timestampFormatted: string; // "00:15"
+  type: 'POSSESSION_CHANGE' | 'HIGH_INTENSITY_SPRINT' | 'ZONE_TRANSITION' | 'BALL_TRACKED' | 'HIGH_DENSITY_PRESSING';
+  title: string;
+  description: string;
+  pitchZone: string;
+  importance: 'Hoch' | 'Normal' | 'Info';
+  trackedPlayersCount: number;
+  ballCoordinates?: { x: number; y: number };
+}
+
+export interface SceneClip {
+  id: string;
+  category: 'TORE' | 'CHANCEN' | 'STANDARDS' | 'PRESSING' | 'AUFBAU' | 'UMSCHALTMOMENTE';
+  subcategory: string;
+  title: string;
+  startTimeSeconds: number; // 6s before event
+  endTimeSeconds: number; // 6s after event
+  timestampFormatted: string; // e.g. "04:15"
+  aiCommentary: string; // 1-2 sentence tactical commentary
+  participatingPlayerNames: string[];
+  participatingPlayerIds?: string[];
+  pitchZone: 'Abwehr' | 'Mittelfeld' | 'Angriff' | 'Strafraum' | 'Flügel' | 'Halbraum';
+  teamInvolved: 'FC Auggen' | 'Gegner' | 'Beide';
+  thumbnailUrl?: string;
+}
+
+export interface AiVideoAnalysisRecord {
+  id: string;
+  videoTitle: string;
+  videoUrl: string;
+  videoFileName?: string;
+  uploadDate: string;
+  durationSeconds: number;
+  fps: number;
+  status: 'UPLOADED' | 'PROCESSING' | 'ANALYZED' | 'ERROR';
+  progressPercent: number;
+  summary: string;
+  trackedPersons: TrackedPerson[];
+  trackedBall?: TrackedBall;
+  pitchDetection?: PitchZoneDetection;
+  timelineEvents: TimelineEvent[];
+  sceneClips?: SceneClip[];
+  rawAiData?: any;
+  mappedPlayerIds?: string[];
+}
+
+export interface VideoClip {
+  id: string;
+  title: string;
+  category: 'Spiel-Analyse' | 'Gegner-Analyse' | 'Spieler-Momente' | 'Training' | 'Taktik' | 'Sonstiges';
+  url: string; // Video URL or data/blob URL
+  description?: string;
+  playerNames?: string[]; // Tagged players
+  timestamp?: string; // e.g. "Minute 34:12"
+  createdAt?: string;
+}
 
 export interface MatchAnalysis {
   id: string; // analysis id
@@ -41,6 +162,10 @@ export interface MatchAnalysis {
   matchRating?: string; // e.g. "7/10"
   presentations?: string; // Links or notes about game presentations
   presentationImages?: string[]; // Array of image URLs for presentations
+  gameVideoUrl?: string; // Single game analysis video URL
+  opponentVideoUrl?: string; // Opponent analysis video URL
+  playerMomentsVideoUrl?: string; // Player moments video URL
+  videoClips?: VideoClip[]; // Array of structured video clips
 }
 
 export interface LogEntry {
@@ -196,6 +321,8 @@ export interface Match {
   competition?: string;
   trainerNote?: string;
   notes?: string;
+  scorers?: string;
+  cards?: string;
 }
 
 export interface MatchPlanningEntry {
@@ -262,14 +389,22 @@ export interface Player {
   lange_hose?: string;
   schuhe?: string;
   injuryHistory?: string;
+  isInjured?: boolean;
+  injuryType?: string;
+  recoveryForecast?: string;
   professionalStatus?: 'Student' | 'Schüler' | 'Arbeitslos' | 'Angestellter' | string;
   education?: string;
   employer?: string;
   secondaryPositions?: string[];
+  rückennummer?: number | string;
+  fitness?: string;
+  verletzung?: string;
+  tore?: number;
   marketValue?: string;
   potential?: number;
   einsatzzeitenGesamt?: number;
   testEinsatzzeitenGesamt?: number;
+  loadAmpel?: 'Grün' | 'Gelb' | 'Rot';
   physical?: {
     height?: number;
     weight?: number;
@@ -366,6 +501,16 @@ export interface Player {
     sprintCount: number;
     tacticalSummary: string;
   }[];
+  movementPoints?: {
+    id: string;
+    matchId: string | number;
+    minute: number;
+    x: number;
+    y: number;
+    actionType?: 'sprint' | 'run' | 'walk' | 'defensive';
+    label?: string;
+  }[];
+  videoHighlights?: VideoClip[];
 }
 
 export interface Spieler extends Player {
@@ -444,6 +589,8 @@ export interface TrainingSession {
   importantInfoImages?: string[];
   remarks: string;
   remarksImages?: string[];
+  videoUrl?: string;
+  videoClips?: VideoClip[];
 }
 
 export interface IndividualTrainingRecord {
@@ -454,6 +601,7 @@ export interface IndividualTrainingRecord {
   goals: string;
   status: string;
   load: string;
+  loadAmpel?: 'Grün' | 'Gelb' | 'Rot';
   targetDate: string;
   ek: string;
   o: string;

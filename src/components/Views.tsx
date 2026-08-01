@@ -21,3 +21,7 @@ export * from './views/TrainingPlanningView';
 export * from './views/MatchReportView';
 export * from './views/AccessControlView';
 export * from './views/PlayerPortalView';
+export * from './views/AcademyAnalysisView';
+export * from './views/ChampionsCupProView';
+export * from './views/DashboardView';
+export * from './views/VideoAnalysisView';

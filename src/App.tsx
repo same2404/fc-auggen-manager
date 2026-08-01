@@ -9,11 +9,13 @@ import { useSyncedState } from './hooks/useSyncedState';
 import { useCollectionSync } from './hooks/useCollectionSync';
 import { migrateFirestoreData } from './utils/migration';
 import { UniformMask } from './components/UniformMask';
+import { KaderAgentModal } from './components/KaderAgentModal';
+import { Pro3DTacticBoardModal } from './components/Pro3DTacticBoardModal';
 import JSZip from 'jszip';
 import { TacticBoard } from './components/TacticBoard';
 import { FormationView } from './components/FormationView';
 import { ScoutingFormationView } from './components/ScoutingFormationView';
-import { MatchPlanningView, YearlyPlanView, BudgetFinanceView, CardStatisticsSheet, RunsSWView, PhysioPlanView, IndividualSteuerungView, TrainingAttendanceView, SummerPreparationView, WinterPreparationView, TeamListView, DeveloperTasksView, TrainingPlanningView, MatchReportView, ScoutingView, MeetingsCalendarView, AccessControlView, PlayerPortalView } from './components/Views';
+import { MatchPlanningView, YearlyPlanView, BudgetFinanceView, CardStatisticsSheet, RunsSWView, PhysioPlanView, IndividualSteuerungView, TrainingAttendanceView, SummerPreparationView, WinterPreparationView, TeamListView, DeveloperTasksView, TrainingPlanningView, MatchReportView, ScoutingView, MeetingsCalendarView, AccessControlView, PlayerPortalView, AcademyAnalysisView, ChampionsCupProView, DashboardView, VideoAnalysisView } from './components/Views';
 import { getPositionOrder, sortPlayers, isPlayer } from './utils/playerSorting';
 import PersonnelView from './components/views/PersonnelView';
 import { UniformView } from './components/UniformView';
@@ -44,7 +46,8 @@ import {
   Calendar,
   RotateCcw,
   RefreshCw,
-  Upload
+  Upload,
+  Menu
 } from 'lucide-react';
 
 const KEY_TO_TAB: Record<string, string> = {
@@ -256,11 +259,15 @@ const App: React.FC = () => {
   };
 
   const [toast, setToast] = useState<{ message: string, id: number } | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('personnel');
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [playerProfileTab, setPlayerProfileTab] = useState<'basis' | 'finanzen' | 'notizen'>('basis');
   const [editingPlayer, setEditingPlayer] = useState<Spieler | null>(null);
   const [modalCategory, setModalCategory] = useState<'player' | 'coach' | 'staff' | 'medical'>('player');
+  const [showKaderAgentModal, setShowKaderAgentModal] = useState(false);
+  const [show3DProfiBoardModal, setShow3DProfiBoardModal] = useState(false);
+  const [kaderAgentPreset, setKaderAgentPreset] = useState<'beste_formation' | 'topform_startelf' | 'vollbild_ordnung' | 'laufwege_profi'>('beste_formation');
 
   const { data: players, loading: loadingSpieler, addOrUpdateItem: saveSpieler, removeItem: deleteSpieler } = useCollectionSync<Spieler>('spieler', 'id', undefined, 'asc', true);
   const { data: training, loading: loadingTraining, addOrUpdateItem: saveTraining, removeItem: deleteTraining } = useCollectionSync<Training>('training', 'id', undefined, 'asc', true);
@@ -289,8 +296,10 @@ const App: React.FC = () => {
   const { data: vorbereitungWinter, loading: loadingWinter, addOrUpdateItem: saveVorbereitungWinter, removeItem: removeVorbereitungWinter } = useCollectionSync<any>('vorbereitung_winter', 'id', undefined, 'asc', true);
   const { data: winterPrepConfig, loading: loadingWinterConfig, addOrUpdateItem: saveWinterConfig } = useCollectionSync<any>('winter_prep_config', 'id', undefined, 'asc', true);
   const { data: matchAnalyses, loading: loadingAnalyses, addOrUpdateItem: saveMatchAnalysis, removeItem: deleteMatchAnalysis } = useCollectionSync<any>('match_analyses', 'id', undefined, 'asc', true);
+  const { data: academyEvaluations, loading: loadingAcademyEvals, addOrUpdateItem: saveAcademyEvaluation, removeItem: deleteAcademyEvaluation } = useCollectionSync<any>('academy_evaluations', 'id', 'createdAt', 'desc', true);
+  const { data: academyWeeklyReports, loading: loadingAcademyReports, addOrUpdateItem: saveAcademyWeeklyReport, removeItem: deleteAcademyWeeklyReport } = useCollectionSync<any>('academy_weekly_reports', 'id', 'createdAt', 'desc', true);
 
-  const { data: competitiveMatches, loading: loadingCompMatches, addOrUpdateItem: originalSaveCompMatch, removeItem: originalDeleteCompMatch } = useCollectionSync<any>('competitive_matches', 'id', undefined, 'asc', true);
+  const { data: competitiveMatches, loading: loadingCompMatches, addOrUpdateItem: originalSaveCompMatch, removeItem: originalDeleteCompMatch } = useCollectionSync<any>('competitive_matches', 'id', 'date', 'asc', true);
 
   const saveCompMatch = useCallback(async (match: any) => {
     // Get the previous date if match already exists
@@ -393,7 +402,22 @@ const App: React.FC = () => {
       setToast({ message: 'Fehler beim Löschen!', id: Date.now() });
     }
   }, [competitiveMatches, originalDeleteCompMatch, yearlyPlan, deleteYearlyPlan, competitiveMinutes, deleteCompMinutes]);
-  const { data: testMatches, loading: loadingTestMatches, addOrUpdateItem: saveTestMatch, removeItem: deleteTestMatch } = useCollectionSync<any>('test_matches', 'id', undefined, 'asc', true);
+
+  const handleRestoreCompetitiveMatches = useCallback(async () => {
+    try {
+      setToast({ message: '32 Pflichtspiele werden wiederhergestellt...', id: Date.now() });
+      if (COMPETITIVE_MATCHES && COMPETITIVE_MATCHES.length > 0) {
+        for (const m of COMPETITIVE_MATCHES) {
+          await saveCompMatch(m as any);
+        }
+      }
+      setToast({ message: '32 Pflichtspiele erfolgreich wiederhergestellt!', id: Date.now() });
+    } catch (e) {
+      console.error('Error restoring competitive matches:', e);
+      setToast({ message: 'Fehler beim Wiederherstellen der Pflichtspiele!', id: Date.now() });
+    }
+  }, [saveCompMatch]);
+  const { data: testMatches, loading: loadingTestMatches, addOrUpdateItem: saveTestMatch, removeItem: deleteTestMatch } = useCollectionSync<any>('test_matches', 'id', 'date', 'asc', true);
   const { data: testMinutes, loading: loadingTestMinutes, addOrUpdateItem: saveTestMinutes, removeItem: deleteTestMinutes } = useCollectionSync<any>('test_minutes', 'playerId', undefined, 'asc', true);
   const { data: opponents, loading: loadingOpponents, addOrUpdateItem: saveOpponent, removeItem: deleteOpponent } = useCollectionSync<any>('opponents', 'id', 'name', 'asc', true);
   const { data: playerSessionLogs, loading: loadingSessionLogs, addOrUpdateItem: savePlayerSessionLog, removeItem: deletePlayerSessionLog } = useCollectionSync<any>('player_session_logs', 'id', undefined, 'asc', true);
@@ -527,8 +551,11 @@ const App: React.FC = () => {
         }
       };
       void syncComp();
+    } else if (!isLoading && competitiveMatches.length === 0 && COMPETITIVE_MATCHES && COMPETITIVE_MATCHES.length > 0) {
+      console.log('Competitive matches empty, auto-restoring 32 default competitive matches...');
+      void handleRestoreCompetitiveMatches();
     }
-  }, [isLoading, competitiveMatches]);
+  }, [isLoading, competitiveMatches, handleRestoreCompetitiveMatches]);
 
   const handleRemoveVorbereitungSommer = async (id: string) => {
     const item = vorbereitungSommer.find((u: any) => u.id === id);
@@ -753,16 +780,16 @@ const App: React.FC = () => {
   const bootstrappingRef = React.useRef(false);
 
   useEffect(() => {
-    if (!isLoading && !localStorage.getItem('fca_test_matches_bootstrapped_v3') && !bootstrappingRef.current) {
+    if (!isLoading && !localStorage.getItem('fca_test_matches_bootstrapped_v4') && !bootstrappingRef.current) {
       const bootstrapTestMatches = async () => {
         if (TEST_MATCHES && TEST_MATCHES.length > 0) {
           bootstrappingRef.current = true;
           try {
             // First set the flag to prevent other instances from starting
             try {
-              localStorage.setItem('fca_test_matches_bootstrapped_v3', 'true');
+              localStorage.setItem('fca_test_matches_bootstrapped_v4', 'true');
             } catch (e) {
-              console.warn('Failed to save fca_test_matches_bootstrapped_v3 in localStorage', e);
+              console.warn('Failed to save fca_test_matches_bootstrapped_v4 in localStorage', e);
             }
             
             // Clean up old IDs if they exist in the current state
@@ -788,7 +815,7 @@ const App: React.FC = () => {
             console.error("Bootstrapping failed:", error);
             // Optionally remove the key so it tries again next time
             try {
-              localStorage.removeItem('fca_test_matches_bootstrapped_v3');
+              localStorage.removeItem('fca_test_matches_bootstrapped_v4');
             } catch (e) {}
             bootstrappingRef.current = false;
           }
@@ -1892,6 +1919,7 @@ const App: React.FC = () => {
   const handleTabClick = (tabId: TabId) => {
     setActiveTab(tabId);
     setSelectedPlayerId(null);
+    setIsMobileMenuOpen(false);
   };
 
   const normalizeDate = (dateStr: string) => {
@@ -1928,7 +1956,12 @@ const App: React.FC = () => {
         }
       }
       
-      // Competitive Matches are managed manually and not restored from defaults.
+      // Competitive Matches
+      if (COMPETITIVE_MATCHES && COMPETITIVE_MATCHES.length > 0) {
+        for (const m of COMPETITIVE_MATCHES) {
+          await saveCompMatch(m as any);
+        }
+      }
 
       // Test Matches
       if (TEST_MATCHES && TEST_MATCHES.length > 0) {
@@ -2032,6 +2065,17 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'dashboard':
+        return (
+          <DashboardView
+            players={sortedPlayers}
+            competitiveMatches={competitiveMatches}
+            testMatches={testMatches}
+            trainingSessions={trainingSessions}
+            onSaveTestMatch={saveTestMatch}
+            onNavigateToTab={(tabId) => handleTabClick(tabId)}
+          />
+        );
       case 'personnel':
         return (
           <PersonnelView 
@@ -2546,6 +2590,7 @@ const App: React.FC = () => {
             onSaveOpponent={saveOpponent}
             onDeleteOpponent={deleteOpponent}
             onWipeAllMatches={handleWipeAllCompetitiveMatches}
+            onRestoreMatches={handleRestoreCompetitiveMatches}
             title="Pflichtspiel-Planung"
           />
         );
@@ -2691,6 +2736,40 @@ const App: React.FC = () => {
                 setToast({ message: 'Fehler beim Speichern der Tracker-Analyse!', id: Date.now() });
               }
             }}
+            onUpdatePlayerMovementPoints={async (playerId, points) => {
+              try {
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                  await saveSpieler({
+                    ...player,
+                    movementPoints: points
+                  });
+                  setToast({ message: 'Bewegungsprofil erfolgreich aktualisiert!', id: Date.now() });
+                }
+              } catch (err) {
+                console.error("Fehler beim Speichern des Bewegungsprofils:", err);
+                setToast({ message: 'Fehler beim Speichern des Bewegungsprofils!', id: Date.now() });
+              }
+            }}
+            onUpdatePlayerVideos={async (playerId, videoClips) => {
+              try {
+                const player = players.find(p => p.id === playerId);
+                if (player) {
+                  await saveSpieler({
+                    ...player,
+                    videoHighlights: videoClips
+                  });
+                  setToast({ message: 'Video-Highlights erfolgreich aktualisiert!', id: Date.now() });
+                }
+              } catch (err) {
+                console.error("Fehler beim Speichern der Video-Highlights:", err);
+                setToast({ message: 'Fehler beim Speichern der Video-Highlights!', id: Date.now() });
+              }
+            }}
+            competitiveMatches={competitiveMatches}
+            competitiveMinutes={competitiveMinutes}
+            testMatches={testMatches}
+            testMinutes={testMinutes}
           />
         );
       case 'access_control':
@@ -2699,6 +2778,29 @@ const App: React.FC = () => {
             ownerEmail={ownerEmail}
             securityLockActive={securityLockActive}
             onToggleSecurityLock={setSecurityLockActive}
+          />
+        );
+      case 'video_analysis':
+        return <VideoAnalysisView players={sortedPlayers} />;
+      case 'academy_analysis':
+        return (
+          <AcademyAnalysisView 
+            players={sortedPlayers}
+            sessionEvaluations={academyEvaluations || []}
+            weeklyReports={academyWeeklyReports || []}
+            attendance={attendance || []}
+            saveSessionEvaluation={saveAcademyEvaluation}
+            deleteSessionEvaluation={deleteAcademyEvaluation}
+            saveWeeklyReport={saveAcademyWeeklyReport}
+            deleteWeeklyReport={deleteAcademyWeeklyReport}
+          />
+        );
+      case 'champions_cup':
+        return (
+          <ChampionsCupProView 
+            players={sortedPlayers}
+            isEditing={isEditing}
+            setToast={setToast}
           />
         );
       default:
@@ -2757,21 +2859,19 @@ const App: React.FC = () => {
     );
   }
 
-
-
   return (
-      <div className="flex flex-col h-screen bg-gray-100 font-sans overflow-hidden selection:bg-[#C00000] selection:text-white print:h-auto print:overflow-visible print:bg-white">
+      <div className="flex flex-col h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden selection:bg-amber-500 selection:text-slate-950 print:h-auto print:overflow-visible print:bg-white">
         {quotaError && (
-          <div className="bg-amber-400 border-b-2 border-black text-black px-4 py-3 text-xs font-bold flex flex-wrap items-center justify-between gap-3 z-50 print:hidden shrink-0">
+          <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-200 px-4 py-3 text-xs font-bold flex flex-wrap items-center justify-between gap-3 z-50 print:hidden shrink-0 backdrop-blur-md">
             <div className="flex items-start gap-2 max-w-3xl">
               <span className="text-base mt-0.5">⚠️</span>
               <div>
-                <p className="font-extrabold uppercase tracking-wider text-[10px] text-amber-950 mb-0.5">Firestore Quota erreicht (Tageslimit überschritten)</p>
-                <p className="font-medium text-amber-900 leading-relaxed">
+                <p className="font-black uppercase tracking-wider text-[10px] text-amber-400 mb-0.5">Firestore Quota erreicht (Tageslimit überschritten)</p>
+                <p className="font-medium text-slate-300 leading-relaxed">
                   Das kostenlose Tageslimit an Datenbank-Lesevorgängen/Schreibvorgängen ist aufgebraucht. 
-                  <strong className="font-bold text-black"> Die App läuft vollkommen offline weiter!</strong> Deine Änderungen (wie z.B. Einheiten, Aufstellungen) werden sicher lokal in deinem Browser gespeichert.
+                  <strong className="font-bold text-amber-400"> Die App läuft vollkommen offline weiter!</strong> Deine Änderungen (wie z.B. Einheiten, Aufstellungen) werden sicher lokal in deinem Browser gespeichert.
                 </p>
-                <p className="font-medium text-amber-950 mt-1 flex items-center gap-1.5 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 w-fit">
+                <p className="font-medium text-slate-300 mt-1 flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded-lg border border-slate-800 w-fit text-[11px]">
                   <span>🕒</span>
                   <span><strong>Wie lange dauert das?</strong> Das Limit wird von Google jeden Tag automatisch um <strong>09:00 Uhr deutscher Zeit</strong> (Mitternacht US-Pazifikzeit) zurückgesetzt. Danach synchronisiert sich alles wieder von selbst!</span>
                 </p>
@@ -2782,13 +2882,13 @@ const App: React.FC = () => {
                 href="https://console.firebase.google.com/project/gen-lang-client-0951111843/firestore/databases/ai-studio-20b6fe19-5950-4d1f-9c88-e7f55ed9a819/data?openUpgradeDialog=true"
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="bg-black text-white px-3 py-1.5 text-[9px] uppercase font-black tracking-wider hover:bg-gray-800 transition-colors border border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                className="bg-amber-500 text-slate-950 px-3 py-1.5 text-[10px] uppercase font-black tracking-wider hover:bg-amber-400 transition-colors rounded-xl shadow"
               >
                 In Firebase Console upgraden
               </a>
               <button 
                 onClick={() => setQuotaError(false)}
-                className="bg-amber-500/30 text-amber-950 hover:bg-amber-500/50 rounded p-1 font-black leading-none text-xs transition-colors"
+                className="bg-slate-800 text-slate-400 hover:text-white rounded-lg p-1 font-black leading-none text-xs transition-colors"
                 title="Schließen"
               >
                 ✕
@@ -2797,56 +2897,146 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Navigation Bar */}
-        <nav className="bg-gray-900 text-white flex overflow-x-auto border-b-2 border-black shrink-0 no-scrollbar print:hidden">
-          {TABS.filter(tab => {
-            if (tab.id === 'access_control') {
-              return isOwner;
-            }
-            return true;
-          }).map(tab => {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.id)}
-                className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-r border-white/10 flex items-center gap-2
-                  ${activeTab === tab.id ? 'bg-[#C00000] text-white' : 'text-gray-400 hover:bg-white/5'}`}
+        {/* Responsive Navigation Bar */}
+        <nav className="bg-slate-900/90 text-slate-100 border-b border-slate-800 shrink-0 print:hidden relative z-50 shadow-xl backdrop-blur-md">
+          {/* Desktop Navigation (visible on large screens) */}
+          <div className="hidden lg:flex items-center w-full overflow-x-auto no-scrollbar px-2 py-1">
+            {TABS.filter(tab => {
+              if (tab.id === 'access_control') {
+                return isOwner;
+              }
+              return true;
+            }).map(tab => {
+              const isAcademy = tab.id === 'academy_analysis';
+              const isCup = tab.id === 'champions_cup';
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab.id)}
+                  className={`px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap rounded-xl flex items-center gap-1.5 mx-0.5
+                    ${isActive 
+                      ? (isCup 
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/10 border border-amber-400' 
+                          : isAcademy 
+                          ? 'bg-emerald-600 text-white shadow-lg border border-emerald-400' 
+                          : 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg border border-red-500') 
+                      : (isAcademy 
+                          ? 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-800/40' 
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700/60')}`}
+                >
+                  {tab.label}
+                  {isAcademy && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />}
+                  {isCup && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse ml-0.5" />}
+                </button>
+              );
+            })}
+            <div className="ml-auto flex items-center px-2 gap-2 self-stretch">
+              <button 
+                onClick={handleMigrateLocalData}
+                className="bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 px-2.5 py-1 text-[9px] font-bold uppercase border border-amber-500/40 rounded-lg transition-all flex items-center gap-1"
+                title="Lokale Daten importieren"
               >
-                {tab.label}
+                <Upload size={11} /> Local Import
               </button>
-            );
-          })}
-          <div className="ml-auto flex items-center px-3 gap-2 bg-black">
-            <button 
-              onClick={handleMigrateLocalData}
-              className="bg-amber-500 text-black px-2 py-1 text-[8px] font-black uppercase border border-black hover:bg-amber-400 transition-all flex items-center gap-1"
-              title="Lokale Daten importieren"
-            >
-              <Upload size={10} /> Local Import
-            </button>
-            <button 
-              onClick={handleCloudSync}
-              className="bg-blue-600 text-white px-2 py-1 text-[8px] font-black uppercase border border-black hover:bg-blue-500 transition-all flex items-center gap-1"
-              title="Firestore Daten bereinigen und normalisieren"
-            >
-              <RefreshCw size={10} /> Daten-Wartung
-            </button>
-            <button 
-              onClick={() => void bootstrapData()}
-              className="bg-[#C00000] text-white px-2 py-1 text-[8px] font-black uppercase border border-white/20 hover:bg-red-700 transition-all flex items-center gap-1"
-              title="Initialdaten wiederherstellen"
-            >
-              <RefreshCw size={10} /> Restore
-            </button>
-            <div className="h-4 w-[1px] bg-white/20 mx-1" />
-            <span className="text-[9px] font-bold opacity-60 pr-2">FC AUGGEN</span>
+              <button 
+                onClick={handleCloudSync}
+                className="bg-sky-950/60 text-sky-300 hover:bg-sky-900/80 px-2.5 py-1 text-[9px] font-bold uppercase border border-sky-800/60 rounded-lg transition-all flex items-center gap-1"
+                title="Firestore Daten bereinigen und normalisieren"
+              >
+                <RefreshCw size={11} /> Wartung
+              </button>
+              <button 
+                onClick={() => void bootstrapData()}
+                className="bg-rose-950/80 text-rose-300 hover:bg-rose-900 px-2.5 py-1 text-[9px] font-bold uppercase border border-rose-800/80 rounded-lg transition-all flex items-center gap-1"
+                title="Initialdaten wiederherstellen"
+              >
+                <RefreshCw size={11} /> Restore
+              </button>
+              <div className="h-4 w-[1px] bg-slate-800 mx-1" />
+              <span className="text-[10px] font-black tracking-widest text-amber-400 pr-2">FC AUGGEN</span>
+            </div>
           </div>
+
+          {/* Mobile Navigation Header (visible on screens smaller than lg) */}
+          <div className="flex lg:hidden items-center justify-between px-4 py-2.5 bg-slate-900">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl hover:bg-slate-700 transition-all"
+              aria-label="Menü öffnen"
+            >
+              <Menu size={16} className="text-amber-400" />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-100">
+                {TABS.find(t => t.id === activeTab)?.label || 'MENÜ'}
+              </span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black tracking-widest text-amber-400 bg-slate-950 px-2.5 py-1 border border-slate-800 rounded-lg">
+                FC AUGGEN 1921
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Navigation Dropdown Menu */}
+          {isMobileMenuOpen && (
+            <div className="absolute top-full left-0 w-full bg-slate-950 border-b border-slate-800 shadow-2xl flex flex-col divide-y divide-slate-800/60 lg:hidden animate-fadeIn max-h-[80vh] overflow-y-auto z-50 p-2 space-y-1">
+              <div className="p-2 bg-slate-900/60 rounded-xl flex flex-wrap gap-1.5 items-center justify-center border border-slate-800 mb-2">
+                <button 
+                  onClick={() => { handleMigrateLocalData(); setIsMobileMenuOpen(false); }}
+                  className="bg-amber-500 text-slate-950 px-2.5 py-1 text-[9px] font-black uppercase rounded-lg shadow flex items-center gap-1"
+                >
+                  <Upload size={10} /> Local Import
+                </button>
+                <button 
+                  onClick={() => { handleCloudSync(); setIsMobileMenuOpen(false); }}
+                  className="bg-sky-600 text-white px-2.5 py-1 text-[9px] font-black uppercase rounded-lg shadow flex items-center gap-1"
+                >
+                  <RefreshCw size={10} /> Wartung
+                </button>
+                <button 
+                  onClick={() => { void bootstrapData(); setIsMobileMenuOpen(false); }}
+                  className="bg-rose-600 text-white px-2.5 py-1 text-[9px] font-black uppercase rounded-lg shadow flex items-center gap-1"
+                >
+                  <RefreshCw size={10} /> Restore
+                </button>
+              </div>
+
+              {TABS.filter(tab => {
+                if (tab.id === 'access_control') {
+                  return isOwner;
+                }
+                return true;
+              }).map(tab => {
+                const isAcademy = tab.id === 'academy_analysis';
+                const isCup = tab.id === 'champions_cup';
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabClick(tab.id)}
+                    className={`w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-between my-0.5
+                      ${isActive 
+                        ? (isCup ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black' : isAcademy ? 'bg-emerald-600 text-white font-black' : 'bg-red-600 text-white font-black') 
+                        : (isAcademy ? 'bg-emerald-950/60 text-emerald-300 font-bold' : 'text-slate-300 hover:bg-slate-900')}`}
+                  >
+                    <span>{tab.label}</span>
+                    {isActive && <span className="w-1.5 h-1.5 bg-amber-400 rounded-full" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 overflow-hidden bg-[#DEDEDE] print:p-0 print:overflow-visible print:bg-white">
+      <main className="flex-1 p-3 sm:p-5 overflow-hidden bg-slate-950 text-slate-100 print:p-0 print:bg-white print:overflow-visible">
         <UniformMask 
           title={TABS.find(t => t.id === activeTab)?.label || ''}
+          onOpenKaderAgent={(activeTab === 'trainer_view' || activeTab === 'tacticboard') ? ((preset) => {
+            setKaderAgentPreset(preset || 'beste_formation');
+            setShowKaderAgentModal(true);
+          }) : undefined}
+          onOpen3DTacticBoard={(activeTab === 'trainer_view' || activeTab === 'tacticboard') ? (() => setShow3DProfiBoardModal(true)) : undefined}
           onShareText={handleShareText}
           onEmail={handleEmail}
           onEdit={handleEdit}
@@ -3675,26 +3865,26 @@ const App: React.FC = () => {
 
       {/* Remove Scouting Modal */}
       {showRemoveScoutingModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg">
-            <div className="bg-[#C00000] text-white p-4 border-b-4 border-black flex justify-between items-center">
-              <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
-                <UserMinus size={20} /> Kandidat entfernen
+        <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-red-900 to-slate-900 text-white p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-wider text-amber-400 flex items-center gap-2 text-sm">
+                <UserMinus size={18} /> Kandidat entfernen
               </h3>
-              <button onClick={() => setShowRemoveScoutingModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+              <button onClick={() => setShowRemoveScoutingModal(false)} className="text-slate-400 hover:text-white hover:rotate-90 transition-transform"><CloseIcon size={18} /></button>
             </div>
             <div className="p-6">
-              <p className="text-[10px] font-bold uppercase opacity-60 mb-4 italic">Wählen Sie einen Kandidaten aus, den Sie von der Liste entfernen möchten:</p>
-              <div className="max-h-96 overflow-y-auto custom-scrollbar border-2 border-black">
+              <p className="text-xs font-bold uppercase text-slate-400 mb-4 italic">Wählen Sie einen Kandidaten aus, den Sie von der Liste entfernen möchten:</p>
+              <div className="max-h-96 overflow-y-auto custom-scrollbar border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
                 {scoutingCandidates.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between p-3 border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors group">
+                  <div key={c.id} className="flex items-center justify-between p-3.5 hover:bg-slate-900 transition-colors group">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 flex items-center justify-center bg-gray-100 text-xs font-black border border-black group-hover:bg-[#C00000] group-hover:text-white transition-colors">
+                      <div className="w-8 h-8 flex items-center justify-center bg-slate-800 text-amber-400 font-black rounded-lg border border-slate-700 text-xs">
                         {c.name.substring(0, 1)}
                       </div>
                       <div>
-                        <p className="font-black uppercase text-sm leading-none">{c.name}</p>
-                        <p className="text-[9px] font-bold uppercase opacity-40 mt-1">{c.position} • {c.club}</p>
+                        <p className="font-bold uppercase text-sm leading-none text-slate-100">{c.name}</p>
+                        <p className="text-[10px] font-bold uppercase text-slate-400 mt-1">{c.position} • {c.club}</p>
                       </div>
                     </div>
                     <button 
@@ -3707,7 +3897,7 @@ const App: React.FC = () => {
                           setToast({ message: 'Fehler beim Entfernen des Kandidaten.', id: Date.now() });
                         }
                       }}
-                      className="bg-white text-[#C00000] p-2 border-2 border-[#C00000] hover:bg-[#C00000] hover:text-white transition-all"
+                      className="bg-rose-950/80 text-rose-300 p-2 border border-rose-800 hover:bg-rose-900 rounded-lg transition-all"
                       title="Kandidat löschen"
                     >
                       <Trash2 size={16} />
@@ -3715,13 +3905,13 @@ const App: React.FC = () => {
                   </div>
                 ))}
                 {scoutingCandidates.length === 0 && (
-                  <div className="p-8 text-center font-black uppercase opacity-20 italic">Keine Kandidaten auf der Liste</div>
+                  <div className="p-8 text-center font-bold uppercase text-slate-500 italic text-xs">Keine Kandidaten auf der Liste</div>
                 )}
               </div>
               <div className="mt-6">
                 <button 
                   onClick={() => setShowRemoveScoutingModal(false)}
-                  className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black"
+                  className="w-full bg-slate-800 text-slate-200 py-3 font-bold uppercase tracking-wider hover:bg-slate-700 transition-colors rounded-xl border border-slate-700 text-xs"
                 >
                   Schließen
                 </button>
@@ -3732,11 +3922,11 @@ const App: React.FC = () => {
       )}
       {/* Add Meeting Modal */}
       {showAddMeetingModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="bg-black text-white p-4 flex justify-between items-center">
-              <h3 className="font-black uppercase tracking-widest text-sm">Gespräch hinzufügen</h3>
-              <button onClick={() => { setShowAddMeetingModal(false); setSelectedMeetingPlayer(''); }} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-gradient-to-r from-slate-900 to-slate-950 text-white p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-wider text-amber-400 text-sm">Gespräch hinzufügen</h3>
+              <button onClick={() => { setShowAddMeetingModal(false); setSelectedMeetingPlayer(''); }} className="text-slate-400 hover:text-white hover:rotate-90 transition-transform"><CloseIcon size={18} /></button>
             </div>
             <form className="p-6 space-y-4" onSubmit={(e) => {
               e.preventDefault();
@@ -3756,9 +3946,7 @@ const App: React.FC = () => {
                 status: formData.get('status') as any || 'Offen',
                 isScout
               };
-              console.log('Creating new meeting:', newMeeting);
               saveMeetingEntry(newMeeting).then(() => {
-                console.log('Meeting saved successfully');
                 setShowAddScoutingModal(false);
                 setShowAddMeetingModal(false);
                 setSelectedMeetingPlayer('');
@@ -3769,11 +3957,11 @@ const App: React.FC = () => {
               });
             }}>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Spieler / Kontakt</label>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1.5">Spieler / Kontakt</label>
                 <select 
                   name="playerType" 
                   required 
-                  className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase text-xs"
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 uppercase text-xs"
                   value={selectedMeetingPlayer}
                   onChange={(e) => setSelectedMeetingPlayer(e.target.value)}
                 >
@@ -3791,46 +3979,46 @@ const App: React.FC = () => {
                   </optgroup>
                 </select>
                 {selectedMeetingPlayer === 'NEUER SPIELER' && (
-                  <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
-                    <label className="text-[10px] font-black uppercase block mb-1">Name des neuen Spielers</label>
+                  <div className="mt-2.5 animate-in slide-in-from-top-2 duration-200">
+                    <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Name des neuen Spielers</label>
                     <input 
                       name="customPlayerName" 
                       type="text" 
                       required 
-                      className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase text-xs" 
+                      className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 uppercase text-xs" 
                       placeholder="NAME EINGEBEN..."
                     />
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
-                  <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Datum</label>
+                  <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2 font-bold focus:outline-none focus:border-amber-400 text-xs" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Uhrzeit</label>
-                  <input name="time" type="time" required defaultValue="18:00" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Uhrzeit</label>
+                  <input name="time" type="time" required defaultValue="18:00" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2 font-bold focus:outline-none focus:border-amber-400 text-xs" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Ort</label>
-                <input name="location" type="text" required defaultValue="Sportheim" className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase" />
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Ort</label>
+                <input name="location" type="text" required defaultValue="Sportheim" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 uppercase text-xs" />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Status</label>
-                <select name="status" className="w-full border-2 border-black p-2 font-black focus:outline-none uppercase text-xs">
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Status</label>
+                <select name="status" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 uppercase text-xs">
                   <option value="Offen">Offen</option>
                   <option value="Zusage">Zusage</option>
                   <option value="Absage">Absage</option>
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Notizen</label>
-                <textarea name="notes" className="w-full border-2 border-black p-2 font-black focus:outline-none text-xs" rows={3} placeholder="Themen, Ziele..."></textarea>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Notizen</label>
+                <textarea name="notes" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" rows={3} placeholder="Themen, Ziele..."></textarea>
               </div>
-              <div className="pt-4">
-                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)]">
+              <div className="pt-2">
+                <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 py-3 font-black uppercase tracking-wider rounded-xl shadow-lg hover:brightness-110 transition-all text-xs">
                   Termin speichern
                 </button>
               </div>
@@ -3841,11 +4029,11 @@ const App: React.FC = () => {
 
       {/* Add Training Modal */}
       {showAddTrainingModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl my-auto">
-            <div className="bg-black text-white p-4 flex justify-between items-center">
-              <h3 className="font-black uppercase tracking-widest text-sm">Trainingseinheit hinzufügen</h3>
-              <button onClick={() => setShowAddTrainingModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl my-auto overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-900 to-slate-950 text-white p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-wider text-amber-400 text-sm">Trainingseinheit hinzufügen</h3>
+              <button onClick={() => setShowAddTrainingModal(false)} className="text-slate-400 hover:text-white hover:rotate-90 transition-transform"><CloseIcon size={18} /></button>
             </div>
             <form className="p-6 space-y-4" onSubmit={async (e) => {
               e.preventDefault();
@@ -3874,30 +4062,30 @@ const App: React.FC = () => {
                 handleFirestoreError(err, OperationType.CREATE, 'training_sessions');
               }
             }}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
-                  <input name="date" type="date" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Datum</label>
+                  <input name="date" type="date" required className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Trainer</label>
-                  <input name="trainer" type="text" defaultValue="Trainerteam" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Gruppe</label>
-                  <input name="group" type="text" defaultValue="Gesamtkader" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Dauer (Min)</label>
-                  <input name="duration" type="text" defaultValue="90" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Trainer</label>
+                  <input name="trainer" type="text" defaultValue="Trainerteam" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Belastung</label>
-                  <select name="load" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Gruppe</label>
+                  <input name="group" type="text" defaultValue="Gesamtkader" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Dauer (Min)</label>
+                  <input name="duration" type="text" defaultValue="90" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Belastung</label>
+                  <select name="load" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs">
                     <option value="Gering">Gering</option>
                     <option value="Mittel">Mittel</option>
                     <option value="Hoch">Hoch</option>
@@ -3905,8 +4093,8 @@ const App: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase block mb-1">Intensität</label>
-                  <select name="intensity" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                  <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Intensität</label>
+                  <select name="intensity" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs">
                     <option value="Regenerativ">Regenerativ</option>
                     <option value="Extensiv">Extensiv</option>
                     <option value="Intensiv">Intensiv</option>
@@ -3915,15 +4103,15 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Wochenschwerpunkt</label>
-                <input name="weeklyFocus" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Wochenschwerpunkt</label>
+                <input name="weeklyFocus" type="text" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Einheitsschwerpunkt</label>
-                <input name="sessionFocus" type="text" className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Einheitsschwerpunkt</label>
+                <input name="sessionFocus" type="text" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
               </div>
-              <div className="pt-4">
-                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)]">
+              <div className="pt-2">
+                <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 py-3 font-black uppercase tracking-wider rounded-xl shadow-lg hover:brightness-110 transition-all text-xs">
                   Einheit speichern
                 </button>
               </div>
@@ -3934,23 +4122,41 @@ const App: React.FC = () => {
 
       {/* Add Physio Modal */}
       {showAddPhysioModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md my-auto">
-            <div className="bg-black text-white p-4 flex justify-between items-center">
-              <h3 className="font-black uppercase tracking-widest text-sm">Physio-Eintrag hinzufügen</h3>
-              <button onClick={() => setShowAddPhysioModal(false)} className="hover:rotate-90 transition-transform"><CloseIcon size={20} /></button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md my-auto overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-900 to-slate-950 text-white p-4 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="font-black uppercase tracking-wider text-amber-400 text-sm">Physio-Eintrag hinzufügen</h3>
+              <button onClick={() => setShowAddPhysioModal(false)} className="text-slate-400 hover:text-white hover:rotate-90 transition-transform"><CloseIcon size={18} /></button>
             </div>
             <form className="p-6 space-y-4" onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              const playerId = (formData.get('playerId') as string || '').trim();
+              const date = (formData.get('date') as string || '').trim();
+              const diagnosis = (formData.get('diagnosis') as string || '').trim();
+
+              if (!playerId) {
+                setToast({ message: 'Fehler: Bitte einen Spieler auswählen', id: Date.now() });
+                return;
+              }
+              if (!date) {
+                setToast({ message: 'Fehler: Bitte ein gültiges Datum wählen', id: Date.now() });
+                return;
+              }
+              if (!diagnosis) {
+                setToast({ message: 'Fehler: Bitte eine Diagnose/Beschwerde eingeben', id: Date.now() });
+                return;
+              }
+
               const newEntry = {
                 id: Date.now().toString(),
-                playerId: formData.get('playerId') as string,
-                date: formData.get('date') as string,
+                playerId,
+                date,
                 type: formData.get('type') as string,
-                diagnosis: formData.get('diagnosis') as string,
+                diagnosis,
+                treatment: (formData.get('treatment') as string || '').trim(),
                 status: formData.get('status') as string,
-                remarks: formData.get('remarks') as string
+                remarks: (formData.get('remarks') as string || '').trim()
               };
               try {
                 await savePhysioEntry(newEntry);
@@ -3961,21 +4167,21 @@ const App: React.FC = () => {
               }
             }}>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Spieler</label>
-                <select name="playerId" required className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Spieler</label>
+                <select name="playerId" required className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs">
                   <option value="">-- Spieler wählen --</option>
                   {sortedPlayers.map(p => (
-                    <option key={p.id} value={p.id}>{p.lastName} {p.firstName}</option>
+                    <option key={p.id} value={p.id}>{p.lastName}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Datum</label>
-                <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Datum</label>
+                <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Typ</label>
-                <select name="type" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Typ</label>
+                <select name="type" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs">
                   <option value="Behandlung">Behandlung</option>
                   <option value="Check-Up">Check-Up</option>
                   <option value="Reha">Reha</option>
@@ -3983,24 +4189,29 @@ const App: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Diagnose / Grund</label>
-                <input name="diagnosis" type="text" required className="w-full border-2 border-black p-2 font-black focus:outline-none" />
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Diagnose / Grund</label>
+                <input name="diagnosis" type="text" required className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Status</label>
-                <select name="status" className="w-full border-2 border-black p-2 font-black focus:outline-none">
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Durchgeführte Behandlung</label>
+                <input name="treatment" type="text" placeholder="Z.B. Massage, Kältetherapie" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Status</label>
+                <select name="status" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 text-xs">
                   <option value="In Behandlung">In Behandlung</option>
-                  <option value="Eingeschränkt">Eingeschränkt</option>
+                  <option value="Austrainiert">Austrainiert</option>
                   <option value="Spielfähig">Spielfähig</option>
-                  <option value="Reha">Reha</option>
+                  <option value="Reha-Phase">Reha-Phase</option>
+                  <option value="Langzeit">Langzeit</option>
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase block mb-1">Bemerkungen</label>
-                <textarea name="remarks" className="w-full border-2 border-black p-2 font-black focus:outline-none min-h-[60px]" />
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Bemerkungen</label>
+                <textarea name="remarks" className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl p-2.5 font-bold focus:outline-none focus:border-amber-400 min-h-[60px] text-xs" />
               </div>
-              <div className="pt-4">
-                <button type="submit" className="w-full bg-black text-white py-3 font-black uppercase tracking-widest hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(192,0,0,1)]">
+              <div className="pt-2">
+                <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 py-3 font-black uppercase tracking-wider rounded-xl shadow-lg hover:brightness-110 transition-all text-xs">
                   Eintrag speichern
                 </button>
               </div>
@@ -4009,11 +4220,30 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* KaderAgent Profi-Modus Modal */}
+      {showKaderAgentModal && (
+        <KaderAgentModal
+          players={players}
+          onClose={() => setShowKaderAgentModal(false)}
+          initialPreset={kaderAgentPreset}
+        />
+      )}
+
+      {/* 3D Profi Taktiktafel Modal */}
+      {show3DProfiBoardModal && (
+        <Pro3DTacticBoardModal
+          players={players}
+          matches={competitiveMatches}
+          analyses={matchAnalyses}
+          onClose={() => setShow3DProfiBoardModal(false)}
+        />
+      )}
+
       {/* Toast Notification */}
       {toast && (
-        <div key={toast.id} className="fixed bottom-6 right-6 z-[200] bg-black text-white px-4 py-3 border-2 border-white shadow-[4px_4px_0px_0px_rgba(192,0,0,1)] animate-in slide-in-from-bottom-5 fade-in duration-300 flex items-center gap-3">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
-          <span className="text-[10px] font-black uppercase tracking-widest">{toast.message}</span>
+        <div key={toast.id} className="fixed bottom-6 right-6 z-[200] bg-slate-900 text-slate-100 px-4 py-3 border border-slate-700 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300 flex items-center gap-3 backdrop-blur-md">
+          <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-sm shadow-emerald-400/50" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">{toast.message}</span>
         </div>
       )}
 

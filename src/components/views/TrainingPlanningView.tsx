@@ -28,6 +28,10 @@ import {
   Maximize2,
   X,
   RotateCw,
+  RotateCcw,
+  Undo2,
+  Redo2,
+  History,
   User,
   UserPlus,
   Briefcase,
@@ -53,6 +57,7 @@ import {
   HeadingLevel as DocxHeadingLevel 
 } from 'docx';
 import { sortPlayers } from '../../utils/playerSorting';
+import { VideoSection } from '../VideoSection';
 
 interface TrainingPlanningViewProps {
   players: Player[];
@@ -461,6 +466,9 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
   const [selectedLibraryDocId, setSelectedLibraryDocId] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [modalDragActive, setModalDragActive] = useState(false);
+  const [undoStack, setUndoStack] = useState<TrainingSession[]>([]);
+  const [redoStack, setRedoStack] = useState<TrainingSession[]>([]);
+  const [initialSessionSnapshot, setInitialSessionSnapshot] = useState<TrainingSession | null>(null);
 
   const handleFileUpload = async (files: FileList | null) => {
       if (!files || files.length === 0) return;
@@ -523,8 +531,55 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
+  const pushUndoState = () => {
+    if (localSession) {
+      const copy = JSON.parse(JSON.stringify(localSession));
+      setUndoStack(prev => [...prev.slice(-30), copy]);
+      setRedoStack([]);
+    }
+  };
+
+  const handleUndo = () => {
+    if (undoStack.length === 0 || !localSession) return;
+    const previousState = undoStack[undoStack.length - 1];
+    const nextUndoStack = undoStack.slice(0, undoStack.length - 1);
+
+    const currentCopy = JSON.parse(JSON.stringify(localSession));
+    setRedoStack(prev => [...prev, currentCopy]);
+    setUndoStack(nextUndoStack);
+    setLocalSession(previousState);
+    saveSession(previousState);
+    setNotification("Änderung rückgängig gemacht");
+    setTimeout(() => setNotification(null), 2000);
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0 || !localSession) return;
+    const nextState = redoStack[redoStack.length - 1];
+    const nextRedoStack = redoStack.slice(0, redoStack.length - 1);
+
+    const currentCopy = JSON.parse(JSON.stringify(localSession));
+    setUndoStack(prev => [...prev, currentCopy]);
+    setRedoStack(nextRedoStack);
+    setLocalSession(nextState);
+    saveSession(nextState);
+    setNotification("Änderung wiederhergestellt");
+    setTimeout(() => setNotification(null), 2000);
+  };
+
+  const handleRestoreInitial = () => {
+    if (!initialSessionSnapshot || !localSession) return;
+    pushUndoState();
+    const restored = JSON.parse(JSON.stringify(initialSessionSnapshot));
+    setLocalSession(restored);
+    saveSession(restored);
+    setNotification("Ursprünglicher Stand wiederhergestellt");
+    setTimeout(() => setNotification(null), 2000);
+  };
+
   const addManualPlayer = () => {
     if (!manualPlayerName || !localSession) return;
+    pushUndoState();
     
     const newPlayerEntry = {
       name: manualPlayerName,
@@ -629,11 +684,43 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
       // or if we are not in editing mode (meaning we want the latest from DB).
       if (!localSession || localSession.id !== session.id || !isEditing) {
         setLocalSession(session);
+        setInitialSessionSnapshot(JSON.parse(JSON.stringify(session)));
+        setUndoStack([]);
+        setRedoStack([]);
       }
     } else {
       setLocalSession(null);
+      setInitialSessionSnapshot(null);
+      setUndoStack([]);
+      setRedoStack([]);
     }
   }, [selectedSessionId, sessions, isEditing]);
+
+  // Keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y / Shift+Ctrl+Z)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isEditing) return;
+      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+        } else if (!isInput && undoStack.length > 0) {
+          e.preventDefault();
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        if (!isInput && redoStack.length > 0) {
+          e.preventDefault();
+          handleRedo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditing, undoStack, redoStack, localSession]);
 
   // Simple global paste listener
   useEffect(() => {
@@ -726,13 +813,13 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
       const sortedStaff = sortPlayers(players.filter(p => !isPlayer(p)));
       basePlayers = [
         ...sortedSquad.map(p => ({
-          name: `${p.lastName} ${p.firstName}`,
+          name: p.lastName,
           position: p.position,
           status: '1' as any,
           category: p.category
         })),
         ...sortedStaff.map(p => ({
-          name: `${p.lastName} ${p.firstName}`,
+          name: p.lastName,
           position: p.position,
           status: '1' as any,
           category: p.category
@@ -742,7 +829,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
     // Ensure all current club players are present (just in case new players were added in administration)
     players.forEach(p => {
-      const fullName = `${p.lastName} ${p.firstName}`;
+      const fullName = p.lastName;
       if (!basePlayers.some(bp => bp.name === fullName)) {
         basePlayers.push({
           name: fullName,
@@ -1391,18 +1478,19 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
   const handleLoadSquad = () => {
     if (localSession) {
+      pushUndoState();
       const sortedSquad = sortPlayers(players.filter(isPlayer));
       const sortedStaff = sortPlayers(players.filter(p => !isPlayer(p)));
       
       const updatedPlayers = [
         ...sortedSquad.map(p => ({
-          name: `${p.lastName} ${p.firstName}`,
+          name: p.lastName,
           position: p.position,
           status: '1' as any,
           category: p.category
         })),
         ...sortedStaff.map(p => ({
-          name: `${p.lastName} ${p.firstName}`,
+          name: p.lastName,
           position: p.position,
           status: '1' as any,
           category: p.category
@@ -1416,6 +1504,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
   const updateField = (field: keyof TrainingSession, value: any) => {
     if (localSession) {
+      pushUndoState();
       const updates: any = { [field]: value };
       if (field === 'date' && value) {
         const date = new Date(value);
@@ -1444,6 +1533,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
   };
 
   const updateContent = (field: keyof TrainingSession['content'], value: string) => {
+    pushUndoState();
     setLocalSession(prev => {
       if (!prev) return null;
       return {
@@ -1454,6 +1544,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
   };
 
   const updateMultipleContent = (updates: Partial<TrainingSession['content']>) => {
+    pushUndoState();
     setLocalSession(prev => {
       if (!prev) return null;
       return {
@@ -1465,6 +1556,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
   const processImagesForSession = (images: string[] | string, targetSlot?: keyof TrainingSession['content']) => {
     if (!localSession) return;
+    pushUndoState();
     const imageList = Array.isArray(images) ? images : [images];
     
     setLocalSession(prev => {
@@ -1494,6 +1586,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
   const updatePlayerStatus = (index: number, status: any) => {
     if (localSession) {
+      pushUndoState();
       const newPlayers = [...localSession.players];
       newPlayers[index] = { ...newPlayers[index], status };
       const updatedSession = { ...localSession, players: newPlayers };
@@ -1604,6 +1697,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
   const removePlayerFromSession = (index: number) => {
     if (localSession) {
+      pushUndoState();
       const newPlayers = [...(localSession.players || [])];
       newPlayers.splice(index, 1);
       const updatedSession = { ...localSession, players: newPlayers };
@@ -1616,9 +1710,10 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
   const addPlayerToSession = (player: Player) => {
     if (localSession) {
+      pushUndoState();
       // Check if player already in session
-      const name = `${player.lastName} ${player.firstName}`;
-      if ((localSession.players || []).some(p => p && p.name === name)) return;
+      const name = player.lastName;
+      if ((localSession.players || []).some(p => p && (p.name === name || p.name === `${player.lastName} ${player.firstName}`))) return;
 
       const newPlayerEntry = {
         name,
@@ -1660,41 +1755,41 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
   }
 
   return (
-    <div className="flex h-full bg-[#f5f5f5] overflow-hidden print:h-auto print:overflow-visible print:bg-white">
+    <div className="flex flex-col lg:flex-row h-full bg-[#f5f5f5] overflow-y-auto lg:overflow-hidden print:h-auto print:overflow-visible print:bg-white">
       {/* Sidebar - Einheiten Liste */}
-      <div className="w-64 bg-white border-r-2 border-black flex flex-col shrink-0 print:hidden">
+      <div className="w-full lg:w-64 bg-white border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col shrink-0 print:hidden">
         <div className="p-4 border-b-2 border-black bg-black text-white flex justify-between items-center">
           <h3 className="font-black uppercase text-xs tracking-widest">Einheiten</h3>
           <button onClick={handleAddSession} className="hover:text-red-500 transition-colors">
             <Plus size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-h-36 lg:max-h-none lg:flex-1 overflow-y-auto custom-scrollbar">
           {sessions.map(s => (
             <button
               key={s.id}
               onClick={() => onSelectSession(s.id)}
-              className={`w-full p-4 text-left border-b border-black/10 hover:bg-gray-50 transition-colors flex flex-col gap-1 ${selectedSessionId === s.id ? 'bg-gray-100 border-l-4 border-l-red-600' : ''}`}
+              className={`w-full p-4 text-left border-b border-black/10 hover:bg-amber-50 transition-colors flex flex-col gap-1 ${selectedSessionId === s.id ? 'bg-amber-100/80 border-l-4 border-l-red-600' : 'bg-white'}`}
             >
-              <span className="font-black text-xs">{new Date(s.date).toLocaleDateString('de-DE')}</span>
-              <span className="text-[10px] uppercase font-bold opacity-60 truncate">{s.sessionFocus || 'Kein Schwerpunkt'}</span>
+              <span className="font-black text-xs text-slate-900">{new Date(s.date).toLocaleDateString('de-DE')}</span>
+              <span className="text-[10px] uppercase font-bold text-slate-700 truncate">{s.sessionFocus || 'Kein Schwerpunkt'}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible print:h-auto">
+      <div className="flex-1 flex flex-col lg:overflow-hidden overflow-visible print:overflow-visible print:h-auto">
         {/* Toolbar */}
-        <div className="p-2 bg-white border-b-2 border-black flex justify-between items-center shrink-0 print:hidden">
+        <div className="p-2 bg-white border-b-2 border-black flex justify-between items-center shrink-0 print:hidden text-slate-900">
           <div className="flex items-center gap-1">
             <button 
               onClick={handleAddSession}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1"
+              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-slate-900"
               title="Hinzufügen"
             >
-              <Plus size={18} />
-              <span className="text-[8px] font-bold uppercase">Hinzufügen</span>
+              <Plus size={18} className="text-slate-900" />
+              <span className="text-[9px] font-black uppercase text-slate-900">Hinzufügen</span>
             </button>
             <button 
               onClick={handleDelete}
@@ -1702,7 +1797,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Entfernen"
             >
               <Trash2 size={18} />
-              <span className="text-[8px] font-bold uppercase">Entfernen</span>
+              <span className="text-[9px] font-black uppercase">Entfernen</span>
             </button>
             <button 
               onClick={handleGenerateUnits}
@@ -1710,7 +1805,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Generieren"
             >
               <Calendar size={18} />
-              <span className="text-[8px] font-bold uppercase">Generieren</span>
+              <span className="text-[9px] font-black uppercase">Generieren</span>
             </button>
             <button 
               onClick={handleReset}
@@ -1718,7 +1813,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Reset"
             >
               <Activity size={18} />
-              <span className="text-[8px] font-bold uppercase">Reset</span>
+              <span className="text-[9px] font-black uppercase">Reset</span>
             </button>
             <div className="w-px h-8 bg-black/10 mx-1" />
             <button 
@@ -1727,25 +1822,53 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Bibliothek & Dokumente"
             >
               <FileText size={18} />
-              <span className="text-[8px] font-bold uppercase underline decoration-2">Bibliothek</span>
+              <span className="text-[9px] font-black uppercase underline decoration-2">Bibliothek</span>
+            </button>
+            <div className="w-px h-8 bg-black/10 mx-1" />
+            <button 
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${undoStack.length > 0 ? 'hover:bg-gray-100 text-slate-900 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
+              title="Änderung rückgängig machen (Strg+Z)"
+            >
+              <Undo2 size={18} className="text-slate-900" />
+              <span className="text-[9px] font-black uppercase text-slate-900">Rückgängig {undoStack.length > 0 ? `(${undoStack.length})` : ''}</span>
+            </button>
+            <button 
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${redoStack.length > 0 ? 'hover:bg-gray-100 text-slate-900 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
+              title="Wiederherstellen (Strg+Y)"
+            >
+              <Redo2 size={18} className="text-slate-900" />
+              <span className="text-[9px] font-black uppercase text-slate-900">Wiederholen</span>
+            </button>
+            <button 
+              onClick={handleRestoreInitial}
+              disabled={!initialSessionSnapshot || undoStack.length === 0}
+              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${initialSessionSnapshot && undoStack.length > 0 ? 'hover:bg-amber-50 text-amber-700 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
+              title="Auf ursprünglichen Stand vor den Änderungen zurücksetzen"
+            >
+              <RotateCcw size={18} />
+              <span className="text-[9px] font-black uppercase">Zurücksetzen</span>
             </button>
             <div className="w-px h-8 bg-black/10 mx-1" />
             <button 
               onClick={handleSave}
-              className={`p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'text-green-600' : 'opacity-30'}`}
+              className={`p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'text-green-600' : 'opacity-40 text-slate-400'}`}
               disabled={!isEditing}
               title="Speichern"
             >
               <Save size={18} />
-              <span className="text-[8px] font-bold uppercase">Speichern</span>
+              <span className="text-[9px] font-black uppercase">Speichern</span>
             </button>
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className={`p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'bg-black text-white' : ''}`}
+              className={`p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'bg-black text-white' : 'text-slate-900'}`}
               title="Bearbeiten"
             >
               <Edit2 size={18} />
-              <span className="text-[8px] font-bold uppercase">Bearbeiten</span>
+              <span className="text-[9px] font-black uppercase">Bearbeiten</span>
             </button>
           </div>
 
@@ -1756,7 +1879,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Trainingsplan ausdrucken"
             >
               <Printer size={18} />
-              <span className="text-[8px] font-bold uppercase">Drucken</span>
+              <span className="text-[9px] font-black uppercase">Drucken</span>
             </button>
             <button 
               onClick={handleExportDocx}
@@ -1764,15 +1887,15 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Als Word-Dokument (.docx) exportieren"
             >
               <FileText size={18} />
-              <span className="text-[8px] font-bold uppercase">Word (.docx)</span>
+              <span className="text-[9px] font-black uppercase">Word (.docx)</span>
             </button>
             <button 
               onClick={handleShareImage}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1"
+              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-slate-900"
               title="Per E-Mail teilen (Bild)"
             >
               <Mail size={18} />
-              <span className="text-[8px] font-bold uppercase">E-Mail</span>
+              <span className="text-[9px] font-black uppercase">E-Mail</span>
             </button>
             <button 
               onClick={handleShareImage}
@@ -1780,7 +1903,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               title="Per WhatsApp teilen (Bild)"
             >
               <MessageCircle size={18} />
-              <span className="text-[8px] font-bold uppercase">WhatsApp</span>
+              <span className="text-[9px] font-black uppercase">WhatsApp</span>
             </button>
           </div>
         </div>
@@ -1813,116 +1936,116 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               }
             }}
           >
-            <div id="training-plan-card" className="max-w-6xl mx-auto bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-0 flex flex-col print:shadow-none print:max-w-none print:w-full print:border-none print:mx-0 print:overflow-visible print:h-auto">
+            <div id="training-plan-card" className="max-w-6xl mx-auto bg-white text-slate-900 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-0 flex flex-col print:shadow-none print:max-w-none print:w-full print:border-none print:mx-0 print:overflow-visible print:h-auto">
               
-              {/* Top Header Row - 5 Columns */}
-              <div className="grid grid-cols-5 border-b-2 border-black bg-gray-100 text-[10px] font-black uppercase">
+              {/* Top Header Row - Responsive Columns */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 border-b-2 border-black bg-gray-100 text-[10px] font-black uppercase text-slate-900">
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Datum:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Datum:</span>
                   {isEditing ? (
                     <input 
                       type="date" 
                       value={localSession.date}
                       onChange={(e) => updateField('date', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{new Date(localSession.date).toLocaleDateString('de-DE')}</div>
+                    <div className="font-bold text-xs text-slate-900">{new Date(localSession.date).toLocaleDateString('de-DE')}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Wochentag:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Wochentag:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.weekday}
                       onChange={(e) => updateField('weekday', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.weekday}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.weekday}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Gegner:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Gegner:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.opponent || ''}
                       onChange={(e) => updateField('opponent', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.opponent || '-'}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.opponent || '-'}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Ort:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Ort:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.location || ''}
                       onChange={(e) => updateField('location', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.location || '-'}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.location || '-'}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">T.-Gruppe:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">T.-Gruppe:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.group}
                       onChange={(e) => updateField('group', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.group}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.group}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Belastung:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Belastung:</span>
                   {isEditing ? (
                     <select 
                       value={localSession.load}
                       onChange={(e) => updateField('load', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     >
-                      <option>Gering</option>
-                      <option>Mittel</option>
-                      <option>Hoch</option>
-                      <option>Maximal</option>
+                      <option className="bg-white text-slate-900">Gering</option>
+                      <option className="bg-white text-slate-900">Mittel</option>
+                      <option className="bg-white text-slate-900">Hoch</option>
+                      <option className="bg-white text-slate-900">Maximal</option>
                     </select>
                   ) : (
-                    <div className="font-bold text-xs">{localSession.load}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.load}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Dauer:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Dauer:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.duration}
                       onChange={(e) => updateField('duration', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.duration}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.duration}</div>
                   )}
                 </div>
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Intensität:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Intensität:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.intensity}
                       onChange={(e) => updateField('intensity', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.intensity}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.intensity}</div>
                   )}
                 </div>
                 <div className="p-2 flex justify-end items-center">
@@ -1931,55 +2054,55 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               </div>
 
               {/* Focus Row */}
-              <div className="grid grid-cols-2 border-b-2 border-black text-[10px] font-black uppercase">
+              <div className="grid grid-cols-2 border-b-2 border-black text-[10px] font-black uppercase text-slate-900">
                 <div className="p-2 border-r-2 border-black">
-                  <span className="opacity-60">Wochenschwerpunkt:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Wochenschwerpunkt:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.weeklyFocus}
                       onChange={(e) => updateField('weeklyFocus', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.weeklyFocus || '-'}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.weeklyFocus || '-'}</div>
                   )}
                 </div>
                 <div className="p-2">
-                  <span className="opacity-60">Schwerpunkt Einheit:</span>
+                  <span className="text-slate-600 font-bold block mb-0.5">Schwerpunkt Einheit:</span>
                   {isEditing ? (
                     <input 
                       type="text" 
                       value={localSession.sessionFocus}
                       onChange={(e) => updateField('sessionFocus', e.target.value)}
-                      className="w-full bg-transparent font-bold text-xs outline-none"
+                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
-                    <div className="font-bold text-xs">{localSession.sessionFocus || '-'}</div>
+                    <div className="font-bold text-xs text-slate-900">{localSession.sessionFocus || '-'}</div>
                   )}
                 </div>
               </div>
 
               {/* Trainer Row */}
-              <div className="flex justify-end border-b-2 border-black bg-gray-50 text-[10px] font-black uppercase p-2">
-                <span className="opacity-60 mr-2">Trainer:</span>
+              <div className="flex justify-end border-b-2 border-black bg-gray-50 text-[10px] font-black uppercase p-2 text-slate-900">
+                <span className="text-slate-600 font-bold mr-2">Trainer:</span>
                 {isEditing ? (
                   <input 
                     type="text" 
                     value={localSession.trainer}
                     onChange={(e) => updateField('trainer', e.target.value)}
-                    className="bg-transparent font-bold text-xs outline-none text-right"
+                    className="bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none text-right"
                     placeholder="Amin, marcel"
                   />
                 ) : (
-                  <div className="font-bold text-xs">{localSession.trainer || 'Amin, marcel'}</div>
+                  <div className="font-bold text-xs text-slate-900">{localSession.trainer || 'Amin, marcel'}</div>
                 )}
               </div>
 
               {/* Main Content Area - Split Layout */}
-              <div className="flex flex-1 min-h-[600px] print:h-auto print:min-h-0 print:overflow-visible">
+              <div className="flex flex-col lg:flex-row flex-1 min-h-[600px] print:h-auto print:min-h-0 print:overflow-visible">
                 {/* Left Column: Player List */}
-                <div className="w-1/3 border-r-2 border-black flex flex-col bg-gray-50 print:bg-white print:overflow-visible print:h-auto">
+                <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col bg-gray-50 print:bg-white print:overflow-visible print:h-auto">
                   <div className="bg-black text-white p-2 shrink-0 flex justify-between items-center">
                     <h3 className="font-black uppercase tracking-widest text-[10px]">Anwesenheit</h3>
                     <div className="flex items-center gap-2">
@@ -2003,7 +2126,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     ) : (
                       (localSession.players || []).map((p, idx) => {
                         if (!p) return null;
-                        const fullPlayer = players.find(fp => `${fp.lastName} ${fp.firstName}` === p.name);
+                        const fullPlayer = players.find(fp => fp.lastName === p.name || `${fp.lastName} ${fp.firstName}` === p.name);
                         const cat = p.category || fullPlayer?.category || 'player';
                         const isStaff = !isPlayer({ category: cat });
                         
@@ -2027,15 +2150,15 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                               <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(cat)}`} />
                               
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <span className={`w-7 h-7 flex items-center justify-center text-[10px] font-black border border-black shrink-0 transition-transform group-hover:scale-105 bg-white ${getCategoryBorderColor(cat)} border-2`}>
+                                  <span className={`w-7 h-7 flex items-center justify-center text-[10px] font-black border border-black shrink-0 transition-transform group-hover:scale-105 bg-white text-black ${getCategoryBorderColor(cat)} border-2`}>
                                     {(normalizeCategory(cat) === 'player') ? `#${fullPlayer?.number || '?'}` : getCategoryIcon(cat)}
                                   </span>
                                   <div className="text-left min-w-0 flex-1 flex items-center gap-2">
-                                    <p className="font-black uppercase text-[9px] leading-tight truncate flex-1">
+                                    <p className="font-black uppercase text-[11px] text-black leading-tight truncate flex-1">
                                       {p.name}
                                     </p>
-                                    <div className="w-14 border-l border-black/10 pl-2 shrink-0">
-                                      <p className="text-[7px] font-black uppercase text-gray-400 truncate text-center leading-none">
+                                    <div className="w-14 border-l border-black/20 pl-2 shrink-0">
+                                      <p className="text-[9px] font-black uppercase text-black truncate text-center leading-none">
                                         {p.position}
                                       </p>
                                     </div>
@@ -2057,14 +2180,14 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                   onChange={(e) => updatePlayerStatus(idx, e.target.value)}
                                   className={`
                                     min-w-[40px] px-1 py-0.5 border-2 border-black text-[10px] font-black uppercase focus:outline-none transition-colors
-                                    ${p.status === '1' ? 'bg-green-100 text-green-700' : ''}
-                                    ${p.status === 'A' ? 'bg-yellow-100 text-yellow-700' : ''}
-                                    ${p.status === 'B' ? 'bg-red-100 text-red-700' : ''}
+                                    ${p.status === '1' ? 'bg-green-100 text-green-800' : ''}
+                                    ${p.status === 'A' ? 'bg-yellow-100 text-yellow-800' : ''}
+                                    ${p.status === 'B' ? 'bg-red-100 text-red-800' : ''}
                                   `}
                                 >
-                                  <option value="1">1</option>
-                                  <option value="A">A</option>
-                                  <option value="B">B</option>
+                                  <option value="1" className="bg-white text-slate-900">1</option>
+                                  <option value="A" className="bg-white text-slate-900">A</option>
+                                  <option value="B" className="bg-white text-slate-900">B</option>
                                 </select>
                               ) : (
                                 <div className={`
@@ -2086,41 +2209,41 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
                   {/* Player Counts Summary */}
                   {(localSession.players || []).length > 0 && (
-                    <div className="p-2 border-t-2 border-black bg-gray-100 flex justify-between items-center text-[9px] font-black uppercase shrink-0">
+                    <div className="p-2 border-t-2 border-black bg-gray-100 flex justify-between items-center text-[9px] font-black uppercase text-slate-900 shrink-0">
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1">
-                          <span className="opacity-60">Spieler:</span>
-                          <span>{(localSession.players || []).filter(p => p && normalizeCategory(p.category) === 'player' && (p.position || '').toUpperCase() !== 'TW' && p.status !== 'B' && p.status !== 'A').length}</span>
+                          <span className="text-slate-600 font-bold">Spieler:</span>
+                          <span className="text-slate-900 font-black">{(localSession.players || []).filter(p => p && normalizeCategory(p.category) === 'player' && (p.position || '').toUpperCase() !== 'TW' && p.status !== 'B' && p.status !== 'A').length}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="opacity-60">TW:</span>
-                          <span className="text-blue-600">{(localSession.players || []).filter(p => p && normalizeCategory(p.category) === 'player' && (p.position || '').toUpperCase() === 'TW' && p.status !== 'B' && p.status !== 'A').length}</span>
+                          <span className="text-slate-600 font-bold">TW:</span>
+                          <span className="text-blue-700 font-black">{(localSession.players || []).filter(p => p && normalizeCategory(p.category) === 'player' && (p.position || '').toUpperCase() === 'TW' && p.status !== 'B' && p.status !== 'A').length}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="opacity-60">Staff:</span>
-                          <span>{(localSession.players || []).filter(p => p && normalizeCategory(p.category) !== 'player' && p.status !== 'B' && p.status !== 'A').length}</span>
+                          <span className="text-slate-600 font-bold">Staff:</span>
+                          <span className="text-slate-900 font-black">{(localSession.players || []).filter(p => p && normalizeCategory(p.category) !== 'player' && p.status !== 'B' && p.status !== 'A').length}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="opacity-60">Gesamt (Sp.):</span>
-                        <span className="text-[#C00000] underline">{(localSession.players || []).filter(p => p && normalizeCategory(p.category) === 'player' && p.status !== 'B' && p.status !== 'A').length}</span>
+                        <span className="text-slate-600 font-bold">Gesamt (Sp.):</span>
+                        <span className="text-[#C00000] font-black underline">{(localSession.players || []).filter(p => p && normalizeCategory(p.category) === 'player' && p.status !== 'B' && p.status !== 'A').length}</span>
                       </div>
                     </div>
                   )}
                   
                   {/* Legend */}
-                  <div className="p-2 border-t-2 border-black bg-white text-[8px] font-black uppercase space-y-1">
+                  <div className="p-2 border-t-2 border-black bg-white text-[9px] font-black uppercase text-slate-900 space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-green-500 border border-black flex items-center justify-center text-white">1</div>
-                      <span>Training</span>
+                      <div className="w-4 h-4 bg-green-500 border border-black flex items-center justify-center text-white font-bold">1</div>
+                      <span className="text-slate-900">Training</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-yellow-400 border border-black flex items-center justify-center">A</div>
-                      <span>Aufbau</span>
+                      <div className="w-4 h-4 bg-yellow-400 border border-black flex items-center justify-center text-slate-900 font-bold">A</div>
+                      <span className="text-slate-900">Aufbau</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-red-600 border border-black flex items-center justify-center text-white">B</div>
-                      <span>Verletzt/Krank/Entschuldigt</span>
+                      <div className="w-4 h-4 bg-red-600 border border-black flex items-center justify-center text-white font-bold">B</div>
+                      <span className="text-slate-900">Verletzt/Krank/Entschuldigt</span>
                     </div>
                   </div>
                 </div>
@@ -2128,43 +2251,43 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                 {/* Right Column: Content Sections */}
                 <div className="flex-1 flex flex-col print:overflow-visible print:h-auto">
                   {/* Intensity Bar */}
-                  <div className="bg-yellow-400 border-b-2 border-black p-2 flex justify-center items-center gap-4 text-[10px] font-black uppercase">
-                    <span>Intensität:</span>
+                  <div className="bg-yellow-400 text-slate-900 border-b-2 border-black p-2 flex justify-center items-center gap-4 text-[10px] font-black uppercase">
+                    <span className="text-slate-900 font-black">Intensität:</span>
                     {isEditing ? (
                       <input 
                         type="text" 
                         value={localSession.intensity}
                         onChange={(e) => updateField('intensity', e.target.value)}
-                        className="bg-transparent border-b border-black font-black text-xs outline-none text-center"
+                        className="bg-white text-slate-900 border border-black font-black text-xs outline-none text-center px-2 py-0.5"
                         placeholder="Mittel-Hoch"
                       />
                     ) : (
-                      <span className="font-black text-xs">{localSession.intensity || 'Mittel-Hoch'}</span>
+                      <span className="font-black text-xs text-slate-900">{localSession.intensity || 'Mittel-Hoch'}</span>
                     )}
                   </div>
 
                   {/* Content Sections */}
-                  <div className="flex-1 flex flex-col print:overflow-visible print:h-auto">
+                  <div className="flex-1 flex flex-col print:overflow-visible print:h-auto text-slate-900">
                     <div className="flex-1 border-b-2 border-black flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
-                        <span>Erwärmung:</span>
+                      <div className="bg-gray-100 text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
+                        <span className="text-slate-900 font-black">Erwärmung:</span>
                         <div className="flex items-center gap-1">
-                          <Clock size={10} />
+                          <Clock size={10} className="text-slate-900" />
                           {isEditing ? (
                             <input 
                               type="text" 
                               value={localSession.content.warmupDuration || ''}
                               onChange={(e) => updateContent('warmupDuration', e.target.value)}
-                              className="w-12 bg-white border border-black px-1 text-[9px] outline-none"
+                              className="w-12 bg-white text-slate-900 border border-black px-1 text-[9px] font-bold outline-none"
                               placeholder="min"
                             />
                           ) : (
-                            <span className="bg-white border border-black px-1 text-[9px]">{localSession.content.warmupDuration || '-'}</span>
+                            <span className="bg-white text-slate-900 font-bold border border-black px-1 text-[9px]">{localSession.content.warmupDuration || '-'}</span>
                           )}
                         </div>
                       </div>
-                      <div className="bg-white p-1 border-b border-black text-[9px] font-black uppercase text-center">Aktivierung</div>
-                      <div className="flex-1 flex min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
+                      <div className="bg-white text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase text-center">Aktivierung</div>
+                      <div className="flex-1 flex flex-col sm:flex-row min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
                         {isEditing ? (
                           <textarea 
                             value={localSession.content.warmup || ''}
@@ -2173,12 +2296,12 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                             onDrop={(e) => handleTextAreaDrop(e, resolveImageField('warmup'))}
                             onDragOver={(e) => e.preventDefault()}
                             placeholder="Text hier einfügen... (Bilder können auch einfach mit Strg+V oder Drag & Drop eingefügt werden)"
-                            className="flex-1 p-4 font-bold text-xs outline-none resize-none"
+                            className="flex-1 p-4 font-bold text-xs text-slate-900 bg-white border border-slate-300 rounded outline-none resize-none w-full placeholder:text-slate-400"
                           />
                         ) : (
-                          <div className="flex-1 p-4 font-bold text-sm whitespace-pre-wrap">{localSession.content.warmup}</div>
+                          <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.warmup}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-l border-black bg-gray-50 min-w-[120px] max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.warmupImages || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2210,24 +2333,24 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     </div>
 
                     <div className="flex-1 border-b-2 border-black flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
-                        <span>Hauptteil 1:</span>
+                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
+                        <span className="text-slate-900 font-black">Hauptteil 1:</span>
                         <div className="flex items-center gap-1">
-                          <Clock size={10} />
+                          <Clock size={10} className="text-slate-900" />
                           {isEditing ? (
                             <input 
                               type="text" 
                               value={localSession.content.main1Duration || ''}
                               onChange={(e) => updateContent('main1Duration', e.target.value)}
-                              className="w-12 bg-white border border-black px-1 text-[9px] outline-none"
+                              className="w-12 bg-white text-slate-900 border border-black px-1 text-[9px] font-bold outline-none"
                               placeholder="min"
                             />
                           ) : (
-                            <span className="bg-white border border-black px-1 text-[9px]">{localSession.content.main1Duration || '-'}</span>
+                            <span className="bg-white text-slate-900 font-bold border border-black px-1 text-[9px]">{localSession.content.main1Duration || '-'}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex-1 flex min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
+                      <div className="flex-1 flex flex-col sm:flex-row min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
                         {isEditing ? (
                           <textarea 
                             value={localSession.content.main1 || ''}
@@ -2236,12 +2359,12 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                             onDrop={(e) => handleTextAreaDrop(e, resolveImageField('main1'))}
                             onDragOver={(e) => e.preventDefault()}
                             placeholder="Text hier einfügen... (Bilder können auch einfach mit Strg+V oder Drag & Drop eingefügt werden)"
-                            className="flex-1 p-4 font-bold text-xs outline-none resize-none"
+                            className="flex-1 p-4 font-bold text-xs text-slate-900 bg-white border border-slate-300 rounded outline-none resize-none w-full placeholder:text-slate-400"
                           />
                         ) : (
-                          <div className="flex-1 p-4 font-bold text-sm whitespace-pre-wrap">{localSession.content.main1}</div>
+                          <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.main1}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-l border-black bg-gray-50 min-w-[120px] max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.main1Images || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2273,24 +2396,24 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     </div>
 
                     <div className="flex-1 border-b-2 border-black flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
-                        <span>SP Hauptteil 2:</span>
+                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
+                        <span className="text-slate-900 font-black">SP Hauptteil 2:</span>
                         <div className="flex items-center gap-1">
-                          <Clock size={10} />
+                          <Clock size={10} className="text-slate-900" />
                           {isEditing ? (
                             <input 
                               type="text" 
                               value={localSession.content.main2Duration || ''}
                               onChange={(e) => updateContent('main2Duration', e.target.value)}
-                              className="w-12 bg-white border border-black px-1 text-[9px] outline-none"
+                              className="w-12 bg-white text-slate-900 border border-black px-1 text-[9px] font-bold outline-none"
                               placeholder="min"
                             />
                           ) : (
-                            <span className="bg-white border border-black px-1 text-[9px]">{localSession.content.main2Duration || '-'}</span>
+                            <span className="bg-white text-slate-900 font-bold border border-black px-1 text-[9px]">{localSession.content.main2Duration || '-'}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex-1 flex min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
+                      <div className="flex-1 flex flex-col sm:flex-row min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
                         {isEditing ? (
                           <textarea 
                             value={localSession.content.main2 || ''}
@@ -2299,12 +2422,12 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                             onDrop={(e) => handleTextAreaDrop(e, resolveImageField('main2'))}
                             onDragOver={(e) => e.preventDefault()}
                             placeholder="Text hier einfügen... (Bilder können auch einfach mit Strg+V oder Drag & Drop eingefügt werden)"
-                            className="flex-1 p-4 font-bold text-xs outline-none resize-none"
+                            className="flex-1 p-4 font-bold text-xs text-slate-900 bg-white border border-slate-300 rounded outline-none resize-none w-full placeholder:text-slate-400"
                           />
                         ) : (
-                          <div className="flex-1 p-4 font-bold text-sm whitespace-pre-wrap">{localSession.content.main2}</div>
+                          <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.main2}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-l border-black bg-gray-50 min-w-[120px] max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.main2Images || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2336,25 +2459,25 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     </div>
 
                     <div className="flex-1 flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
-                        <span>Schluss:</span>
+                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
+                        <span className="text-slate-900 font-black">Schluss:</span>
                         <div className="flex items-center gap-1">
-                          <Clock size={10} />
+                          <Clock size={10} className="text-slate-900" />
                           {isEditing ? (
                             <input 
                               type="text" 
                               value={localSession.content.closingDuration || ''}
                               onChange={(e) => updateContent('closingDuration', e.target.value)}
-                              className="w-12 bg-white border border-black px-1 text-[9px] outline-none"
+                              className="w-12 bg-white text-slate-900 border border-black px-1 text-[9px] font-bold outline-none"
                               placeholder="min"
                             />
                           ) : (
-                            <span className="bg-white border border-black px-1 text-[9px]">{localSession.content.closingDuration || '-'}</span>
+                            <span className="bg-white text-slate-900 font-bold border border-black px-1 text-[9px]">{localSession.content.closingDuration || '-'}</span>
                           )}
                         </div>
                       </div>
-                      <div className="bg-white p-1 border-b border-black text-[9px] font-black uppercase text-center">Schluss</div>
-                      <div className="flex-1 flex min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
+                      <div className="bg-white text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase text-center">Schluss</div>
+                      <div className="flex-1 flex flex-col sm:flex-row min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
                         {isEditing ? (
                           <textarea 
                             value={localSession.content.closing || ''}
@@ -2363,12 +2486,12 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                             onDrop={(e) => handleTextAreaDrop(e, resolveImageField('closing'))}
                             onDragOver={(e) => e.preventDefault()}
                             placeholder="Text hier einfügen... (Bilder können auch einfach mit Strg+V oder Drag & Drop eingefügt werden)"
-                            className="flex-1 p-4 font-bold text-xs outline-none resize-none"
+                            className="flex-1 p-4 font-bold text-xs text-slate-900 bg-white border border-slate-300 rounded outline-none resize-none w-full placeholder:text-slate-400"
                           />
                         ) : (
-                          <div className="flex-1 p-4 font-bold text-sm whitespace-pre-wrap">{localSession.content.closing}</div>
+                          <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.closing}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-l border-black bg-gray-50 min-w-[120px] max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.closingImages || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2504,6 +2627,18 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       />
                     )}
                   </div>
+                </div>
+
+                {/* Training Session Video Section */}
+                <div className="space-y-2 mt-6 print:hidden">
+                  <VideoSection 
+                    title="TRAININGS- & ÜBUNGS-VIDEOS"
+                    subtitle="Übungsausführungen, Taktik-Videos und Trainingsanalysen"
+                    clips={localSession.videoClips || []}
+                    onUpdateClips={(clips) => updateField('videoClips', clips)}
+                    players={players}
+                    defaultCategory="Training"
+                  />
                 </div>
               </div>
 
@@ -2660,8 +2795,8 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {sortPlayers(players).map((p) => {
-                  const name = `${p.lastName} ${p.firstName}`;
-                  const isAlreadyIn = (localSession.players || []).some(lp => lp && lp.name === name);
+                  const name = p.lastName;
+                  const isAlreadyIn = (localSession.players || []).some(lp => lp && (lp.name === name || lp.name === `${p.lastName} ${p.firstName}`));
                   
                   return (
                     <button

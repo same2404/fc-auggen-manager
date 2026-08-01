@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Player, Match, MatchMinuteRecord, Opponent } from '../../types';
 import { isPlayer } from '../../utils/playerSorting';
-import { Calendar, MapPin, Clock, Save, ChevronRight, ChevronLeft, Timer, Users, Trash2, Edit2, Plus, X, ChevronDown, LayoutGrid, List, ExternalLink, Trophy, Target } from 'lucide-react';
+import { Calendar, MapPin, Clock, Save, ChevronRight, ChevronLeft, Timer, Users, Trash2, Edit2, Plus, X, ChevronDown, LayoutGrid, List, ExternalLink, Trophy, Target, RotateCcw, Download, Award, FileText, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface MatchPlanningViewProps {
@@ -15,6 +15,7 @@ interface MatchPlanningViewProps {
   onSaveOpponent: (opponent: Opponent) => Promise<void>;
   onDeleteOpponent: (id: string) => Promise<void>;
   onWipeAllMatches?: () => Promise<void>;
+  onRestoreMatches?: () => Promise<void>;
   title?: string;
 }
 
@@ -45,6 +46,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
   onSaveOpponent,
   onDeleteOpponent,
   onWipeAllMatches,
+  onRestoreMatches,
   title = "Pflichtspiel-Planung"
 }) => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | number>(matches[0]?.id || '');
@@ -59,14 +61,16 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
     type = "text", 
     className = "", 
     isTextArea = false,
-    listId = ""
+    listId = "",
+    placeholder = ""
   }: { 
     value: string, 
     onSave: (val: string) => void, 
     type?: string, 
     className?: string,
     isTextArea?: boolean,
-    listId?: string
+    listId?: string,
+    placeholder?: string
   }) => {
     const [localValue, setLocalValue] = useState(value);
     
@@ -77,6 +81,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
     if (isTextArea) {
       return (
         <textarea 
+          placeholder={placeholder}
           className={className}
           value={localValue}
           onChange={(e) => setLocalValue(e.target.value)}
@@ -91,6 +96,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
       <input 
         type={type}
         list={listId}
+        placeholder={placeholder}
         className={className}
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
@@ -120,15 +126,136 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
     return d.toLocaleDateString('de-DE');
   };
 
+  const parseMatchDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('.')) {
+      const parts = dateStr.split('.');
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+    return dateStr;
+  };
+
   const selectedMatch = useMemo(() => 
     matches.find(m => m.id === selectedMatchId),
     [matches, selectedMatchId]
   );
 
-  const sortedMatches = useMemo(() => 
-    [...matches].sort((a, b) => (Number(a.index) || 0) - (Number(b.index) || 0)),
-    [matches]
-  );
+  const sortedMatches = useMemo(() => {
+    return [...matches].sort((a, b) => {
+      const dateA = parseMatchDate(a.date);
+      const dateB = parseMatchDate(b.date);
+      if (dateA && dateB && dateA !== dateB) {
+        return dateA.localeCompare(dateB);
+      }
+      if (dateA && !dateB) return -1;
+      if (!dateA && dateB) return 1;
+      return (Number(a.index) || 0) - (Number(b.index) || 0);
+    });
+  }, [matches]);
+
+  const matchStats = useMemo(() => {
+    let played = 0;
+    let wins = 0;
+    let draws = 0;
+    let losses = 0;
+    let goalsFor = 0;
+    let goalsAgainst = 0;
+    const scorerMap: Record<string, number> = {};
+
+    matches.forEach(m => {
+      if (m.result && m.result.includes(':')) {
+        played++;
+        const parts = m.result.split(':').map(s => parseInt(s.trim(), 10));
+        if (!isNaN(parts[0]) && !isNaN(parts[1])) {
+          const teamGoals = m.isHome ? parts[0] : parts[1];
+          const oppGoals = m.isHome ? parts[1] : parts[0];
+          goalsFor += teamGoals;
+          goalsAgainst += oppGoals;
+
+          if (teamGoals > oppGoals) wins++;
+          else if (teamGoals === oppGoals) draws++;
+          else losses++;
+        }
+      }
+
+      if (m.scorers) {
+        const tokens = m.scorers.split(/[,;\n]/);
+        tokens.forEach(tok => {
+          const cleaned = tok.trim();
+          if (cleaned) {
+            const countMatch = cleaned.match(/(.*?)\((\d+)\)/);
+            if (countMatch) {
+              const name = countMatch[1].trim();
+              const cnt = parseInt(countMatch[2], 10) || 1;
+              scorerMap[name] = (scorerMap[name] || 0) + cnt;
+            } else {
+              scorerMap[cleaned] = (scorerMap[cleaned] || 0) + 1;
+            }
+          }
+        });
+      }
+    });
+
+    const topScorers = Object.entries(scorerMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4);
+
+    return {
+      total: matches.length,
+      played,
+      wins,
+      draws,
+      losses,
+      goalsFor,
+      goalsAgainst,
+      diff: goalsFor - goalsAgainst,
+      topScorers
+    };
+  }, [matches]);
+
+  const handleExportICS = (matchToExport?: Match) => {
+    const listToExport = matchToExport ? [matchToExport] : sortedMatches;
+    if (listToExport.length === 0) return;
+
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//FC Auggen Match Plan//NONSGML v1.0//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      `X-WR-CALNAME:${title}`
+    ];
+
+    listToExport.forEach(m => {
+      const matchDateStr = parseMatchDate(m.date);
+      const matchDate = matchDateStr ? new Date(matchDateStr + 'T' + (m.kickOff || '15:00')) : new Date();
+      const endDate = new Date(matchDate.getTime() + 2 * 60 * 60 * 1000);
+      const formatDateToICS = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:match-${m.id}-${Date.now()}@fc-auggen`,
+        `DTSTAMP:${formatDateToICS(new Date())}`,
+        `DTSTART:${formatDateToICS(matchDate)}`,
+        `DTEND:${formatDateToICS(endDate)}`,
+        `SUMMARY:[${m.isHome ? 'Heim' : 'Auswärts'}] FC Auggen vs. ${m.opponent}`,
+        `LOCATION:${m.location || 'Auggen'}`,
+        `DESCRIPTION:Anstoß: ${m.kickOff || 'TBD'} Uhr\\nTreffpunkt: ${m.meetingTime || 'TBD'} Uhr\\nErgebnis: ${m.result || 'Noch nicht gespielt'}\\nTorschützen: ${m.scorers || '-'}\\nNotizen: ${m.notes || '-'}`,
+        'END:VEVENT'
+      );
+    });
+
+    lines.push('END:VCALENDAR');
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = matchToExport ? `spiel_${matchToExport.opponent.toLowerCase().replace(/[^a-z0-9]/g, '_')}.ics` : `${title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleMatchChange = (field: keyof Match, value: any) => {
     if (!selectedMatch) return;
@@ -273,6 +400,15 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
         </div>
 
         <div className="flex gap-2">
+          {onRestoreMatches && (
+            <button 
+              onClick={onRestoreMatches}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-emerald-800 px-3 py-2 font-black uppercase text-xs transition-colors flex items-center gap-2 shadow-sm"
+              title="Alle 32 Pflichtspiele der Saison 2026/2027 wiederherstellen"
+            >
+              <RotateCcw size={14} /> Pflichtspiele wiederherstellen
+            </button>
+          )}
           {onWipeAllMatches && (
             confirmWipe ? (
               <div className="flex gap-1 items-center bg-red-50 p-1 border-2 border-[#C00000] rounded">
@@ -304,6 +440,13 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             )
           )}
           <button 
+            onClick={() => handleExportICS()}
+            className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 font-black uppercase text-xs transition-colors border-2 border-black flex items-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            title="Spieltermine als ICS-Kalenderdatei exportieren"
+          >
+            <Download size={14} /> Kalender (.ics)
+          </button>
+          <button 
             onClick={handleAddMatch}
             className="bg-black text-white px-4 py-2 font-black uppercase text-xs hover:bg-[#C00000] transition-colors border-2 border-black flex items-center gap-2"
           >
@@ -315,6 +458,50 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
           >
             <Users size={14} /> Gegner verwalten
           </button>
+        </div>
+      </div>
+
+      {/* Aggregated Statistics Summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-black uppercase text-gray-500">Spiele & Bilanz</div>
+            <div className="text-2xl font-black">{matchStats.played} / {matchStats.total}</div>
+            <div className="text-[10px] font-bold text-emerald-600 uppercase">
+              {matchStats.wins}S - {matchStats.draws}U - {matchStats.losses}N
+            </div>
+          </div>
+          <Trophy className="text-amber-500 h-8 w-8 opacity-80" />
+        </div>
+
+        <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-black uppercase text-gray-500">Torverhältnis</div>
+            <div className="text-2xl font-black">{matchStats.goalsFor} : {matchStats.goalsAgainst}</div>
+            <div className="text-[10px] font-bold text-blue-600 uppercase">
+              Diff: {matchStats.diff > 0 ? `+${matchStats.diff}` : matchStats.diff}
+            </div>
+          </div>
+          <Target className="text-[#C00000] h-8 w-8 opacity-80" />
+        </div>
+
+        <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between col-span-2 sm:col-span-2">
+          <div className="w-full">
+            <div className="text-[10px] font-black uppercase text-gray-500 mb-1 flex items-center gap-1">
+              <Award size={12} className="text-amber-500" /> Top-Torschützen ({title.includes('Test') ? 'Testspiele' : 'Pflichtspiele'})
+            </div>
+            {matchStats.topScorers.length > 0 ? (
+              <div className="flex flex-wrap gap-2 text-xs">
+                {matchStats.topScorers.map(([name, goals]) => (
+                  <span key={name} className="bg-black text-white px-2.5 py-1 rounded font-black text-[10px] uppercase flex items-center gap-1">
+                    {name}: <span className="text-amber-400 font-extrabold">{goals} Tore</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-xs text-gray-400 italic">Noch keine Torschützen erfasst</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -427,10 +614,33 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                        <MapPin size={14} className="text-[#C00000]" />
                       <span className="text-[10px] font-black uppercase truncate">{match.location}</span>
                     </div>
+
+                    {match.result && (
+                      <div className="col-span-2 bg-black/5 p-2 rounded border border-black/10 flex justify-between items-center text-[11px] font-black">
+                        <span className="text-gray-500 text-[9px] uppercase">Ergebnis:</span>
+                        <span className="bg-[#C00000] text-white px-2 py-0.5 rounded text-xs">{match.result}</span>
+                      </div>
+                    )}
+
+                    {match.scorers && (
+                      <div className="col-span-2 text-[10px] bg-amber-50 p-2 rounded border border-amber-200">
+                        <span className="font-black text-amber-800 uppercase block mb-0.5">⚽ Torschützen:</span>
+                        <span className="font-bold text-gray-800">{match.scorers}</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="px-4 pb-4 flex justify-between items-center text-[8px] font-black uppercase">
-                    <div className="opacity-40">INDEX: {match.index}</div>
+                  <div className="px-4 pb-4 flex justify-between items-center text-[8px] font-black uppercase border-t border-black/5 pt-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExportICS(match);
+                      }}
+                      className="text-sky-700 hover:text-sky-900 hover:underline flex items-center gap-1"
+                      title="Termin im Kalender speichern"
+                    >
+                      <Download size={10} /> ICS Kalender
+                    </button>
                     <div className="group-hover:text-[#C00000] transition-colors flex items-center gap-1">
                       Details <ExternalLink size={10} />
                     </div>
@@ -456,11 +666,13 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                     <th className="p-3 border border-white/10 w-32">Datum</th>
                     <th className="p-3 border border-white/10 w-20">Anstoß</th>
                     <th className="p-3 border border-white/10 w-20 text-center">H/A</th>
-                    <th className="p-3 border border-white/10 min-w-[200px]">Gegner</th>
-                    <th className="p-3 border border-white/10 min-w-[150px]">Ort</th>
+                    <th className="p-3 border border-white/10 min-w-[180px]">Gegner</th>
+                    <th className="p-3 border border-white/10 min-w-[130px]">Ort</th>
+                    <th className="p-3 border border-white/10 w-24 text-center">Ergebnis</th>
+                    <th className="p-3 border border-white/10 min-w-[160px]">Torschützen</th>
                     <th className="p-3 border border-white/10 w-20 text-center">Treff</th>
                     <th className="p-3 border border-white/10 w-20 text-center">Ende</th>
-                    <th className="p-3 border border-white/10 min-w-[200px]">Notizen</th>
+                    <th className="p-3 border border-white/10 min-w-[180px]">Notizen</th>
                     <th className="p-3 border border-white/10 w-12 text-center"></th>
                   </tr>
                 </thead>
@@ -511,6 +723,22 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                           className="w-full bg-transparent focus:outline-none font-bold text-[10px] uppercase opacity-70"
                           value={match.location || ''}
                           onSave={(val) => onSaveMatch({ ...match, location: val })}
+                        />
+                      </td>
+                      <td className="p-3 border-r border-black/10 text-center">
+                        <EditableField 
+                          placeholder="z.B. 3:1"
+                          className="w-full bg-transparent focus:outline-none font-black text-xs text-[#C00000] text-center uppercase"
+                          value={match.result || ''}
+                          onSave={(val) => onSaveMatch({ ...match, result: val })}
+                        />
+                      </td>
+                      <td className="p-3 border-r border-black/10">
+                        <EditableField 
+                          placeholder="Torschützen..."
+                          className="w-full bg-transparent focus:outline-none font-bold text-[10px] text-slate-800"
+                          value={match.scorers || ''}
+                          onSave={(val) => onSaveMatch({ ...match, scorers: val })}
                         />
                       </td>
                       <td className="p-3 border-r border-black/10 text-center">
@@ -584,12 +812,21 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-xs font-black uppercase opacity-60">Gegner</label>
-                    <button 
-                      onClick={() => setShowDeleteMatchConfirm(true)}
-                      className="text-[10px] font-black uppercase text-red-600 hover:underline"
-                    >
-                      Spiel löschen
-                    </button>
+                    <div className="flex gap-3 items-center">
+                      <button 
+                        onClick={() => handleExportICS(selectedMatch)}
+                        className="text-[10px] font-black uppercase text-sky-700 hover:underline flex items-center gap-1"
+                        title="Diesen Spieltermin als ICS-Kalenderdatei herunterladen"
+                      >
+                        <Download size={12} /> ICS Export
+                      </button>
+                      <button 
+                        onClick={() => setShowDeleteMatchConfirm(true)}
+                        className="text-[10px] font-black uppercase text-red-600 hover:underline"
+                      >
+                        Spiel löschen
+                      </button>
+                    </div>
                   </div>
                   <div className="relative group">
                     <EditableField 
@@ -605,7 +842,19 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                     </datalist>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1 text-[#C00000]">
+                      <Trophy className="h-3 w-3" /> Ergebnis / Endstand
+                    </label>
+                    <EditableField 
+                      placeholder="z.B. 3:1"
+                      className="w-full border-2 border-black p-2 font-black text-sm bg-red-50 focus:bg-white"
+                      value={selectedMatch.result || ''} 
+                      onSave={(val) => handleMatchChange('result', val)}
+                    />
+                  </div>
                   <div>
                     <label className="text-xs font-black uppercase opacity-60">Heim/Auswärts</label>
                     <select 
@@ -617,6 +866,21 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                       <option value="Auswärts">Auswärts</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
+                    ⚽ Torschützen (Name, Min / Anzahl)
+                  </label>
+                  <EditableField 
+                    placeholder="z.B. J. Ehret (2), D. Valchuk (45')"
+                    className="w-full border-2 border-black p-2 font-bold bg-amber-50/50"
+                    value={selectedMatch.scorers || ''} 
+                    onSave={(val) => handleMatchChange('scorers', val)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-black uppercase opacity-60">Datum</label>
                     <EditableField 
@@ -626,16 +890,16 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                       onSave={(val) => handleMatchChange('date', val)}
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> Ort
-                  </label>
-                  <EditableField 
-                    className="w-full border-2 border-black p-2 font-bold"
-                    value={selectedMatch.location || ''} 
-                    onSave={(val) => handleMatchChange('location', val)}
-                  />
+                  <div>
+                    <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Ort
+                    </label>
+                    <EditableField 
+                      className="w-full border-2 border-black p-2 font-bold"
+                      value={selectedMatch.location || ''} 
+                      onSave={(val) => handleMatchChange('location', val)}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -704,7 +968,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                       return (
                         <tr key={player.id} className="hover:bg-gray-50 transition-colors">
                           <td className="p-4 font-black uppercase text-sm">
-                            {player.firstName} {player.lastName}
+                            {player.lastName}
                           </td>
                           <td className="p-4 text-xs font-bold opacity-60">
                             <div className="flex items-center gap-2">
@@ -943,7 +1207,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             >
               <h3 className="text-xl font-black uppercase mb-4">Zeiten zurücksetzen?</h3>
               <p className="font-bold text-sm mb-6">
-                Möchtest du wirklich alle Einsatzzeiten für <span className="text-[#C00000]">{playerToReset.firstName} {playerToReset.lastName}</span> über alle Spiele hinweg auf 0 setzen?
+                Möchtest du wirklich alle Einsatzzeiten für <span className="text-[#C00000]">{playerToReset.lastName}</span> über alle Spiele hinweg auf 0 setzen?
               </p>
               <div className="flex gap-4">
                 <button 

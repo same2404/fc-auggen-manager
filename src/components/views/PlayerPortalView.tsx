@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { Spieler } from '../../types';
 import { 
   User, 
@@ -27,7 +29,17 @@ import {
   ExternalLink,
   Cpu,
   FolderCheck,
-  Compass
+  Compass,
+  Map,
+  List,
+  Check,
+  AlertCircle,
+  X,
+  FileDown,
+  Printer,
+  Pause,
+  Play,
+  Video
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -37,8 +49,11 @@ import {
   Tooltip as ChartTooltip, 
   ResponsiveContainer, 
   Legend, 
-  Cell 
+  Cell,
+  CartesianGrid
 } from 'recharts';
+import { VideoSection } from '../VideoSection';
+import { VideoClip } from '../../types';
 
 interface PlayerPortalViewProps {
   players: Spieler[];
@@ -49,6 +64,12 @@ interface PlayerPortalViewProps {
   onUpdatePlayerStats?: (playerId: string, minutes: number, goals: number, assists: number) => Promise<void>;
   onUpdatePlayerDatenblatt?: (playerId: string, report: any) => Promise<void>;
   onUpdatePlayerTracker?: (playerId: string, trackerData: any) => Promise<void>;
+  onUpdatePlayerMovementPoints?: (playerId: string, points: any[]) => Promise<void>;
+  onUpdatePlayerVideos?: (playerId: string, videoClips: VideoClip[]) => Promise<void>;
+  competitiveMatches?: any[];
+  competitiveMinutes?: any[];
+  testMatches?: any[];
+  testMinutes?: any[];
 }
 
 export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
@@ -59,7 +80,13 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
   onUpdatePlayerDiagnostics,
   onUpdatePlayerStats,
   onUpdatePlayerDatenblatt,
-  onUpdatePlayerTracker
+  onUpdatePlayerTracker,
+  onUpdatePlayerMovementPoints,
+  onUpdatePlayerVideos,
+  competitiveMatches = [],
+  competitiveMinutes = [],
+  testMatches = [],
+  testMinutes = []
 }) => {
   const onlyPlayers = useMemo(() => {
     return players.filter(p => !p.category || p.category === 'player');
@@ -85,9 +112,54 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
   const [parsingSuccess, setParsingSuccess] = useState<string>('');
 
   // Player Data Sheet States
-  const [portalView, setPortalView] = useState<'form' | 'datenblatt' | 'vergleich' | 'tracker'>('tracker');
+  const [portalView, setPortalView] = useState<'form' | 'datenblatt' | 'vergleich' | 'tracker' | 'spielanalyse' | 'video'>('tracker');
   const [editDatenblatt, setEditDatenblatt] = useState<boolean>(false);
   const [editTracker, setEditTracker] = useState<boolean>(false);
+
+  // Spielanalyse & Bewegungsprofil States
+  const [selectedMovementMatchId, setSelectedMovementMatchId] = useState<string | number>('');
+  const [movementMinuteInput, setMovementMinuteInput] = useState<number>(45);
+  const [movementMinuteFilter, setMovementMinuteFilter] = useState<number>(90);
+  const [movementViewMode, setMovementViewMode] = useState<'combined' | 'heatmap' | 'vectors'>('combined');
+  const [selectedActionType, setSelectedActionType] = useState<'sprint' | 'run' | 'walk' | 'defensive'>('sprint');
+  const [isPlayingAnimation, setIsPlayingAnimation] = useState<boolean>(false);
+  const [animationMinute, setAnimationMinute] = useState<number>(1);
+
+  // Animation interval timer for movement trajectory playback
+  useEffect(() => {
+    let timer: any;
+    if (isPlayingAnimation) {
+      timer = setInterval(() => {
+        setAnimationMinute(prev => {
+          if (prev >= 90) {
+            setIsPlayingAnimation(false);
+            return 90;
+          }
+          return prev + 1;
+        });
+      }, 150);
+    }
+    return () => clearInterval(timer);
+  }, [isPlayingAnimation]);
+
+  // Derive all matches list
+  const allMatches = useMemo(() => {
+    const list: any[] = [];
+    competitiveMatches.forEach(m => list.push({ ...m, type: 'Pflichtspiel' }));
+    testMatches.forEach(m => list.push({ ...m, type: 'Testspiel' }));
+    return list.sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return b.date.localeCompare(a.date);
+    });
+  }, [competitiveMatches, testMatches]);
+
+  // Set default selected match if not set
+  useEffect(() => {
+    if (!selectedMovementMatchId && allMatches.length > 0) {
+      setSelectedMovementMatchId(allMatches[0].id);
+    }
+  }, [allMatches, selectedMovementMatchId]);
 
   // Tracker Specific State
   const [trackerFileName, setTrackerFileName] = useState<string>('');
@@ -144,23 +216,28 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
   const [naechsteMassnahmen, setNaechsteMassnahmen] = useState<string>('');
   const [generatingReport, setGeneratingReport] = useState<boolean>(false);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // PDF / Document Parsing & Export States
+  const portalFileInputRef = useRef<HTMLInputElement>(null);
+  const [portalDragActive, setPortalDragActive] = useState<boolean>(false);
+  const [parsedDocModalOpen, setParsedDocModalOpen] = useState<boolean>(false);
+  const [parsedDocData, setParsedDocData] = useState<any>(null);
+  const [parsedDocFileName, setParsedDocFileName] = useState<string>('');
+  const [isExportingDataSheetPDF, setIsExportingDataSheetPDF] = useState<boolean>(false);
 
+  const processPortalPDFFile = async (file: File) => {
+    if (!file) return;
     setParsingDoc(true);
     setParsingError('');
-    setParsingSuccess('');
+    setParsingSuccess(`Analysiere "${file.name}" per Gemini KI...`);
+    setParsedDocFileName(file.name);
 
     try {
-      // 1. Convert file to base64
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => {
           const result = reader.result as string;
-          // Extract only the base64 part, removing the data:... prefix
-          const base64Data = result.split(',')[1];
-          resolve(base64Data);
+          const commaIdx = result.indexOf(',');
+          resolve(commaIdx !== -1 ? result.substring(commaIdx + 1) : result);
         };
         reader.onerror = (error) => reject(error);
       });
@@ -168,7 +245,6 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
       reader.readAsDataURL(file);
       const base64Data = await base64Promise;
 
-      // 2. Post to our new API route
       const response = await fetch("/api/player-session/parse-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -184,41 +260,135 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
       }
 
       const parsed = await response.json();
-
-      // 3. Populate form fields
-      if (parsed.date) setDate(parsed.date);
-      if (parsed.focus) setFocus(parsed.focus);
-      if (parsed.duration) setDuration(Number(parsed.duration));
-      if (parsed.rpe) setRpe(Number(parsed.rpe));
-
-      if (parsed.type === 'Match' || parsed.type === 'match') {
-        setType('Match');
-        if (parsed.matchMinutes !== undefined) setMatchMinutes(Number(parsed.matchMinutes));
-        if (parsed.goals !== undefined) setGoals(Number(parsed.goals));
-        if (parsed.assists !== undefined) setAssists(Number(parsed.assists));
-        if (parsed.passAccuracy !== undefined) setPassAccuracy(Number(parsed.passAccuracy));
-        if (parsed.tackleRate !== undefined) setTackleRate(Number(parsed.tackleRate));
-      } else {
-        setType('Training');
-      }
-
-      if (parsed.sprint10m || parsed.sprint30m || parsed.yoyotest || parsed.jumpHeight) {
-        setUpdateKpis(true);
-        if (parsed.sprint10m) setSprint10m(parsed.sprint10m);
-        if (parsed.sprint30m) setSprint30m(parsed.sprint30m);
-        if (parsed.yoyotest) setYoyotest(parsed.yoyotest);
-        if (parsed.jumpHeight) setJumpHeight(parsed.jumpHeight);
-      }
-
-      setParsingSuccess(`Erfolgreich eingelesen! Daten aus "${file.name}" wurden in das Formular übernommen.`);
+      setParsedDocData(parsed);
+      setParsedDocModalOpen(true);
+      setParsingSuccess(`Dokument "${file.name}" erfolgreich analysiert! Bitte Ergebnisse prüfen.`);
     } catch (err: any) {
       console.error(err);
       setParsingError(err.message || "Datei konnte nicht gelesen oder verarbeitet werden.");
     } finally {
       setParsingDoc(false);
-      // Clear file input value to allow uploading the same file again
+    }
+  };
+
+  const handlePortalFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processPortalPDFFile(e.target.files[0]);
       e.target.value = '';
     }
+  };
+
+  const handlePortalDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPortalDragActive(true);
+  };
+
+  const handlePortalDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPortalDragActive(false);
+  };
+
+  const handlePortalDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPortalDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processPortalPDFFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleApplyParsedDoc = () => {
+    if (!parsedDocData) return;
+
+    if (parsedDocData.date) setDate(parsedDocData.date);
+    if (parsedDocData.focus) setFocus(parsedDocData.focus);
+    if (parsedDocData.duration) setDuration(Number(parsedDocData.duration));
+    if (parsedDocData.rpe) setRpe(Number(parsedDocData.rpe));
+
+    if (parsedDocData.type === 'Match' || parsedDocData.type === 'match') {
+      setType('Match');
+      if (parsedDocData.matchMinutes !== undefined) setMatchMinutes(Number(parsedDocData.matchMinutes));
+      if (parsedDocData.goals !== undefined) setGoals(Number(parsedDocData.goals));
+      if (parsedDocData.assists !== undefined) setAssists(Number(parsedDocData.assists));
+      if (parsedDocData.passAccuracy !== undefined) setPassAccuracy(Number(parsedDocData.passAccuracy));
+      if (parsedDocData.tackleRate !== undefined) setTackleRate(Number(parsedDocData.tackleRate));
+    } else {
+      setType('Training');
+    }
+
+    if (parsedDocData.sprint10m || parsedDocData.sprint30m || parsedDocData.yoyotest || parsedDocData.jumpHeight) {
+      setUpdateKpis(true);
+      if (parsedDocData.sprint10m) {
+        setSprint10m(parsedDocData.sprint10m);
+        setKpi10m(parsedDocData.sprint10m);
+      }
+      if (parsedDocData.sprint30m) {
+        setSprint30m(parsedDocData.sprint30m);
+        setKpi30m(parsedDocData.sprint30m);
+      }
+      if (parsedDocData.yoyotest) {
+        setYoyotest(parsedDocData.yoyotest);
+        setKpiYoyo(parsedDocData.yoyotest);
+      }
+      if (parsedDocData.jumpHeight) {
+        setJumpHeight(parsedDocData.jumpHeight);
+        setKpiJump(parsedDocData.jumpHeight);
+      }
+    }
+
+    if (parsedDocData.trackerTotalDist) setTrackerTotalDist(parsedDocData.trackerTotalDist);
+    if (parsedDocData.trackerHighSpeed) setTrackerHighSpeed(parsedDocData.trackerHighSpeed);
+    if (parsedDocData.trackerMaxSpeed) setTrackerMaxSpeed(parsedDocData.trackerMaxSpeed);
+    if (parsedDocData.trackerSprints) setTrackerSprints(parsedDocData.trackerSprints);
+    if (parsedDocData.trackerAvgHr) setTrackerAvgHr(parsedDocData.trackerAvgHr);
+    if (parsedDocData.trackerMaxHr) setTrackerMaxHr(parsedDocData.trackerMaxHr);
+    if (parsedDocFileName) setTrackerFileName(parsedDocFileName);
+
+    setPortalView('form');
+    setParsedDocModalOpen(false);
+    setParsingSuccess(`Daten aus "${parsedDocFileName}" erfolgreich in das Spielerprofil übernommen!`);
+  };
+
+  const handleExportDataSheetPDF = async () => {
+    setIsExportingDataSheetPDF(true);
+    try {
+      const element = document.getElementById('player-data-sheet-pdf');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const nameStr = selectedPlayer ? `${selectedPlayer.lastName}_${selectedPlayer.firstName}` : 'Spieler';
+      pdf.save(`Spielerdatenblatt_${nameStr}.pdf`);
+    } catch (err) {
+      console.error("PDF Export Error:", err);
+      alert("Fehler beim Erstellen der PDF. Bitte versuche 'Report drucken / PDF'.");
+    } finally {
+      setIsExportingDataSheetPDF(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processPortalPDFFile(file);
+    e.target.value = '';
   };
 
   // Optional Athletic KPIs
@@ -235,6 +405,234 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
   const selectedPlayer = useMemo(() => {
     return players.find(p => p.id === selectedPlayerId);
   }, [players, selectedPlayerId]);
+
+  // Played matches with starting lineups vs subs minutes
+  const playedMatches = useMemo(() => {
+    if (!selectedPlayer) return [];
+    const list: any[] = [];
+    
+    // Competitive matches
+    competitiveMatches.forEach(m => {
+      const rec = competitiveMinutes.find(r => r.playerId === selectedPlayer.id);
+      const mins = rec?.minutes?.[m.id] || 0;
+      if (mins > 0) {
+        const details = rec?.details?.[m.id];
+        const isSubstitute = details && details.start && details.start !== "" && details.start !== "00:00";
+        list.push({
+          matchId: m.id,
+          opponent: m.opponent,
+          date: m.date || '',
+          type: 'Pflichtspiel',
+          minutes: mins,
+          startelfMinutes: isSubstitute ? 0 : mins,
+          einwechslungMinutes: isSubstitute ? mins : 0,
+          isSubstitute
+        });
+      }
+    });
+
+    // Test matches
+    testMatches.forEach(m => {
+      const rec = testMinutes.find(r => r.playerId === selectedPlayer.id);
+      const mins = rec?.minutes?.[m.id] || 0;
+      if (mins > 0) {
+        const details = rec?.details?.[m.id];
+        const isSubstitute = details && details.start && details.start !== "" && details.start !== "00:00";
+        list.push({
+          matchId: m.id,
+          opponent: m.opponent,
+          date: m.date || '',
+          type: 'Testspiel',
+          minutes: mins,
+          startelfMinutes: isSubstitute ? 0 : mins,
+          einwechslungMinutes: isSubstitute ? mins : 0,
+          isSubstitute
+        });
+      }
+    });
+
+    // Chronological sorting
+    return list.sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return a.date.localeCompare(b.date);
+    });
+  }, [selectedPlayer, competitiveMatches, competitiveMinutes, testMatches, testMinutes]);
+
+  // Plotted points for the currently selected player and match
+  const filteredPointsForMatch = useMemo(() => {
+    if (!selectedPlayer || !selectedMovementMatchId) return [];
+    return (selectedPlayer.movementPoints || []).filter(
+      pt => String(pt.matchId) === String(selectedMovementMatchId)
+    );
+  }, [selectedPlayer, selectedMovementMatchId]);
+
+  // Points filtered by current slider minute and sorted chronologically
+  const pointsBeforeFilter = useMemo(() => {
+    return filteredPointsForMatch
+      .filter(pt => pt.minute <= (isPlayingAnimation ? animationMinute : movementMinuteFilter))
+      .sort((a, b) => a.minute - b.minute);
+  }, [filteredPointsForMatch, movementMinuteFilter, isPlayingAnimation, animationMinute]);
+
+  // Interpolated position for smooth animation replay along the trajectory path
+  const animatedPlayerPos = useMemo(() => {
+    const pts = [...filteredPointsForMatch].sort((a, b) => a.minute - b.minute);
+    if (pts.length === 0) return null;
+    const currentMin = isPlayingAnimation ? animationMinute : movementMinuteFilter;
+
+    if (currentMin <= pts[0].minute) {
+      return { x: pts[0].x, y: pts[0].y, actionType: pts[0].actionType || 'run', label: pts[0].label || `Min. ${pts[0].minute}` };
+    }
+    if (currentMin >= pts[pts.length - 1].minute) {
+      const last = pts[pts.length - 1];
+      return { x: last.x, y: last.y, actionType: last.actionType || 'run', label: last.label || `Min. ${last.minute}` };
+    }
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      if (currentMin >= p1.minute && currentMin <= p2.minute) {
+        const factor = (currentMin - p1.minute) / (p2.minute - p1.minute);
+        const interpolatedX = p1.x + (p2.x - p1.x) * factor;
+        const interpolatedY = p1.y + (p2.y - p1.y) * factor;
+        return {
+          x: interpolatedX,
+          y: interpolatedY,
+          actionType: p2.actionType || 'run',
+          label: `${p1.minute}' ➔ ${p2.minute}': ${p2.label || 'Laufbewegung'}`
+        };
+      }
+    }
+    return { x: pts[0].x, y: pts[0].y, actionType: pts[0].actionType || 'run' };
+  }, [filteredPointsForMatch, isPlayingAnimation, animationMinute, movementMinuteFilter]);
+
+  // Auto-generate realistic GPS trajectory points based on player position
+  const handleGeneratePositionalTrajectory = () => {
+    if (!selectedPlayer || !selectedMovementMatchId) return;
+
+    const pos = selectedPlayer.position?.toUpperCase() || 'ZM';
+    let templatePoints: { minute: number; x: number; y: number; actionType: 'sprint' | 'run' | 'walk' | 'defensive'; label: string }[] = [];
+
+    if (pos === 'TW') {
+      templatePoints = [
+        { minute: 5, x: 8, y: 50, actionType: 'walk', label: 'Torlinie Grundposition' },
+        { minute: 18, x: 16, y: 38, actionType: 'run', label: 'Abstoß / Passwinkel links' },
+        { minute: 32, x: 12, y: 62, actionType: 'run', label: 'Flanke abfangen rechts' },
+        { minute: 45, x: 8, y: 50, actionType: 'walk', label: 'Halbzeit Torlinie' },
+        { minute: 58, x: 22, y: 50, actionType: 'sprint', label: 'Mitspielender TW (Herausrücken)' },
+        { minute: 74, x: 10, y: 42, actionType: 'sprint', label: '1-gegen-1 Klärung' },
+        { minute: 90, x: 8, y: 50, actionType: 'walk', label: 'Schlussphase Torlinie' },
+      ];
+    } else if (pos.includes('IV')) {
+      templatePoints = [
+        { minute: 5, x: 25, y: 45, actionType: 'walk', label: 'Abwehrkette Grundordnung' },
+        { minute: 15, x: 38, y: 42, actionType: 'run', label: 'Vorschieben im Aufbauspiel' },
+        { minute: 28, x: 18, y: 35, actionType: 'defensive', label: 'Tiefensicherung / Laufduell' },
+        { minute: 40, x: 28, y: 52, actionType: 'run', label: 'Diagonaler Ballgewinn' },
+        { minute: 52, x: 32, y: 40, actionType: 'sprint', label: 'Gegenpressing nach Ballverlust' },
+        { minute: 68, x: 85, y: 50, actionType: 'sprint', label: 'Offensiv-Ecke Kopfballduell' },
+        { minute: 78, x: 22, y: 48, actionType: 'defensive', label: 'Rückzug Abwehrriegel' },
+        { minute: 90, x: 24, y: 45, actionType: 'walk', label: 'Schlussabsicherung' },
+      ];
+    } else if (pos.includes('RV') || pos.includes('LV')) {
+      const isRight = pos.includes('RV');
+      const sideY = isRight ? 82 : 18;
+      templatePoints = [
+        { minute: 5, x: 28, y: sideY, actionType: 'walk', label: 'Außenverteidiger Grundstellung' },
+        { minute: 16, x: 55, y: sideY, actionType: 'run', label: 'Aufrücken Flügelzone' },
+        { minute: 28, x: 82, y: sideY - 5, actionType: 'sprint', label: 'Flankensprint Grundlinie' },
+        { minute: 42, x: 30, y: sideY, actionType: 'defensive', label: 'Rücklauf Konterabsicherung' },
+        { minute: 55, x: 68, y: sideY, actionType: 'sprint', label: 'Überlaufen des Flügelstürmers' },
+        { minute: 72, x: 78, y: 50, actionType: 'sprint', label: 'Einrücken / Torgefahr 16m' },
+        { minute: 88, x: 25, y: sideY, actionType: 'defensive', label: 'Kette schließen' },
+      ];
+    } else if (pos.includes('ST')) {
+      templatePoints = [
+        { minute: 5, x: 68, y: 50, actionType: 'walk', label: 'Anspielstation Zentrum' },
+        { minute: 14, x: 86, y: 38, actionType: 'sprint', label: 'Tiefenlauf Schnittstelle' },
+        { minute: 28, x: 92, y: 52, actionType: 'sprint', label: 'Strafraum-Szenario / Abschluss' },
+        { minute: 42, x: 62, y: 45, actionType: 'defensive', label: 'Anlaufpressing gegnerische IV' },
+        { minute: 58, x: 84, y: 70, actionType: 'run', label: 'Ausweichen auf den Flügel' },
+        { minute: 72, x: 88, y: 48, actionType: 'sprint', label: 'Kopfball-Präsenz 11m-Punkt' },
+        { minute: 86, x: 75, y: 55, actionType: 'run', label: 'Festmachen des Ballempfangs' },
+      ];
+    } else {
+      templatePoints = [
+        { minute: 5, x: 48, y: 50, actionType: 'walk', label: 'Zentrales Mittelfeld Anpfiff' },
+        { minute: 14, x: 65, y: 38, actionType: 'run', label: 'Aufrücken / Box-to-Box' },
+        { minute: 26, x: 82, y: 45, actionType: 'sprint', label: 'Torgefährlicher Vorstoss 16m' },
+        { minute: 38, x: 38, y: 60, actionType: 'defensive', label: 'Defensiver Umschaltlauf' },
+        { minute: 52, x: 55, y: 48, actionType: 'run', label: 'Spielaufbau / Verteilerrolle' },
+        { minute: 66, x: 76, y: 28, actionType: 'sprint', label: 'Flügelunterstützung' },
+        { minute: 80, x: 32, y: 50, actionType: 'defensive', label: 'Abfangpass Tiefenabsicherung' },
+        { minute: 90, x: 58, y: 48, actionType: 'run', label: 'Schlussoffensive Pressing' },
+      ];
+    }
+
+    const generatedPoints = templatePoints.map((pt, idx) => ({
+      id: `gen_point_${Date.now()}_${idx}`,
+      matchId: selectedMovementMatchId,
+      minute: pt.minute,
+      x: pt.x,
+      y: pt.y,
+      actionType: pt.actionType,
+      label: pt.label
+    }));
+
+    const existingOtherMatchPoints = (selectedPlayer.movementPoints || []).filter(
+      pt => String(pt.matchId) !== String(selectedMovementMatchId)
+    );
+    const updatedPoints = [...existingOtherMatchPoints, ...generatedPoints];
+
+    onUpdatePlayerMovementPoints?.(selectedPlayer.id, updatedPoints);
+  };
+
+  const handleClearAllMatchPoints = () => {
+    if (!selectedPlayer || !selectedMovementMatchId) return;
+    if (window.confirm('Möchten Sie wirklich alle Laufweg-Punkte für dieses Spiel löschen?')) {
+      const remainingPoints = (selectedPlayer.movementPoints || []).filter(
+        pt => String(pt.matchId) !== String(selectedMovementMatchId)
+      );
+      onUpdatePlayerMovementPoints?.(selectedPlayer.id, remainingPoints);
+    }
+  };
+
+  // Handle setting a point on the pitch
+  const handlePitchClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!selectedPlayer || !selectedMovementMatchId) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    const actionLabels: Record<string, string> = {
+      sprint: 'Vollsprint / Tempoakzent',
+      run: 'Laufbewegung / Umschalten',
+      walk: 'Positionierung / Trotten',
+      defensive: 'Defensivlauf / Pressing'
+    };
+
+    const newPoint = {
+      id: `point_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      matchId: selectedMovementMatchId,
+      minute: movementMinuteInput,
+      x: parseFloat(x.toFixed(1)),
+      y: parseFloat(y.toFixed(1)),
+      actionType: selectedActionType,
+      label: actionLabels[selectedActionType] || 'Laufbewegung'
+    };
+
+    const currentPoints = selectedPlayer.movementPoints || [];
+    const updatedPoints = [...currentPoints, newPoint];
+    onUpdatePlayerMovementPoints?.(selectedPlayer.id, updatedPoints);
+  };
+
+  // Handle deleting a plotted point
+  const handleDeletePoint = (pointId: string) => {
+    if (!selectedPlayer) return;
+    const currentPoints = selectedPlayer.movementPoints || [];
+    const updatedPoints = currentPoints.filter(pt => pt.id !== pointId);
+    onUpdatePlayerMovementPoints?.(selectedPlayer.id, updatedPoints);
+  };
 
   // Logs of the selected player
   const playerLogs = useMemo(() => {
@@ -290,7 +688,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
       const sessionData: any = {
         id: logId,
         playerId: selectedPlayerId,
-        playerName: selectedPlayer ? `${selectedPlayer.firstName} ${selectedPlayer.lastName}` : 'Unbekannt',
+        playerName: selectedPlayer ? selectedPlayer.lastName : 'Unbekannt',
         date,
         type,
         focus: focus.trim(),
@@ -384,7 +782,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
         id: p.id,
         firstName: p.firstName,
         lastName: p.lastName,
-        name: `${p.firstName} ${p.lastName}`,
+        name: p.lastName,
         position: p.position || 'Feldspieler',
         sprint10m: sprint10mStr || 'k.A.',
         sprint30m: sprint30mStr || 'k.A.',
@@ -727,7 +1125,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          playerName: `${selectedPlayer.firstName} ${selectedPlayer.lastName}`,
+          playerName: selectedPlayer.lastName,
           position: selectedPlayer.position,
           kpis: {
             sprint10m: kpi10m,
@@ -791,8 +1189,34 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-6">
-      
+    <div 
+      className="max-w-6xl mx-auto p-4 space-y-6 relative"
+      onDragOver={handlePortalDragOver}
+      onDragLeave={handlePortalDragLeave}
+      onDrop={handlePortalDrop}
+    >
+      {/* Hidden File Input for PDF / Image Upload */}
+      <input
+        type="file"
+        ref={portalFileInputRef}
+        onChange={handlePortalFileInputChange}
+        accept="application/pdf,image/*,.csv"
+        className="hidden"
+      />
+
+      {/* Drag & Drop Fullscreen Overlay */}
+      {portalDragActive && (
+        <div className="absolute inset-0 z-50 bg-[#0D4433]/90 backdrop-blur-sm border-8 border-dashed border-white flex flex-col items-center justify-center text-white p-8 rounded-lg shadow-2xl">
+          <Sparkles size={64} className="animate-bounce mb-4 text-emerald-300" />
+          <h2 className="text-3xl font-black uppercase tracking-wider text-center">
+            PDF ODER BERICHT HIER ABLEGEN
+          </h2>
+          <p className="text-sm font-bold text-emerald-100 mt-2 text-center max-w-md">
+            Gemini KI extrahiert Trainingsdaten, Match-Stats, Garmin/TRACKTICS GPS und Sprintzeiten automatisch für {selectedPlayer ? selectedPlayer.lastName : 'den Spieler'}!
+          </p>
+        </div>
+      )}
+
       {/* Design Header */}
       <div className="bg-[#0D4433] text-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -826,7 +1250,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
             <option value="" disabled>-- Bitte Spieler auswählen --</option>
             {onlyPlayers.map(p => (
               <option key={p.id} value={p.id}>
-                #{p.number} {p.lastName}, {p.firstName} ({p.position})
+                #{p.number} {p.lastName} ({p.position})
               </option>
             ))}
           </select>
@@ -842,7 +1266,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
             </div>
             <div className="text-left">
               <h4 className="font-black text-sm uppercase leading-none">
-                {selectedPlayer.lastName}, {selectedPlayer.firstName}
+                {selectedPlayer.lastName}
               </h4>
               <p className="text-[10px] font-bold text-gray-500 mt-1">
                 Trikot-Nr. {selectedPlayer.number} • {selectedPlayer.position}
@@ -851,6 +1275,154 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Persistent KI Upload & Quick Action Banner */}
+      {selectedPlayer && (
+        <div className="bg-[#0D4433] text-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-800 border-2 border-black rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-emerald-300 shrink-0">
+              <Sparkles size={24} className="animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm uppercase tracking-wider flex items-center gap-2">
+                <span>KI-PDF-PARSER & AUTOMATISCHER IMPORT</span>
+                <span className="text-[10px] bg-emerald-400 text-black font-black px-1.5 py-0.5 rounded uppercase">BETA</span>
+              </h3>
+              <p className="text-xs text-emerald-100 font-medium mt-0.5">
+                Lade ein PDF (Garmin, TRACKTICS, Leistungsblatt) oder Foto hoch. Gemini füllt die Daten für <strong>{selectedPlayer.lastName}</strong> aus.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => portalFileInputRef.current?.click()}
+            disabled={parsingDoc}
+            className="w-full sm:w-auto px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black border-2 border-black font-black text-xs uppercase tracking-wider transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-2 shrink-0"
+          >
+            {parsingDoc ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Analysiere PDF...</span>
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                <span>PDF / Bericht hochladen</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Parsed Doc Review Modal */}
+      {parsedDocModalOpen && parsedDocData && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border-4 border-black p-6 max-w-2xl w-full shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] space-y-6 animate-in fade-in zoom-in-95 duration-150 my-8">
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b-4 border-black pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#0D4433] text-white text-[10px] font-black px-2 py-0.5 uppercase tracking-widest border border-black">
+                    GEMINI KI ANALYSE ERFOLGREICH
+                  </span>
+                  <span className="text-xs font-mono font-bold text-gray-500 truncate max-w-[200px]">
+                    {parsedDocFileName}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-black uppercase mt-1 tracking-tight">
+                  GEPARSETE DOKUMENTENDATEN
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setParsedDocModalOpen(false)}
+                className="p-1.5 border-2 border-black bg-gray-100 hover:bg-red-100 text-black transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Summary Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
+              <div className="bg-gray-50 p-3 border-2 border-black">
+                <span className="text-[10px] text-gray-500 uppercase font-black block">Datum</span>
+                <span className="font-black text-sm">{parsedDocData.date || '—'}</span>
+              </div>
+              <div className="bg-gray-50 p-3 border-2 border-black">
+                <span className="text-[10px] text-gray-500 uppercase font-black block">Typ</span>
+                <span className="font-black text-sm">{parsedDocData.type || 'Training'}</span>
+              </div>
+              <div className="bg-gray-50 p-3 border-2 border-black">
+                <span className="text-[10px] text-gray-500 uppercase font-black block">Dauer & RPE</span>
+                <span className="font-black text-sm">{parsedDocData.duration || 0} min • RPE {parsedDocData.rpe || '—'}</span>
+              </div>
+            </div>
+
+            {/* Details Sections */}
+            <div className="space-y-3 text-xs">
+              <div className="bg-emerald-50 p-3 border-2 border-black space-y-1">
+                <span className="font-black uppercase text-[10px] text-emerald-900 tracking-wider">Fokus / Schwerpunkt</span>
+                <p className="font-bold text-sm text-black">{parsedDocData.focus || 'Kein Schwerpunkt'}</p>
+              </div>
+
+              {(parsedDocData.matchMinutes || parsedDocData.goals || parsedDocData.assists || parsedDocData.passAccuracy) && (
+                <div className="bg-amber-50 p-3 border-2 border-black">
+                  <span className="font-black uppercase text-[10px] text-amber-900 tracking-wider block mb-1">Match Statistiken</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+                    <div><strong>Einsatz:</strong> {parsedDocData.matchMinutes || 0} Min</div>
+                    <div><strong>Tore/Assists:</strong> {parsedDocData.goals || 0} T / {parsedDocData.assists || 0} A</div>
+                    <div><strong>Passquote:</strong> {parsedDocData.passAccuracy ? parsedDocData.passAccuracy + '%' : '—'}</div>
+                    <div><strong>Zweikampf:</strong> {parsedDocData.tackleRate ? parsedDocData.tackleRate + '%' : '—'}</div>
+                  </div>
+                </div>
+              )}
+
+              {(parsedDocData.sprint10m || parsedDocData.sprint30m || parsedDocData.yoyotest || parsedDocData.jumpHeight) && (
+                <div className="bg-blue-50 p-3 border-2 border-black">
+                  <span className="font-black uppercase text-[10px] text-blue-900 tracking-wider block mb-1">Athletik KPIs</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+                    {parsedDocData.sprint10m && <div><strong>10m Sprint:</strong> {parsedDocData.sprint10m}</div>}
+                    {parsedDocData.sprint30m && <div><strong>30m Sprint:</strong> {parsedDocData.sprint30m}</div>}
+                    {parsedDocData.yoyotest && <div><strong>Yo-Yo Test:</strong> {parsedDocData.yoyotest}</div>}
+                    {parsedDocData.jumpHeight && <div><strong>Sprungkraft:</strong> {parsedDocData.jumpHeight}</div>}
+                  </div>
+                </div>
+              )}
+
+              {(parsedDocData.trackerTotalDist || parsedDocData.trackerMaxSpeed) && (
+                <div className="bg-purple-50 p-3 border-2 border-black">
+                  <span className="font-black uppercase text-[10px] text-purple-900 tracking-wider block mb-1">GPS & Tracker Daten</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-xs">
+                    {parsedDocData.trackerTotalDist && <div><strong>Distanz:</strong> {parsedDocData.trackerTotalDist} km</div>}
+                    {parsedDocData.trackerHighSpeed && <div><strong>High Speed:</strong> {parsedDocData.trackerHighSpeed} m</div>}
+                    {parsedDocData.trackerMaxSpeed && <div><strong>Max Speed:</strong> {parsedDocData.trackerMaxSpeed} km/h</div>}
+                    {parsedDocData.trackerSprints && <div><strong>Sprints:</strong> {parsedDocData.trackerSprints}</div>}
+                    {parsedDocData.trackerAvgHr && <div><strong>Puls Schnitt:</strong> {parsedDocData.trackerAvgHr} bpm</div>}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t-2 border-black">
+              <button
+                type="button"
+                onClick={handleApplyParsedDoc}
+                className="flex-1 py-3 px-4 bg-[#0D4433] hover:bg-emerald-900 text-white font-black text-xs uppercase tracking-wider border-2 border-black flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0.5 active:translate-y-0.5"
+              >
+                <Check size={16} /> In Spielerprofil & Formular übernehmen
+              </button>
+              <button
+                type="button"
+                onClick={() => setParsedDocModalOpen(false)}
+                className="py-3 px-4 bg-gray-200 hover:bg-gray-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black flex items-center justify-center gap-2"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Switcher Tabs */}
       {selectedPlayer && (
@@ -882,6 +1454,20 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
             className={`flex-1 py-3 px-4 font-black text-xs uppercase tracking-wider transition-all border-t-4 sm:border-t-0 sm:border-l-4 border-black flex items-center justify-center gap-2 ${portalView === 'tracker' ? 'bg-blue-900 text-white' : 'bg-white text-black hover:bg-gray-100'}`}
           >
             <FolderCheck size={16} /> 📍 WG Tracker & Ordner
+          </button>
+          <button
+            type="button"
+            onClick={() => setPortalView('spielanalyse')}
+            className={`flex-1 py-3 px-4 font-black text-xs uppercase tracking-wider transition-all border-t-4 sm:border-t-0 sm:border-l-4 border-black flex items-center justify-center gap-2 ${portalView === 'spielanalyse' ? 'bg-purple-900 text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+          >
+            <Compass size={16} /> 📋 Spielanalyse & Bewegungsprofil
+          </button>
+          <button
+            type="button"
+            onClick={() => setPortalView('video')}
+            className={`flex-1 py-3 px-4 font-black text-xs uppercase tracking-wider transition-all border-t-4 sm:border-t-0 sm:border-l-4 border-black flex items-center justify-center gap-2 ${portalView === 'video' ? 'bg-red-600 text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+          >
+            <Video size={16} /> 🎬 Video-Highlights & Szenen
           </button>
         </div>
       )}
@@ -1381,10 +1967,19 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
 
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="bg-white text-black hover:bg-gray-50 px-4 py-2 border-2 border-black font-black uppercase text-xs flex items-center gap-1.5"
+                onClick={handleExportDataSheetPDF}
+                disabled={isExportingDataSheetPDF}
+                className="bg-[#0D4433] text-white hover:bg-emerald-900 px-4 py-2 border-2 border-black font-black uppercase text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-colors"
               >
-                <FileText size={14} /> Report drucken / PDF
+                {isExportingDataSheetPDF ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />} PDF Herunterladen
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="bg-white text-black hover:bg-gray-50 px-4 py-2 border-2 border-black font-black uppercase text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <Printer size={14} /> Drucken / System-PDF
               </button>
             </div>
           </div>
@@ -1402,7 +1997,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
                 </h2>
               </div>
               <div className="text-right font-mono text-xs font-bold border-2 border-black p-2 bg-gray-50">
-                SPIELER: {selectedPlayer?.firstName?.toUpperCase()} {selectedPlayer?.lastName?.toUpperCase()}
+                SPIELER: {selectedPlayer?.lastName?.toUpperCase()}
               </div>
             </div>
 
@@ -1410,7 +2005,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 border-2 border-black text-xs">
               <div>
                 <span className="font-black uppercase text-gray-500 block text-[9px] tracking-wide">Spieler</span>
-                <span className="font-black text-sm uppercase">{selectedPlayer?.firstName} {selectedPlayer?.lastName}</span>
+                <span className="font-black text-sm uppercase">{selectedPlayer?.lastName}</span>
               </div>
               <div>
                 <span className="font-black uppercase text-gray-500 block text-[9px] tracking-wide">Verein</span>
@@ -1925,13 +2520,13 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
                         {/* Dual bar comparison */}
                         <div className="space-y-1 select-none">
                           <div className="flex items-center gap-1">
-                            <span className="text-[7px] font-black text-gray-400 w-12 truncate">{p1.firstName}</span>
+                            <span className="text-[7px] font-black text-gray-400 w-12 truncate">{p1.lastName}</span>
                             <div className="flex-1 h-2 bg-gray-200 border border-black rounded-none overflow-hidden">
                               <div className={`h-full border-r border-black ${p1Wins ? 'bg-[#0D4433]' : 'bg-gray-500'}`} style={{ width: width1 }} />
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="text-[7px] font-black text-gray-400 w-12 truncate">{p2.firstName}</span>
+                            <span className="text-[7px] font-black text-gray-400 w-12 truncate">{p2.lastName}</span>
                             <div className="flex-1 h-2 bg-gray-200 border border-black rounded-none overflow-hidden">
                               <div className={`h-full border-r border-black ${p2Wins ? 'bg-[#C00000]' : 'bg-gray-500'}`} style={{ width: width2 }} />
                             </div>
@@ -1959,7 +2554,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
                     data={playerAverages.filter(p => p.sprint10mNum > 0 || p.sprint30mNum > 0)}
                     margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
                   >
-                    <XAxis dataKey="firstName" tick={{ fontSize: 9, fontWeight: 'bold' }} stroke="#000000" />
+                    <XAxis dataKey="lastName" tick={{ fontSize: 9, fontWeight: 'bold' }} stroke="#000000" />
                     <YAxis tick={{ fontSize: 9, fontWeight: 'bold' }} stroke="#000000" />
                     <ChartTooltip 
                       contentStyle={{ backgroundColor: '#ffffff', border: '2px solid black', fontFamily: 'monospace', fontSize: '11px' }}
@@ -1984,7 +2579,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
                     data={playerAverages.filter(p => p.jumpNum > 0 || p.yoyoNum > 0)}
                     margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
                   >
-                    <XAxis dataKey="firstName" tick={{ fontSize: 9, fontWeight: 'bold' }} stroke="#000000" />
+                    <XAxis dataKey="lastName" tick={{ fontSize: 9, fontWeight: 'bold' }} stroke="#000000" />
                     <YAxis tick={{ fontSize: 9, fontWeight: 'bold' }} stroke="#000000" />
                     <ChartTooltip 
                       contentStyle={{ backgroundColor: '#ffffff', border: '2px solid black', fontFamily: 'monospace', fontSize: '11px' }}
@@ -2050,7 +2645,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
             </div>
           </div>
         </div>
-      ) : (
+      ) : portalView === 'tracker' ? (
         /* SPIELERORDNER & TRACKER-ANALYSE VIEW */
         <div className="space-y-8 animate-fadeIn">
           {/* Header Banner for Player Folder */}
@@ -2064,7 +2659,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
                   </span>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider italic">
-                  {selectedPlayer.firstName} {selectedPlayer.lastName} (#{selectedPlayer.number})
+                  {selectedPlayer.lastName} (#{selectedPlayer.number})
                 </h2>
                 <p className="text-xs text-gray-300 font-bold mt-1">
                   Position: <span className="text-white underline">{selectedPlayer.position}</span> • Status: <span className="text-emerald-400">Aktiv im Kader</span>
@@ -2298,7 +2893,7 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
                 <Cpu size={20} /> WG Tracker Import & Ordner-Synchronisation
               </h3>
               <p className="text-xs text-gray-300 font-medium">
-                Sende neue Tracking-Rohdaten, GPS-Exporte oder MagentaCLOUD Links direkt in den Ordner von {selectedPlayer.firstName} {selectedPlayer.lastName}.
+                Sende neue Tracking-Rohdaten, GPS-Exporte oder MagentaCLOUD Links direkt in den Ordner von {selectedPlayer.lastName}.
               </p>
             </div>
 
@@ -2436,7 +3031,590 @@ export const PlayerPortalView: React.FC<PlayerPortalViewProps> = ({
           </div>
 
         </div>
-      )}
+      ) : portalView === 'spielanalyse' ? (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-black text-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 mb-1">
+              <Activity size={20} className="text-emerald-400" />
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-400">
+                Spielanalyse & Bewegungsprofil (Heatmap)
+              </span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-wider italic">
+              {selectedPlayer.lastName} (#{selectedPlayer.number})
+            </h2>
+            <p className="text-xs text-gray-300 font-bold mt-1">
+              Einsatzzeiten-Analyse & Manuelle Positions-Erfassung
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            {/* Left/Main Column: Einsatzzeiten (Bar Chart) & Plotted Points */}
+            <div className="xl:col-span-6 space-y-8">
+              {/* Card 1: Einsatzzeiten-Diagramm */}
+              <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <div className="border-b-2 border-black pb-2 mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp size={18} className="text-[#0D4433]" />
+                    <h3 className="font-black uppercase text-sm tracking-wider">Einsatzzeiten-Diagramm</h3>
+                  </div>
+                  <span className="bg-black text-white text-[10px] font-black px-2 py-0.5 rounded">
+                    STARTELF VS. EINWECHSLUNG
+                  </span>
+                </div>
+
+                {playedMatches.length === 0 ? (
+                  <div className="py-12 text-center text-gray-400">
+                    <Clock size={40} className="mx-auto mb-2 opacity-30" />
+                    <p className="font-bold text-xs uppercase">Keine Einsatzzeiten für Pflicht- oder Testspiele erfasst.</p>
+                    <p className="text-[10px] uppercase mt-1">Trage Einsatzminuten in der Spielplanung ein.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={playedMatches}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis 
+                            dataKey="opponent" 
+                            tick={{ fontSize: 10, fontWeight: 'bold', fill: '#000' }}
+                            stroke="#000"
+                            strokeWidth={2}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 10, fontWeight: 'bold', fill: '#000' }}
+                            stroke="#000"
+                            strokeWidth={2}
+                            domain={[0, 90]}
+                          />
+                          <ChartTooltip
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '3px solid #000',
+                              borderRadius: '0px',
+                              boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)',
+                              fontFamily: 'monospace',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                            }}
+                          />
+                          <Legend 
+                            wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}
+                          />
+                          <Bar name="Startelf (Mins)" dataKey="startelfMinutes" stackId="a" fill="#0D4433" />
+                          <Bar name="Einwechselung (Mins)" dataKey="einwechslungMinutes" stackId="a" fill="#C00000" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-4 border-2 border-black p-3 bg-gray-50 flex flex-wrap gap-4 text-xs font-black uppercase">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-[#0D4433] border border-black" />
+                        <span>Startelf-Spiele: {playedMatches.filter(m => !m.isSubstitute).length}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-[#C00000] border border-black" />
+                        <span>Einwechslungen: {playedMatches.filter(m => m.isSubstitute).length}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">Gesamtspielzeit: {playedMatches.reduce((acc, m) => acc + m.minutes, 0)} MIN</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 2: List of plotted points */}
+              <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <div className="border-b-2 border-black pb-2 mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <List size={18} className="text-blue-900" />
+                    <h3 className="font-black uppercase text-sm tracking-wider">Erfasste Positionspunkte</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-black text-white text-[10px] font-black px-2 py-0.5 rounded">
+                      {filteredPointsForMatch.length} PLOT-PUNKTE
+                    </span>
+                    {filteredPointsForMatch.length > 0 && (
+                      <button
+                        onClick={handleClearAllMatchPoints}
+                        className="text-[10px] font-black uppercase text-red-600 hover:text-red-800 underline"
+                        title="Alle Punkte zurücksetzen"
+                      >
+                        Löschen
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Auto-generate button */}
+                <div className="mb-4">
+                  <button
+                    onClick={handleGeneratePositionalTrajectory}
+                    className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black uppercase text-xs p-2.5 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Zap size={14} className="animate-pulse text-yellow-300" />
+                    <span>Laufwege für Position ({selectedPlayer?.position || 'ZM'}) generieren</span>
+                  </button>
+                  <p className="text-[9px] font-bold text-gray-500 uppercase text-center mt-1">
+                    Erzeugt automatisch realistische Match-Laufwege & GPS-Szenarien von Min. 1-90
+                  </p>
+                </div>
+
+                {filteredPointsForMatch.length === 0 ? (
+                  <div className="py-8 text-center text-gray-400">
+                    <MapPin size={32} className="mx-auto mb-2 opacity-30" />
+                    <p className="font-bold text-xs uppercase">Noch keine Bewegungspunkte für dieses Spiel gezeichnet.</p>
+                    <p className="text-[10px] uppercase mt-1">Nutze den Button oben oder klicke rechts auf das Spielfeld.</p>
+                  </div>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto border-2 border-black">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-black text-white font-black uppercase tracking-wider text-[10px] sticky top-0">
+                        <tr>
+                          <th className="p-2">Minute</th>
+                          <th className="p-2">Aktionstyp</th>
+                          <th className="p-2">Beschreibung</th>
+                          <th className="p-2 text-center">Löschen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y border-black font-bold divide-black/10">
+                        {filteredPointsForMatch
+                          .sort((a, b) => a.minute - b.minute)
+                          .map((pt) => {
+                            const act = pt.actionType || 'run';
+                            const badgeBg = act === 'sprint' ? 'bg-red-100 text-red-800 border-red-500' : act === 'defensive' ? 'bg-blue-100 text-blue-800 border-blue-500' : act === 'walk' ? 'bg-green-100 text-green-800 border-green-500' : 'bg-amber-100 text-amber-800 border-amber-500';
+                            const badgeText = act === 'sprint' ? 'Sprint' : act === 'defensive' ? 'Defensiv' : act === 'walk' ? 'Position' : 'Tempolauf';
+                            return (
+                              <tr key={pt.id} className="hover:bg-gray-50">
+                                <td className="p-2 font-mono font-black text-[#C00000]">Min. {pt.minute}</td>
+                                <td className="p-2">
+                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase border ${badgeBg}`}>
+                                    {badgeText}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-[10px] text-gray-700 font-bold truncate max-w-[120px]">
+                                  {pt.label || `X: ${pt.x}% | Y: ${pt.y}%`}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <button
+                                    onClick={() => handleDeletePoint(pt.id)}
+                                    className="text-red-600 hover:text-red-900 transition-colors p-1"
+                                    title="Punkt löschen"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Interactive Heatmap & Spielfeld */}
+            <div className="xl:col-span-6 space-y-8">
+              <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <div className="border-b-2 border-black pb-2 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Map size={18} className="text-green-700" />
+                    <h3 className="font-black uppercase text-sm tracking-wider">Interaktive Bewegungserfassung & Laufwege</h3>
+                  </div>
+                  
+                  {/* Match Selection Dropdown */}
+                  <select
+                    className="bg-gray-100 border-2 border-black px-2 py-1 font-black text-xs outline-none focus:bg-white"
+                    value={selectedMovementMatchId}
+                    onChange={(e) => {
+                      setSelectedMovementMatchId(e.target.value);
+                      setMovementMinuteFilter(90);
+                      setIsPlayingAnimation(false);
+                    }}
+                  >
+                    <option value="">-- Spiel auswählen --</option>
+                    {allMatches.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.date || 'Ohne Datum'} - {m.opponent} ({m.type})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!selectedMovementMatchId ? (
+                  <div className="py-24 text-center text-gray-400">
+                    <Trophy size={48} className="mx-auto mb-2 opacity-30" />
+                    <p className="font-bold text-xs uppercase">Bitte wähle ein Spiel aus der Liste aus, um das Bewegungsprofil zu bearbeiten.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* View Mode & Action Type Selector Bar */}
+                    <div className="space-y-3 border-2 border-black p-3 bg-gray-50">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-black pb-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-gray-700">Ansichtsmodus:</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setMovementViewMode('combined')}
+                            className={`px-2 py-1 text-[10px] font-black uppercase border-2 border-black transition-all ${
+                              movementViewMode === 'combined' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                            }`}
+                          >
+                            ⚡ Kombiniert
+                          </button>
+                          <button
+                            onClick={() => setMovementViewMode('vectors')}
+                            className={`px-2 py-1 text-[10px] font-black uppercase border-2 border-black transition-all ${
+                              movementViewMode === 'vectors' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                            }`}
+                          >
+                            📐 Nur Laufwege
+                          </button>
+                          <button
+                            onClick={() => setMovementViewMode('heatmap')}
+                            className={`px-2 py-1 text-[10px] font-black uppercase border-2 border-black transition-all ${
+                              movementViewMode === 'heatmap' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'
+                            }`}
+                          >
+                            🔴 Nur Heatmap
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Setup tools: Minute & Action Intensity Input before plot */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider mb-1">
+                            Spielminute für nächsten Plot
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              max="120"
+                              value={movementMinuteInput}
+                              onChange={(e) => setMovementMinuteInput(Math.max(1, parseInt(e.target.value) || 1))}
+                              className="w-20 bg-white border-2 border-black p-1 text-center font-black outline-none text-xs"
+                            />
+                            <span className="text-[9px] font-bold text-gray-500 uppercase">
+                              (Min. 1-120)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider mb-1">
+                            Aktionstyp beim Klick
+                          </label>
+                          <div className="grid grid-cols-2 gap-1">
+                            <button
+                              onClick={() => setSelectedActionType('sprint')}
+                              className={`px-1.5 py-0.5 text-[9px] font-black uppercase border border-black rounded ${
+                                selectedActionType === 'sprint' ? 'bg-red-600 text-white' : 'bg-white text-red-700 hover:bg-red-50'
+                              }`}
+                            >
+                              🔴 Sprint
+                            </button>
+                            <button
+                              onClick={() => setSelectedActionType('run')}
+                              className={`px-1.5 py-0.5 text-[9px] font-black uppercase border border-black rounded ${
+                                selectedActionType === 'run' ? 'bg-amber-500 text-white' : 'bg-white text-amber-700 hover:bg-amber-50'
+                              }`}
+                            >
+                              🟡 Tempolauf
+                            </button>
+                            <button
+                              onClick={() => setSelectedActionType('defensive')}
+                              className={`px-1.5 py-0.5 text-[9px] font-black uppercase border border-black rounded ${
+                                selectedActionType === 'defensive' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 hover:bg-blue-50'
+                              }`}
+                            >
+                              🔵 Defensiv
+                            </button>
+                            <button
+                              onClick={() => setSelectedActionType('walk')}
+                              className={`px-1.5 py-0.5 text-[9px] font-black uppercase border border-black rounded ${
+                                selectedActionType === 'walk' ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700 hover:bg-emerald-50'
+                              }`}
+                            >
+                              🟢 Position
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Interactive Football Field */}
+                    <div className="relative">
+                      {/* Grid/Striped pitch container */}
+                      <div 
+                        onClick={handlePitchClick}
+                        className="w-full relative rounded-lg border-4 border-black overflow-hidden shadow-md cursor-crosshair select-none"
+                        style={{
+                          aspectRatio: '1.54',
+                          background: 'repeating-linear-gradient(90deg, #1b5e20, #1b5e20 6.25%, #237029 6.25%, #237029 12.5%)'
+                        }}
+                      >
+                        {/* Football lines SVG */}
+                        <svg viewBox="0 0 100 64" className="w-full h-full absolute inset-0 pointer-events-none opacity-50">
+                          <rect x="2" y="2" width="96" height="60" fill="none" stroke="white" strokeWidth="0.5" />
+                          <line x1="50" y1="2" x2="50" y2="62" stroke="white" strokeWidth="0.5" />
+                          <circle cx="50" cy="32" r="9.15" fill="none" stroke="white" strokeWidth="0.5" />
+                          <circle cx="50" cy="32" r="0.5" fill="white" />
+                          <rect x="2" y="14" width="16.5" height="36" fill="none" stroke="white" strokeWidth="0.5" />
+                          <rect x="2" y="23" width="5.5" height="18" fill="none" stroke="white" strokeWidth="0.5" />
+                          <circle cx="13" cy="32" r="0.5" fill="white" />
+                          <path d="M 18.5 26.5 A 9.15 9.15 0 0 1 18.5 37.5" fill="none" stroke="white" strokeWidth="0.5" />
+                          <rect x="81.5" y="14" width="16.5" height="36" fill="none" stroke="white" strokeWidth="0.5" />
+                          <rect x="92.5" y="23" width="5.5" height="18" fill="none" stroke="white" strokeWidth="0.5" />
+                          <circle cx="87" cy="32" r="0.5" fill="white" />
+                          <path d="M 81.5 26.5 A 9.15 9.15 0 0 0 81.5 37.5" fill="none" stroke="white" strokeWidth="0.5" />
+                          <path d="M 2 3 A 1 1 0 0 0 3 2" fill="none" stroke="white" strokeWidth="0.5" />
+                          <path d="M 2 61 A 1 1 0 0 1 3 62" fill="none" stroke="white" strokeWidth="0.5" />
+                          <path d="M 98 3 A 1 1 0 0 1 97 2" fill="none" stroke="white" strokeWidth="0.5" />
+                          <path d="M 98 61 A 1 1 0 0 0 97 62" fill="none" stroke="white" strokeWidth="0.5" />
+                        </svg>
+
+                        {/* TRAJECTORY VECTORS / CONNECTING MOVEMENT LINES */}
+                        {(movementViewMode === 'combined' || movementViewMode === 'vectors') && pointsBeforeFilter.length >= 2 && (
+                          <svg viewBox="0 0 100 64" className="w-full h-full absolute inset-0 pointer-events-none z-10 overflow-visible">
+                            <defs>
+                              <marker id="arrow-sprint" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+                              </marker>
+                              <marker id="arrow-run" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+                              </marker>
+                              <marker id="arrow-defensive" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+                              </marker>
+                              <marker id="arrow-walk" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+                              </marker>
+                            </defs>
+
+                            {pointsBeforeFilter.map((pt, idx) => {
+                              if (idx === 0) return null;
+                              const prev = pointsBeforeFilter[idx - 1];
+                              const x1 = prev.x;
+                              const y1 = (prev.y / 100) * 64;
+                              const x2 = pt.x;
+                              const y2 = (pt.y / 100) * 64;
+
+                              const actType = pt.actionType || 'run';
+                              const strokeColor = actType === 'sprint' ? '#ef4444' : actType === 'defensive' ? '#3b82f6' : actType === 'walk' ? '#10b981' : '#f59e0b';
+                              const strokeDash = actType === 'sprint' ? '1.5,0.8' : actType === 'defensive' ? '1,0.5' : 'none';
+                              const markerId = `arrow-${actType}`;
+
+                              return (
+                                <g key={`vector_${prev.id}_${pt.id}`}>
+                                  <line
+                                    x1={x1}
+                                    y1={y1}
+                                    x2={x2}
+                                    y2={y2}
+                                    stroke={strokeColor}
+                                    strokeWidth="0.8"
+                                    strokeDasharray={strokeDash}
+                                    markerEnd={`url(#${markerId})`}
+                                    opacity="0.95"
+                                  />
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        )}
+
+                        {/* RENDER PLOTTED HEATMAP & INDIVIDUAL POINTS */}
+                        {pointsBeforeFilter.map((pt) => {
+                          const act = pt.actionType || 'run';
+                          const ringBorder = act === 'sprint' ? 'border-red-600' : act === 'defensive' ? 'border-blue-600' : act === 'walk' ? 'border-emerald-600' : 'border-amber-500';
+
+                          return (
+                            <React.Fragment key={pt.id}>
+                              {/* Heat Map Overlay Glow (Semi-transparent red glow) */}
+                              {(movementViewMode === 'combined' || movementViewMode === 'heatmap') && (
+                                <>
+                                  <div
+                                    className="absolute bg-red-600/30 rounded-full blur-md pointer-events-none -translate-x-1/2 -translate-y-1/2"
+                                    style={{
+                                      left: `${pt.x}%`,
+                                      top: `${pt.y}%`,
+                                      width: '8%',
+                                      height: '12%',
+                                    }}
+                                  />
+                                  <div
+                                    className="absolute bg-amber-500/40 rounded-full blur-sm pointer-events-none -translate-x-1/2 -translate-y-1/2"
+                                    style={{
+                                      left: `${pt.x}%`,
+                                      top: `${pt.y}%`,
+                                      width: '4%',
+                                      height: '6%',
+                                    }}
+                                  />
+                                </>
+                              )}
+
+                              {/* Individual interactive marker */}
+                              <div
+                                className="absolute group -translate-x-1/2 -translate-y-1/2 z-20"
+                                style={{
+                                  left: `${pt.x}%`,
+                                  top: `${pt.y}%`,
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <div className={`w-5 h-5 bg-white border-2 ${ringBorder} rounded-full flex items-center justify-center font-mono text-[8px] font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:scale-125 transition-all cursor-pointer`}>
+                                  {pt.minute}
+                                </div>
+                                
+                                {/* Point hover/action tooltip */}
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-black text-white text-[9px] font-black border border-white p-1.5 rounded whitespace-nowrap shadow-md z-30">
+                                  <span>Min. {pt.minute}: {pt.label || 'Laufweg-Punkt'}</span>
+                                  <button
+                                    onClick={() => handleDeletePoint(pt.id)}
+                                    className="text-red-400 hover:text-red-300 font-bold mt-1 underline"
+                                  >
+                                    [Punkt Löschen]
+                                  </button>
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          );
+                        })}
+
+                        {/* ANIMATED PLAYER AVATAR TOKEN ON PITCH */}
+                        {animatedPlayerPos && (isPlayingAnimation || pointsBeforeFilter.length > 0) && (
+                          <div
+                            className="absolute -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-150 pointer-events-none"
+                            style={{
+                              left: `${animatedPlayerPos.x}%`,
+                              top: `${animatedPlayerPos.y}%`,
+                            }}
+                          >
+                            <div className="relative flex items-center justify-center">
+                              <div className="absolute -inset-2 bg-yellow-400/60 rounded-full animate-ping" />
+                              <div className="w-6 h-6 bg-yellow-400 border-2 border-black rounded-full flex items-center justify-center font-black text-[10px] text-black shadow-lg">
+                                #{selectedPlayer?.number || '10'}
+                              </div>
+                              <div className="absolute top-7 bg-black text-white text-[8px] font-black px-1.5 py-0.5 rounded border border-white whitespace-nowrap shadow">
+                                {selectedPlayer?.lastName || selectedPlayer?.name || 'Spieler'} ({isPlayingAnimation ? `${animationMinute}'` : `${movementMinuteFilter}'`})
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Controls & Time Slider Filter */}
+                    <div className="space-y-3 border-2 border-black p-4 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b-2 border-black pb-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (isPlayingAnimation) {
+                                setIsPlayingAnimation(false);
+                              } else {
+                                if (animationMinute >= 90) setAnimationMinute(1);
+                                setIsPlayingAnimation(true);
+                              }
+                            }}
+                            className={`px-3 py-1.5 font-black uppercase text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 transition-all ${
+                              isPlayingAnimation ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                            }`}
+                          >
+                            {isPlayingAnimation ? (
+                              <>
+                                <Pause size={14} />
+                                <span>Animation Pausieren</span>
+                              </>
+                            ) : (
+                              <>
+                                <Play size={14} />
+                                <span>▶ Laufweg-Animation Abspielen</span>
+                              </>
+                            )}
+                          </button>
+                          <span className="text-[10px] font-black uppercase text-gray-600">
+                            Status: <span className="text-black">{isPlayingAnimation ? `Replay Min. ${animationMinute}/90` : `Filter Min. ${movementMinuteFilter}`}</span>
+                          </span>
+                        </div>
+
+                        <span className="text-[#C00000] bg-white border-2 border-black px-2 py-0.5 font-black text-xs">
+                          Anzeige bis Minute {isPlayingAnimation ? animationMinute : movementMinuteFilter}
+                        </span>
+                      </div>
+
+                      <div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="120"
+                          value={isPlayingAnimation ? animationMinute : movementMinuteFilter}
+                          onChange={(e) => {
+                            setIsPlayingAnimation(false);
+                            setMovementMinuteFilter(parseInt(e.target.value));
+                          }}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                        />
+                        <div className="flex justify-between text-[9px] font-bold text-gray-500 uppercase mt-1">
+                          <span>Anpfiff (Min. 1)</span>
+                          <span>Halbzeit (Min. 45)</span>
+                          <span>Regulär (Min. 90)</span>
+                          <span>Nachspielzeit (Min. 120)</span>
+                        </div>
+                      </div>
+
+                      {/* Legend */}
+                      <div className="pt-2 border-t border-gray-300 flex flex-wrap gap-4 text-[10px] font-black uppercase text-gray-700">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-1 bg-red-600" />
+                          <span>Vollsprint / Tiefenlauf</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-1 bg-amber-500" />
+                          <span>Tempolauf / Umschalten</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-1 bg-blue-600" />
+                          <span>Defensivlauf / Pressing</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-1 bg-emerald-600" />
+                          <span>Positionierung / Gehen</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : portalView === 'video' && selectedPlayer ? (
+        <div className="space-y-6 animate-fadeIn">
+          <VideoSection 
+            title={`Video-Highlights & Szenen - ${selectedPlayer.lastName} (#${selectedPlayer.number})`}
+            subtitle="Individuelle Spielermomente, Torchancen, Zweikämpfe und Videoszenen"
+            clips={selectedPlayer.videoHighlights || []}
+            onUpdateClips={(clips) => {
+              if (onUpdatePlayerVideos) {
+                onUpdatePlayerVideos(selectedPlayer.id, clips);
+              }
+            }}
+            players={players}
+            defaultCategory="Spieler-Momente"
+          />
+        </div>
+      ) : null}
 
     </div>
   );

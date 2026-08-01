@@ -18,6 +18,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 import { sortPlayers } from '../../utils/playerSorting';
+import { VideoSection } from '../VideoSection';
+import { TrackerReportModal } from '../TrackerReportModal';
 
 interface PersonnelViewProps {
   players: Spieler[];
@@ -275,6 +277,7 @@ const PlayerImageWithLightbox: React.FC<{
 const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, onDeletePlayer, onUpdatePlayer, onAddPlayer, isEditing, sessionLogs = [] }) => {
   const sortedPersonnel = sortPlayers(players);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showTrackerModal, setShowTrackerModal] = useState<boolean>(false);
 
   // Update selectedId if it's null and we have players
   useEffect(() => {
@@ -354,15 +357,24 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
     <div className="flex h-full gap-4 overflow-hidden">
       {/* Left Column: List */}
       <div className="w-1/3 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden watermark-bg">
-        <div className="bg-black text-white p-3 shrink-0 flex justify-between items-center">
+        <div className="bg-black text-white p-3 shrink-0 flex justify-between items-center gap-2">
           <h3 className="font-black uppercase tracking-widest text-xs">Kader & Personal</h3>
-          <button 
-            onClick={onAddPlayer}
-            className="bg-[#C00000] text-white p-1 border border-white hover:bg-red-700 transition-colors"
-            title="Person hinzufügen"
-          >
-            <Plus size={14} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowTrackerModal(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-black px-2 py-1 border border-white font-black text-[10px] uppercase flex items-center gap-1 transition-colors"
+              title="Tracker-Daten (ZIP, CSV, GPX, FIT, TCX) analysieren"
+            >
+              <Activity size={12} /> Tracker-Bericht
+            </button>
+            <button 
+              onClick={onAddPlayer}
+              className="bg-[#C00000] text-white p-1 border border-white hover:bg-red-700 transition-colors"
+              title="Person hinzufügen"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {sortedPersonnel.length === 0 ? (
@@ -409,18 +421,18 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                         {(normalizeCategory(person.category) === 'player') ? `#${person.number}` : getCategoryIcon(person.category || 'player')}
                       </span>
                       <div className="text-left">
-                        <p className="font-black uppercase text-[11px] leading-tight flex items-center gap-1.5">
-                          {person.lastName} {person.firstName}
+                        <p className={`font-black uppercase text-[11px] leading-tight flex items-center gap-1.5 ${selectedId === person.id ? 'text-white' : 'text-slate-900'}`}>
+                          {person.lastName}
                           {person.professionalStatus && (
                             <span className={`text-[7px] px-1 py-0.5 rounded leading-none shrink-0 font-bold ${selectedId === person.id ? 'bg-white text-black' : 'bg-black text-white'}`}>
                               {person.professionalStatus}
                             </span>
                           )}
                         </p>
-                        <p className={`text-[9px] font-black uppercase mt-0.5 flex items-center gap-1.5 ${selectedId === person.id ? 'text-white/80' : 'text-gray-500'}`}>
+                        <p className={`text-[9px] font-black uppercase mt-0.5 flex items-center gap-1.5 ${selectedId === person.id ? 'text-white/80' : 'text-slate-800'}`}>
                           {person.position}
                           {person.education && (
-                            <span className={`text-[7px] italic font-medium leading-none truncate max-w-[100px] ${selectedId === person.id ? 'text-white/60' : 'text-gray-400'}`}>
+                            <span className={`text-[7px] italic font-medium leading-none truncate max-w-[100px] ${selectedId === person.id ? 'text-white/60' : 'text-slate-700'}`}>
                               ({person.education})
                             </span>
                           )}
@@ -509,7 +521,6 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                       <span className="text-white/40 font-black uppercase text-[10px] tracking-widest">{selectedPerson.status}</span>
                     </div>
                     <h2 className="text-4xl font-black uppercase leading-none mb-1">{selectedPerson.lastName}</h2>
-                    <p className="text-white/60 font-black uppercase tracking-[0.2em] text-xs">{selectedPerson.firstName}</p>
                     <p className={`font-black uppercase tracking-widest text-sm mt-2 ${selectedPerson.category === 'player' ? 'text-[#C00000]' : 'text-white'}`}>{selectedPerson.position}</p>
                   </div>
                 </div>
@@ -543,40 +554,40 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Geburtsdatum</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.geburtsdatum || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Geburtsdatum</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.geburtsdatum || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Wochentag</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.wochentag || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Wochentag</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.wochentag || '-'}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[9px] font-black uppercase opacity-40">Adresse</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.adresse || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Adresse</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.adresse || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Telefon</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.telefon || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Telefon</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.telefon || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Email</p>
-                        <p className="font-black uppercase text-sm lowercase">{selectedPerson.email || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Email</p>
+                        <p className="font-black uppercase text-sm lowercase text-slate-900">{selectedPerson.email || '-'}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[9px] font-black uppercase opacity-40">Beruflicher Status / Ausbildung / Arbeitgeber</p>
-                        <p className="font-black uppercase text-sm">
+                        <p className="text-[9px] font-black uppercase text-slate-600">Beruflicher Status / Ausbildung / Arbeitgeber</p>
+                        <p className="font-black uppercase text-sm text-slate-900">
                           {selectedPerson.professionalStatus || '-'} 
                           {selectedPerson.education ? ` / ${selectedPerson.education}` : ''}
                           {selectedPerson.employer ? ` / ${selectedPerson.employer}` : ''}
                         </p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[9px] font-black uppercase opacity-40">Verletzungshistorie</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.injuryHistory || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Verletzungshistorie</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.injuryHistory || '-'}</p>
                       </div>
                       {selectedPerson.category === 'player' && (
                         <div>
-                          <p className="text-[9px] font-black uppercase opacity-40">Gesamteinsatzzeit (Pflichtspiele)</p>
+                          <p className="text-[9px] font-black uppercase text-slate-600">Gesamteinsatzzeit (Pflichtspiele)</p>
                           <p className="font-black uppercase text-sm text-[#C00000]">{selectedPerson.einsatzzeitenGesamt || 0} MIN</p>
                         </div>
                       )}
@@ -591,12 +602,12 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black uppercase opacity-40">Oberteil / Schuhe</p>
-                            <p className="font-black uppercase text-sm">{selectedPerson.oberteil || '-'} / {selectedPerson.schuhe || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-slate-600">Oberteil / Schuhe</p>
+                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.oberteil || '-'} / {selectedPerson.schuhe || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase opacity-40">Hosen (K/L)</p>
-                            <p className="font-black uppercase text-sm">{selectedPerson.kurze_hose || '-'} / {selectedPerson.lange_hose || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-slate-600">Hosen (K/L)</p>
+                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.kurze_hose || '-'} / {selectedPerson.lange_hose || '-'}</p>
                           </div>
                         </div>
                       </section>
@@ -607,20 +618,20 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black uppercase opacity-40">Größe / Gewicht</p>
-                            <p className="font-black uppercase text-sm">{selectedPerson.physical?.height}cm / {selectedPerson.physical?.weight}kg</p>
+                            <p className="text-[9px] font-black uppercase text-slate-600">Größe / Gewicht</p>
+                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.physical?.height}cm / {selectedPerson.physical?.weight}kg</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase opacity-40">Starker Fuß</p>
-                            <p className="font-black uppercase text-sm">{selectedPerson.physical?.strongFoot || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-slate-600">Starker Fuß</p>
+                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.physical?.strongFoot || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase opacity-40">Sprintwert</p>
-                            <p className="font-black uppercase text-sm">{selectedPerson.diagnostics?.sprintwert || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-slate-600">Sprintwert</p>
+                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.diagnostics?.sprintwert || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase opacity-40">Yoyo-Test</p>
-                            <p className="font-black uppercase text-sm">{selectedPerson.diagnostics?.yoyotest || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-slate-600">Yoyo-Test</p>
+                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.diagnostics?.yoyotest || '-'}</p>
                           </div>
                         </div>
                       </section>
@@ -739,16 +750,16 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                       </h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-[9px] font-black uppercase opacity-40">Stärken</p>
-                          <p className="text-xs font-bold">{selectedPerson.analysis?.strengths || '-'}</p>
+                          <p className="text-[9px] font-black uppercase text-slate-600">Stärken</p>
+                          <p className="text-xs font-bold text-slate-900">{selectedPerson.analysis?.strengths || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black uppercase opacity-40">Schwächen</p>
-                          <p className="text-xs font-bold">{selectedPerson.analysis?.weaknesses || '-'}</p>
+                          <p className="text-[9px] font-black uppercase text-slate-600">Schwächen</p>
+                          <p className="text-xs font-bold text-slate-900">{selectedPerson.analysis?.weaknesses || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black uppercase opacity-40">Entwicklungspotenzial</p>
-                          <p className="text-xs font-bold">{selectedPerson.analysis?.development || '-'}</p>
+                          <p className="text-[9px] font-black uppercase text-slate-600">Entwicklungspotenzial</p>
+                          <p className="text-xs font-bold text-slate-900">{selectedPerson.analysis?.development || '-'}</p>
                         </div>
                       </div>
                     </section>
@@ -760,22 +771,36 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                     </h4>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Grundgehalt</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.finance?.baseSalary} €</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Grundgehalt</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.finance?.baseSalary} €</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40">Prämie/Spiel</p>
-                        <p className="font-black uppercase text-sm">{selectedPerson.finance?.bonusPerMatch} €</p>
+                        <p className="text-[9px] font-black uppercase text-slate-600">Prämie/Spiel</p>
+                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.finance?.bonusPerMatch} €</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase opacity-40 text-blue-600">Monate Aktiv</p>
-                        <p className="font-black uppercase text-sm text-blue-600">{selectedPerson.finance?.months || 12}</p>
+                        <p className="text-[9px] font-black uppercase text-blue-600">Monate Aktiv</p>
+                        <p className="font-black uppercase text-sm text-blue-700">{selectedPerson.finance?.months || 12}</p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-[9px] font-black uppercase opacity-40">Nebenvereinbarungen</p>
-                      <p className="text-xs font-bold opacity-60">{selectedPerson.finance?.sideAgreements || 'Keine'}</p>
+                      <p className="text-[9px] font-black uppercase text-slate-600">Nebenvereinbarungen</p>
+                      <p className="text-xs font-bold text-slate-900">{selectedPerson.finance?.sideAgreements || 'Keine'}</p>
                     </div>
+                  </section>
+
+                  {/* Video Section for Person */}
+                  <section className="pt-4 border-t-2 border-black">
+                    <VideoSection 
+                      title={`Video-Highlights (${selectedPerson.lastName})`}
+                      subtitle="Szenen, Torchancen, Zweikämpfe und Taktik-Analysen"
+                      clips={selectedPerson.videoHighlights || []}
+                      onUpdateClips={(clips) => {
+                        onUpdatePlayer(selectedPerson.id, 'videoHighlights', clips);
+                      }}
+                      players={players}
+                      defaultCategory="Spieler-Momente"
+                    />
                   </section>
                 </div>
               </div>
@@ -788,6 +813,15 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
           )}
         </AnimatePresence>
       </div>
+
+      {/* TRACKER REPORT MODAL */}
+      {showTrackerModal && (
+        <TrackerReportModal
+          players={players}
+          onClose={() => setShowTrackerModal(false)}
+          onUpdatePlayer={onUpdatePlayer}
+        />
+      )}
     </div>
   );
 };

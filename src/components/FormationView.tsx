@@ -480,7 +480,7 @@ export const FormationView: React.FC<FormationViewProps> = ({ players, scoutingC
               )}
             </div>
 
-            <div className="p-1.5 border-t-2 border-black bg-gray-50">
+            <div className="p-2 border-t-2 border-black bg-slate-50">
               <div className="flex flex-col gap-1.5">
                 <input 
                   type="text"
@@ -490,20 +490,20 @@ export const FormationView: React.FC<FormationViewProps> = ({ players, scoutingC
                     if (e.key === 'Enter') handleAddTalent();
                   }}
                   placeholder="NAME..."
-                  className="w-full text-[8px] font-black uppercase border-2 border-black p-1 focus:outline-none focus:border-amber-500"
+                  className="w-full text-xs font-bold border-2 border-black p-1.5 focus:outline-none focus:border-amber-500 rounded bg-white"
                 />
                 <input 
                   type="text"
                   value={newTalentPosition}
                   onChange={(e) => setNewTalentPosition(e.target.value)}
-                  placeholder="POS..."
-                  className="w-full text-[8px] font-black uppercase border-2 border-black p-1 focus:outline-none focus:border-amber-500"
+                  placeholder="POS (Z.B. ST)..."
+                  className="w-full text-xs font-bold uppercase border-2 border-black p-1.5 focus:outline-none focus:border-amber-500 rounded bg-white"
                 />
                 <button 
                   onClick={handleAddTalent}
-                  className="w-full bg-black text-white text-[9px] font-black uppercase py-1 hover:bg-gray-800 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none mt-1"
+                  className="w-full bg-amber-500 text-slate-950 text-xs font-black uppercase py-1.5 hover:bg-amber-400 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded border-2 border-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                 >
-                  Talent +
+                  + Talent Hinzufügen
                 </button>
               </div>
             </div>
@@ -577,7 +577,7 @@ export const FormationView: React.FC<FormationViewProps> = ({ players, scoutingC
               )}
             </div>
 
-            <div className="p-1.5 border-t-2 border-black bg-gray-50">
+            <div className="p-2 border-t-2 border-black bg-slate-50">
               <div className="flex flex-col gap-1.5">
                 <input 
                   type="text"
@@ -587,7 +587,7 @@ export const FormationView: React.FC<FormationViewProps> = ({ players, scoutingC
                     if (e.key === 'Enter') handleAddExternal();
                   }}
                   placeholder="NAME..."
-                  className="w-full text-[8px] font-black uppercase border-2 border-black p-1 focus:outline-none focus:border-blue-500"
+                  className="w-full text-xs font-bold border-2 border-black p-1.5 focus:outline-none focus:border-blue-500 rounded bg-white"
                 />
                 <div className="flex gap-1">
                   {['Spieler', 'Trainer'].map(r => (
@@ -595,7 +595,7 @@ export const FormationView: React.FC<FormationViewProps> = ({ players, scoutingC
                       key={r} 
                       type="button" 
                       onClick={() => setNewExternalRole(r)}
-                      className={`flex-1 text-[7px] font-black uppercase border-2 border-black py-0.5 hover:bg-black hover:text-white transition-colors ${newExternalRole === r ? 'bg-black text-white' : 'bg-white'}`}
+                      className={`flex-1 text-[10px] font-black uppercase border-2 border-black py-1 rounded hover:bg-black hover:text-white transition-colors ${newExternalRole === r ? 'bg-black text-white' : 'bg-white text-black'}`}
                     >
                       {r}
                     </button>
@@ -603,9 +603,9 @@ export const FormationView: React.FC<FormationViewProps> = ({ players, scoutingC
                 </div>
                 <button 
                   onClick={handleAddExternal}
-                  className="w-full bg-black text-white text-[9px] font-black uppercase py-1 hover:bg-gray-800 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none mt-1"
+                  className="w-full bg-blue-600 text-white text-xs font-black uppercase py-1.5 hover:bg-blue-500 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded border-2 border-black active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                 >
-                  Person +
+                  + Person Hinzufügen
                 </button>
               </div>
             </div>

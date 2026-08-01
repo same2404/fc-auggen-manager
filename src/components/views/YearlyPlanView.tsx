@@ -125,7 +125,7 @@ export const YearlyPlanView: React.FC<YearlyPlanViewProps> = ({
         }
         map[key].push({
           id: p.id,
-          name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+          name: p.lastName || p.name || '',
           firstName: p.firstName,
           lastName: p.lastName,
           geburtsdatum: p.geburtsdatum,

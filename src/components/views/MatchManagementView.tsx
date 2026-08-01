@@ -81,6 +81,65 @@ export const MatchManagementView: React.FC<MatchManagementViewProps> = ({
     });
   }, [players]);
 
+  const parsedStats = useMemo(() => {
+    let wins = 0;
+    let draws = 0;
+    let losses = 0;
+    let goalsScored = 0;
+    let goalsConceded = 0;
+    const scorerCount: Record<string, number> = {};
+
+    matches.forEach(m => {
+      if (m.result && m.result.includes(':')) {
+        const parts = m.result.split(':').map(p => parseInt(p.trim()));
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          const homeGoals = parts[0];
+          const awayGoals = parts[1];
+          const scored = m.isHome ? homeGoals : awayGoals;
+          const conceded = m.isHome ? awayGoals : homeGoals;
+
+          goalsScored += scored;
+          goalsConceded += conceded;
+
+          if (scored > conceded) {
+            wins++;
+          } else if (scored === conceded) {
+            draws++;
+          } else {
+            losses++;
+          }
+        }
+      }
+
+      if (m.scorers) {
+        const sParts = m.scorers.split(',');
+        sParts.forEach(sp => {
+          let name = sp.trim();
+          if (!name) return;
+          let count = 1;
+          const matchCount = name.match(/\(([^)]+)\)/);
+          if (matchCount && matchCount[1]) {
+            const parsedCount = parseInt(matchCount[1]);
+            if (!isNaN(parsedCount)) {
+              count = parsedCount;
+            }
+            name = name.replace(/\([^)]+\)/, '').trim();
+          }
+          name = name.toUpperCase();
+          if (name) {
+            scorerCount[name] = (scorerCount[name] || 0) + count;
+          }
+        });
+      }
+    });
+
+    const sortedScorers = Object.entries(scorerCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    return { wins, draws, losses, goalsScored, goalsConceded, sortedScorers };
+  }, [matches]);
+
   if (!currentMatch && matches.length > 0) {
     setSelectedMatchIndex(0);
     return null;
@@ -173,6 +232,72 @@ export const MatchManagementView: React.FC<MatchManagementViewProps> = ({
                   {matches.length} Spiele insgesamt
                 </div>
               </div>
+
+              {/* Aggregierte Gesamtstatistik */}
+              {matches.length > 0 && (
+                <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 mb-6">
+                  <h3 className="font-black uppercase text-xs tracking-widest text-[#C00000] mb-4 flex items-center gap-2">
+                    <span>📊</span> Gesamtstatistik ({type === 'competitive' ? 'Pflichtspiele' : 'Testspiele'})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {/* Stat Item 1 */}
+                    <div className="border-r-0 md:border-r-2 border-black/10 last:border-0 pr-4">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-black/40">Bilanz (S / U / N)</div>
+                      <div className="text-2xl font-black uppercase text-black mt-1">
+                        <span className="text-green-600">{parsedStats.wins}</span>
+                        <span className="text-black/20 mx-2">/</span>
+                        <span className="text-gray-500">{parsedStats.draws}</span>
+                        <span className="text-black/20 mx-2">/</span>
+                        <span className="text-red-600">{parsedStats.losses}</span>
+                      </div>
+                      <div className="text-[9px] font-bold uppercase opacity-50 mt-1">
+                        {matches.length} Spiele absolviert
+                      </div>
+                    </div>
+
+                    {/* Stat Item 2 */}
+                    <div className="border-r-0 md:border-r-2 border-black/10 last:border-0 pr-4">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-black/40">Tore & Gegentore</div>
+                      <div className="text-2xl font-black uppercase text-black mt-1">
+                        <span>{parsedStats.goalsScored}</span>
+                        <span className="text-black/30 font-light mx-2">:</span>
+                        <span className="text-gray-400">{parsedStats.goalsConceded}</span>
+                      </div>
+                      <div className="text-[9px] font-bold uppercase opacity-50 mt-1">
+                        Differenz: {parsedStats.goalsScored - parsedStats.goalsConceded >= 0 ? '+' : ''}{parsedStats.goalsScored - parsedStats.goalsConceded}
+                      </div>
+                    </div>
+
+                    {/* Stat Item 3 */}
+                    <div className="border-r-0 md:border-r-2 border-black/10 last:border-0 pr-4">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-black/40">Erfolgsquote</div>
+                      <div className="text-2xl font-black uppercase text-[#C00000] mt-1">
+                        {matches.length > 0 ? Math.round((parsedStats.wins / matches.length) * 100) : 0}%
+                      </div>
+                      <div className="text-[9px] font-bold uppercase opacity-50 mt-1">
+                        Siegwahrscheinlichkeit
+                      </div>
+                    </div>
+
+                    {/* Stat Item 4 */}
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-wider text-black/40">Top-Torschützen</div>
+                      {parsedStats.sortedScorers.length > 0 ? (
+                        <div className="space-y-1 mt-2">
+                          {parsedStats.sortedScorers.map(([name, count]) => (
+                            <div key={name} className="flex justify-between items-center text-[10px] font-bold uppercase">
+                              <span className="truncate max-w-[120px]">{name}</span>
+                              <span className="font-black text-[#C00000]">{count} Tor{count > 1 ? 'e' : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-[9px] font-bold uppercase opacity-50 mt-2">Keine Torschützen erfasst</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...matches].sort((a,b) => {
@@ -412,6 +537,47 @@ export const MatchManagementView: React.FC<MatchManagementViewProps> = ({
             </div>
           </motion.div>
 
+              {/* MIDDLE: Scorers, Cards & Notes */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-6">
+                  <h3 className="font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+                    <span>⚽</span> Torschützen
+                  </h3>
+                  <input 
+                    type="text"
+                    value={localMatchData.scorers || ''}
+                    onChange={(e) => handleLocalUpdate('scorers', e.target.value)}
+                    className="w-full bg-gray-100 border-2 border-black p-3 font-black text-xs uppercase focus:bg-white focus:border-[#C00000] outline-none transition-all"
+                    placeholder="Z.B. Müller (2), Meier (45')..."
+                  />
+                </div>
+
+                <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-6">
+                  <h3 className="font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+                    <span>🟨</span> Karten (Gelb/Rot)
+                  </h3>
+                  <input 
+                    type="text"
+                    value={localMatchData.cards || ''}
+                    onChange={(e) => handleLocalUpdate('cards', e.target.value)}
+                    className="w-full bg-gray-100 border-2 border-black p-3 font-black text-xs uppercase focus:bg-white focus:border-[#C00000] outline-none transition-all"
+                    placeholder="Z.B. Müller (Gelb), Schmidt (Rot)..."
+                  />
+                </div>
+
+                <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-6">
+                  <h3 className="font-black uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
+                    <span>📝</span> Notizen & Spielbericht
+                  </h3>
+                  <textarea 
+                    value={localMatchData.notes || ''}
+                    onChange={(e) => handleLocalUpdate('notes', e.target.value)}
+                    className="w-full bg-gray-100 border-2 border-black p-3 font-bold text-xs focus:bg-white focus:border-[#C00000] outline-none transition-all min-h-[80px]"
+                    placeholder="Spielbericht, Notizen zur Aufstellung, Sonstiges..."
+                  />
+                </div>
+              </div>
+
               {/* BOTTOM: Player Minutes Table */}
               <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
                 <div className="bg-gray-100 p-4 border-b-4 border-black flex justify-between items-center">
@@ -445,7 +611,7 @@ export const MatchManagementView: React.FC<MatchManagementViewProps> = ({
                           <tr key={player.id} className="border-b-2 border-black/5 hover:bg-gray-50 transition-colors">
                             <td className="p-4 font-black text-gray-400">{player.number}</td>
                             <td className="p-4">
-                              <div className="font-black uppercase text-sm">{player.lastName}, {player.firstName}</div>
+                              <div className="font-black uppercase text-sm">{player.lastName}</div>
                             </td>
                             <td className="p-4 text-center">
                               <span className="bg-black text-white text-[10px] font-black px-2 py-1 rounded">

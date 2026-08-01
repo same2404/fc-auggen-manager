@@ -2,10 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Circle, Line, Text, Group, Arrow, Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
 import { Player } from '../types';
-import { Trash2, MousePointer2, Pencil, ArrowUpRight, Square, Circle as CircleIcon, Type, Eraser, Plus, UserCircle2, Download, Save as SaveIcon, FolderOpen, Maximize2, Minimize2, Layout, Flag } from 'lucide-react';
+import { 
+  Trash2, MousePointer2, Pencil, ArrowUpRight, Square, Circle as CircleIcon, 
+  Type, Eraser, Plus, Download, Save as SaveIcon, FolderOpen, Maximize2, 
+  Minimize2, Layout, Copy, Palette, Sliders, ChevronDown, Check, RefreshCw, FileImage, Sparkles, Layers, Activity, Compass
+} from 'lucide-react';
 import { useCollectionSync } from '../hooks/useCollectionSync';
 import { useSyncedState } from '../hooks/useSyncedState';
 import { isPlayer } from '../utils/playerSorting';
+import { Pro3DTacticBoardModal } from './Pro3DTacticBoardModal';
 
 const URLImage = ({ imageUrl, x, y, width, height, onDragEnd, onClick, onDblClick, draggable }: any) => {
   const [img] = useImage(imageUrl);
@@ -28,12 +33,14 @@ const URLImage = ({ imageUrl, x, y, width, height, onDragEnd, onClick, onDblClic
   );
 };
 
-interface TacticElement {
+export interface TacticElement {
   id: string;
   type: 'player' | 'shape' | 'text' | 'line' | 'material' | 'photo';
   x: number;
   y: number;
   color?: string;
+  strokeWidth?: number;
+  dash?: number[];
   text?: string;
   points?: number[];
   shapeType?: 'rect' | 'circle' | 'arrow';
@@ -45,12 +52,15 @@ interface TacticElement {
   height?: number;
 }
 
-interface TacticSetup {
+export interface TacticSetup {
   id: string;
   name: string;
   elements: TacticElement[];
   instructions: string;
+  fieldMode?: 'full' | 'half';
+  systemMode?: 'offensive' | 'defensive';
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface TacticBoardProps {
@@ -71,19 +81,38 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
   const [elements, setElements] = useSyncedState<TacticElement[]>('tactic_active_elements', []);
   const [selectedSetupId, setSelectedSetupId] = useState<string | null>(null);
   const [setupName, setSetupName] = useState('');
+  const [setupFilter, setSetupFilter] = useState('');
   
   const [tool, setTool] = useState<'select' | 'pen' | 'arrow' | 'rect' | 'circle' | 'text'>('select');
   const [selectedColor, setSelectedColor] = useState('#C00000');
+  const [strokeWidth, setStrokeWidth] = useState<number>(3);
+  const [isDashedLine, setIsDashedLine] = useState<boolean>(false);
+  const [symbolSize, setSymbolSize] = useState<number>(16);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [show3DProfiBoard, setShow3DProfiBoard] = useState(false);
+
   const [systemMode, setSystemMode] = useState<'offensive' | 'defensive'>('offensive');
   const [fieldMode, setFieldMode] = useState<'full' | 'half'>('full');
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
   const [activeSidebarTab, setActiveSidebarTab] = useState<'players' | 'setups' | 'tactics'>('players');
+  const [notification, setNotification] = useState<string | null>(null);
 
-  const colors = ['#C00000', '#2d5a27', '#0000FF', '#FFD700', '#000000', '#FFFFFF'];
+  const colorPresets = [
+    '#C00000', // Rot
+    '#0D4433', // Auggen Grün
+    '#2d5a27', // Spielfeld Grün
+    '#0055FF', // Blau
+    '#FFD700', // Gelb
+    '#FF6600', // Orange
+    '#9333EA', // Violett
+    '#000000', // Schwarz
+    '#FFFFFF', // Weiß
+  ];
+
   const positions = ['TW', 'IV', 'RV', 'LV', 'DM', 'ZM', 'RM/RW', 'LM/LW', 'OM', 'ST'];
 
   useEffect(() => {
@@ -101,6 +130,65 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
   }, []);
 
   const allPlayers = players.filter(isPlayer);
+  const selectedElement = elements.find(el => el.id === selectedId);
+
+  // Helper to trigger toast notification
+  const notify = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Color change handler: sets global draw color AND updates selected element if applicable
+  const handleColorChange = (newColor: string) => {
+    setSelectedColor(newColor);
+    if (selectedId) {
+      setElements(prev => prev.map(el => 
+        el.id === selectedId ? { ...el, color: newColor } : el
+      ));
+    }
+  };
+
+  // Stroke width change handler
+  const handleStrokeWidthChange = (width: number) => {
+    setStrokeWidth(width);
+    if (selectedId) {
+      setElements(prev => prev.map(el => 
+        el.id === selectedId ? { ...el, strokeWidth: width } : el
+      ));
+    }
+  };
+
+  // Line style (dashed / solid) toggle
+  const handleDashToggle = (dashed: boolean) => {
+    setIsDashedLine(dashed);
+    const dashValue = dashed ? [8, 4] : undefined;
+    if (selectedId) {
+      setElements(prev => prev.map(el => 
+        el.id === selectedId ? { ...el, dash: dashValue } : el
+      ));
+    }
+  };
+
+  // Global symbol size handler (updates all players or sets global default)
+  const handleSymbolSizeChange = (newSize: number) => {
+    setSymbolSize(newSize);
+  };
+
+  // Individual player symbol size handler
+  const handlePlayerRadiusChange = (id: string, radius: number) => {
+    setElements(prev => prev.map(el => 
+      el.id === id ? { ...el, radius: Math.max(8, radius) } : el
+    ));
+  };
+
+  // Apply radius to all player tokens
+  const handleApplyRadiusToAllPlayers = (radius: number) => {
+    setSymbolSize(radius);
+    setElements(prev => prev.map(el => 
+      el.type === 'player' ? { ...el, radius } : el
+    ));
+    notify(`Größe ${radius}px auf alle Spieler angewendet.`);
+  };
 
   const handleAddPlayer = (player: Player, customPos?: { x: number, y: number }) => {
     if (!isEditing) return;
@@ -110,7 +198,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
       x: customPos?.x || stageSize.width / 2,
       y: customPos?.y || stageSize.height / 2,
       playerData: player,
-      radius: 15,
+      radius: symbolSize,
       color: selectedColor
     };
     setElements(prev => [...prev, newElement]);
@@ -124,10 +212,11 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
       x: 50 + (i % 5) * 60,
       y: 50 + Math.floor(i / 5) * 60,
       playerData: p,
-      radius: 15,
+      radius: symbolSize,
       color: selectedColor
     }));
     setElements(prev => [...prev, ...newElements]);
+    notify(`${allPlayers.length} Spieler zum Taktikboard hinzugefügt.`);
   };
 
   const handleAddMaterial = (type: string) => {
@@ -139,18 +228,6 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
       y: stageSize.height / 2,
       materialType: type,
       color: type.includes('Rot') ? '#C00000' : type.includes('Gelb') ? '#FFD700' : '#000000'
-    };
-    setElements(prev => [...prev, newElement]);
-  };
-
-  const handleAddPhoto = (imageUrl: string) => {
-    if (!isEditing) return;
-    const newElement: TacticElement = {
-      id: `photo-${Date.now()}`,
-      type: 'photo',
-      x: stageSize.width / 2 - 30,
-      y: stageSize.height / 2 - 40,
-      imageUrl: imageUrl,
     };
     setElements(prev => [...prev, newElement]);
   };
@@ -398,18 +475,15 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
     const h = stageSize.height;
     const p = 20;
 
-    // Set field mode
     setFieldMode(isStandard ? 'half' : 'full');
 
     const newElements: TacticElement[] = [];
 
-    // Add Players
     setup.players.forEach((f, i) => {
       const player = players.find(p => p.position === f.pos);
       let stageX, stageY;
       
       if (isStandard) {
-        // Map 0.5-1.0 to p-(w-p)
         stageX = p + (f.x - 0.5) * 2 * (w - 2 * p);
         stageY = p + f.y * (h - 2 * p);
       } else {
@@ -422,19 +496,18 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
         type: 'player',
         x: stageX,
         y: stageY,
-        radius: 15,
+        radius: symbolSize,
         color: selectedColor,
         playerData: player || { id: `temp-${i}`, firstName: 'Pos', lastName: f.pos, number: 0, position: f.pos } as Player
       });
     });
 
-    // Add Lines/Arrows if any
     if (isStandard && setup.lines) {
       setup.lines.forEach((l, i) => {
         const points = l.points.map((val, idx) => {
-          if (idx % 2 === 0) { // x
+          if (idx % 2 === 0) {
              return p + (val - 0.5) * 2 * (w - 2 * p);
-          } else { // y
+          } else {
              return p + val * (h - 2 * p);
           }
         });
@@ -445,23 +518,22 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
           y: 0,
           points: points,
           color: l.color,
+          strokeWidth: strokeWidth,
           shapeType: l.shapeType
         });
       });
     }
 
     setElements(newElements);
-    setNotification(`${isStandard ? 'Standard' : 'System'} ${systemName} angewendet.`);
-    setTimeout(() => setNotification(null), 3000);
+    notify(`${isStandard ? 'Standard' : 'System'} "${systemName}" angewendet.`);
   };
-
-  const [notification, setNotification] = useState<string | null>(null);
 
   const handleMouseDown = (e: any) => {
     if (!isEditing || tool === 'select') return;
 
     setIsDrawing(true);
     const pos = e.target.getStage().getPointerPosition();
+    const dashValue = isDashedLine ? [8, 4] : undefined;
     
     if (tool === 'pen' || tool === 'arrow') {
       const newElement: TacticElement = {
@@ -471,9 +543,11 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
         y: 0,
         points: [pos.x, pos.y, pos.x, pos.y],
         color: selectedColor,
+        strokeWidth: strokeWidth,
+        dash: dashValue,
         shapeType: tool === 'arrow' ? 'arrow' : undefined,
       };
-      setElements([...elements, newElement]);
+      setElements(prev => [...prev, newElement]);
     } else if (tool === 'rect' || tool === 'circle') {
       const newElement: TacticElement = {
         id: `shape-${Date.now()}`,
@@ -481,10 +555,27 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
         x: pos.x,
         y: pos.y,
         color: selectedColor,
+        strokeWidth: strokeWidth,
+        dash: dashValue,
         shapeType: tool,
-        points: [0, 0], // width, height
+        points: [0, 0],
       };
-      setElements([...elements, newElement]);
+      setElements(prev => [...prev, newElement]);
+    } else if (tool === 'text') {
+      const textVal = prompt('Textnotiz eingeben:');
+      if (textVal && textVal.trim()) {
+        const newElement: TacticElement = {
+          id: `text-${Date.now()}`,
+          type: 'text',
+          x: pos.x,
+          y: pos.y,
+          text: textVal.trim(),
+          color: selectedColor,
+        };
+        setElements(prev => [...prev, newElement]);
+        setTool('select');
+      }
+      setIsDrawing(false);
     }
   };
 
@@ -494,6 +585,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
     const lastElement = elements[elements.length - 1];
+    if (!lastElement) return;
 
     if (tool === 'pen' || tool === 'arrow') {
       const newPoints = lastElement.points!.slice(0, 2).concat([point.x, point.y]);
@@ -515,89 +607,234 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
   const removeElement = (id: string) => {
     if (!isEditing) return;
     setElements(elements.filter(el => el.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const duplicateElement = (id: string) => {
+    const el = elements.find(item => item.id === id);
+    if (!el) return;
+    const duplicated: TacticElement = {
+      ...el,
+      id: `${el.id}-dup-${Date.now()}`,
+      x: el.x + 20,
+      y: el.y + 20,
+      points: el.points ? [...el.points] : undefined,
+    };
+    setElements(prev => [...prev, duplicated]);
+    setSelectedId(duplicated.id);
+    notify('Element dupliziert.');
   };
 
   const clearBoard = () => {
     if (!isEditing) return;
-    setElements([]);
+    if (elements.length === 0) return;
+    if (window.confirm('Möchten Sie wirklich alle Elemente vom Taktikboard löschen?')) {
+      setElements([]);
+      setSelectedId(null);
+      notify('Taktikboard geleert.');
+    }
   };
 
+  const handleNewSetup = () => {
+    setSetupName('');
+    setSelectedSetupId(null);
+    setElements([]);
+    onInstructionsChange('');
+    setSelectedId(null);
+    notify('Neues Taktik-Setup gestartet.');
+  };
+
+  // Speichern in der Firestore-Datenbank
   const handleSaveSetup = async () => {
-    if (!setupName) {
+    if (!setupName.trim()) {
       alert('Bitte geben Sie einen Namen für das Taktik-Setup ein.');
       return;
     }
+    const setupId = selectedSetupId || `setup-${Date.now()}`;
     const newSetup: TacticSetup = {
-      id: selectedSetupId || Date.now().toString(),
-      name: setupName,
+      id: setupId,
+      name: setupName.trim(),
       elements,
       instructions,
+      fieldMode,
+      systemMode,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    await saveSetup(newSetup);
-    setSelectedSetupId(newSetup.id);
-    alert('Taktik-Setup gespeichert!');
+
+    try {
+      await saveSetup(newSetup);
+      setSelectedSetupId(setupId);
+      notify(`Setup "${newSetup.name}" in der Datenbank gespeichert!`);
+    } catch (err) {
+      console.error('Error saving tactic setup:', err);
+      alert('Fehler beim Speichern des Taktik-Setups in der Datenbank.');
+    }
+  };
+
+  const handleSaveAsNew = async () => {
+    const newName = prompt('Name für das neue Taktik-Setup:', `${setupName || 'Taktik'} (Kopie)`);
+    if (!newName || !newName.trim()) return;
+
+    const newSetupId = `setup-${Date.now()}`;
+    const newSetup: TacticSetup = {
+      id: newSetupId,
+      name: newName.trim(),
+      elements,
+      instructions,
+      fieldMode,
+      systemMode,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await saveSetup(newSetup);
+      setSelectedSetupId(newSetupId);
+      setSetupName(newSetup.name);
+      notify(`Neues Setup "${newSetup.name}" in Datenbank gespeichert!`);
+    } catch (err) {
+      console.error('Error saving tactic setup copy:', err);
+      alert('Fehler beim Speichern der Kopie.');
+    }
   };
 
   const handleLoadSetup = (setup: TacticSetup) => {
-    setElements(setup.elements);
+    setElements(setup.elements || []);
     onInstructionsChange(setup.instructions || '');
-    setSetupName(setup.name);
+    setSetupName(setup.name || '');
     setSelectedSetupId(setup.id);
+    if (setup.fieldMode) setFieldMode(setup.fieldMode);
+    if (setup.systemMode) setSystemMode(setup.systemMode);
     setSelectedId(null);
-    setActiveSidebarTab('players');
+    notify(`Setup "${setup.name}" geladen.`);
   };
 
-  const handleExport = () => {
-    const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 });
+  // Export functions (PNG / JPG / Composite)
+  const handleExportPNG = () => {
+    if (!stageRef.current) return;
+    const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType: 'image/png' });
     const link = document.createElement('a');
-    link.download = `taktik_${setupName || 'export'}.png`;
+    link.download = `FC_Auggen_Taktik_${(setupName || 'export').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.png`;
     link.href = dataURL;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setShowExportMenu(false);
+    notify('Taktikboard als PNG exportiert.');
   };
 
-  const updateElementSize = (id: string, delta: number) => {
-    setElements(prev => prev.map(el => {
-      if (el.id === id) {
-        if (el.type === 'player') {
-          return { ...el, radius: Math.max(5, (el.radius || 15) + delta) };
-        }
-        if (el.type === 'photo') {
-          return { ...el, width: Math.max(20, (el.width || 60) + delta), height: Math.max(20, (el.height || 80) + delta) };
-        }
-      }
-      return el;
-    }));
+  const handleExportJPG = () => {
+    if (!stageRef.current) return;
+    const dataURL = stageRef.current.toDataURL({ pixelRatio: 3, mimeType: 'image/jpeg', quality: 0.95 });
+    const link = document.createElement('a');
+    link.download = `FC_Auggen_Taktik_${(setupName || 'export').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.jpg`;
+    link.href = dataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowExportMenu(false);
+    notify('Taktikboard als JPG exportiert.');
   };
+
+  const handleExportComposite = (format: 'png' | 'jpg' = 'png') => {
+    if (!stageRef.current) return;
+    
+    const stageDataUrl = stageRef.current.toDataURL({ pixelRatio: 2 });
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const headerHeight = 90;
+      const footerHeight = instructions ? 140 : 50;
+      
+      canvas.width = img.width;
+      canvas.height = img.height + headerHeight + footerHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      // Pitch background / frame
+      ctx.fillStyle = '#0D4433';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Header Banner
+      ctx.fillStyle = '#08281E';
+      ctx.fillRect(0, 0, canvas.width, headerHeight);
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('FC AUGGEN 1928 - TAKTIKBOARD', 30, 40);
+      
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText(setupName || 'Taktische Aufstellung & Anweisungen', 30, 68);
+      
+      const dateStr = new Date().toLocaleDateString('de-DE');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Datum: ${dateStr}`, canvas.width - 30, 40);
+      ctx.fillText(`System: ${fieldMode === 'full' ? 'Ganzfeld' : 'Halbfeld'}`, canvas.width - 30, 65);
+      ctx.textAlign = 'left';
+      
+      // Stage image
+      ctx.drawImage(img, 0, headerHeight);
+      
+      // Footer / Instructions Box
+      const footerY = headerHeight + img.height;
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, footerY, canvas.width, footerHeight);
+      
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('TAKTISCHE ANWEISUNGEN:', 30, footerY + 30);
+      
+      if (instructions) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '13px sans-serif';
+        const lines = instructions.split('\n');
+        let lineY = footerY + 55;
+        lines.slice(0, 4).forEach((line) => {
+          ctx.fillText(line, 30, lineY);
+          lineY += 20;
+        });
+      } else {
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = 'italic 13px sans-serif';
+        ctx.fillText('Keine besonderen Anweisungen hinterlegt.', 30, footerY + 55);
+      }
+      
+      const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+      const link = document.createElement('a');
+      link.download = `FC_Auggen_Taktikreport_${(setupName || 'export').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.${format}`;
+      link.href = canvas.toDataURL(mime, 0.95);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowExportMenu(false);
+      notify(`Taktik-Report als ${format.toUpperCase()} exportiert.`);
+    };
+    img.src = stageDataUrl;
+  };
+
+  const filteredSetups = setups.filter(s => 
+    s.name.toLowerCase().includes(setupFilter.toLowerCase())
+  );
 
   const FieldBackground = () => {
     const w = stageSize.width;
     const h = stageSize.height;
-    const p = 20; // padding
+    const p = 20;
 
     if (fieldMode === 'half') {
       return (
         <Group>
-          {/* Grass */}
           <Rect x={0} y={0} width={w} height={h} fill="#2d5a27" />
-          
-          {/* Goal Line (Right) */}
           <Line points={[w - p, p, w - p, h - p]} stroke="white" strokeWidth={2} />
-          
-          {/* Side Lines */}
           <Line points={[p, p, w - p, p]} stroke="white" strokeWidth={2} />
           <Line points={[p, h - p, w - p, h - p]} stroke="white" strokeWidth={2} />
-          
-          {/* Center Line (Left edge of half field) */}
           <Line points={[p, p, p, h - p]} stroke="white" strokeWidth={2} />
-          
-          {/* Penalty Area (Right) */}
           <Rect x={w - 120} y={h / 2 - 120} width={100} height={240} stroke="white" strokeWidth={2} />
           <Rect x={w - 60} y={h / 2 - 50} width={40} height={100} stroke="white" strokeWidth={2} />
-          
-          {/* Center Circle Arc */}
           <Group clipFunc={(ctx) => {
             ctx.rect(p, p, 100, h - 2 * p);
           }}>
@@ -609,38 +846,13 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
 
     return (
       <Group>
-        {/* Grass */}
         <Rect x={0} y={0} width={w} height={h} fill="#2d5a27" />
-        
-        {/* Outer Lines */}
-        <Rect 
-          x={p} y={p} 
-          width={w - 2 * p} height={h - 2 * p} 
-          stroke="white" strokeWidth={2} 
-        />
-        
-        {/* Center Line */}
-        <Line 
-          points={[w / 2, p, w / 2, h - p]} 
-          stroke="white" strokeWidth={2} 
-        />
-        
-        {/* Center Circle */}
-        <Circle 
-          x={w / 2} y={h / 2} 
-          radius={60} stroke="white" strokeWidth={2} 
-        />
-        <Circle 
-          x={w / 2} y={h / 2} 
-          radius={2} fill="white" 
-        />
-
-        {/* Penalty Areas */}
-        {/* Left */}
+        <Rect x={p} y={p} width={w - 2 * p} height={h - 2 * p} stroke="white" strokeWidth={2} />
+        <Line points={[w / 2, p, w / 2, h - p]} stroke="white" strokeWidth={2} />
+        <Circle x={w / 2} y={h / 2} radius={60} stroke="white" strokeWidth={2} />
+        <Circle x={w / 2} y={h / 2} radius={2} fill="white" />
         <Rect x={p} y={h / 2 - 120} width={100} height={240} stroke="white" strokeWidth={2} />
         <Rect x={p} y={h / 2 - 50} width={40} height={100} stroke="white" strokeWidth={2} />
-        
-        {/* Right */}
         <Rect x={w - 120} y={h / 2 - 120} width={100} height={240} stroke="white" strokeWidth={2} />
         <Rect x={w - 60} y={h / 2 - 50} width={40} height={100} stroke="white" strokeWidth={2} />
       </Group>
@@ -663,7 +875,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
               onClick={() => setActiveSidebarTab('setups')}
               className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'setups' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
             >
-              Setups
+              Setups ({setups.length})
             </button>
             <button 
               onClick={() => setActiveSidebarTab('tactics')}
@@ -678,10 +890,11 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
             <div className="p-4 border-b-2 border-black bg-gray-100 flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <h3 className="font-black uppercase text-[10px] tracking-widest">FC Auggen</h3>
+                <span className="text-[9px] font-bold text-gray-500">{allPlayers.length} Spieler</span>
               </div>
               <button 
                 onClick={handleAddAllPlayers}
-                className="w-full bg-black text-white py-1 text-[8px] font-black uppercase border border-black hover:bg-gray-800 transition-all flex items-center justify-center gap-1"
+                className="w-full bg-black text-white py-1.5 text-[8px] font-black uppercase border border-black hover:bg-gray-800 transition-all flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               >
                 <Plus size={10} /> Gesamten Kader hinzufügen
               </button>
@@ -701,7 +914,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                       >
                         <div className="flex flex-col">
                           <span className="text-[9px] font-black uppercase">{p.lastName}</span>
-                          <span className="text-[7px] opacity-40 font-bold uppercase">{p.position}</span>
+                          <span className="text-[7px] opacity-40 font-bold uppercase">{p.position} #{p.number}</span>
                         </div>
                         <Plus size={10} className="opacity-0 group-hover:opacity-100" />
                       </button>
@@ -709,7 +922,6 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   </div>
                 );
               })}
-              {/* Show players with other positions */}
               {(() => {
                 const otherPlayers = allPlayers.filter(p => !positions.includes(p.position));
                 if (otherPlayers.length === 0) return null;
@@ -724,7 +936,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                       >
                         <div className="flex flex-col">
                           <span className="text-[9px] font-black uppercase">{p.lastName}</span>
-                          <span className="text-[7px] opacity-40 font-bold uppercase">{p.position}</span>
+                          <span className="text-[7px] opacity-40 font-bold uppercase">{p.position} #{p.number}</span>
                         </div>
                         <Plus size={10} className="opacity-0 group-hover:opacity-100" />
                       </button>
@@ -738,7 +950,6 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
 
         {activeSidebarTab === 'tactics' && (
           <div className="flex-1 overflow-auto custom-scrollbar p-4 space-y-6">
-            {/* Systeme Section */}
             <div className="space-y-4">
               <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Systeme</p>
               <div className="flex flex-col gap-2">
@@ -774,139 +985,311 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
             </div>
 
             <div className="p-3 bg-gray-100 border-2 border-black text-[9px] font-bold">
-              Wählen Sie ein System aus, um die Spieler automatisch zu positionieren.
+              Wählen Sie ein System aus, um die Spieler automatisch auf dem Feld zu platzieren.
             </div>
           </div>
         )}
 
         {activeSidebarTab === 'setups' && (
-          <div className="flex-1 overflow-auto custom-scrollbar p-2 space-y-2">
-            {setups.map(setup => (
-              <div key={setup.id} className="group relative">
-                <button
-                  onClick={() => handleLoadSetup(setup)}
-                  className={`w-full p-3 text-left border-2 border-black transition-all hover:bg-white ${selectedSetupId === setup.id ? 'bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-100'}`}
-                >
-                  <p className="text-[10px] font-black uppercase">{setup.name}</p>
-                  <p className="text-[7px] opacity-40 font-bold uppercase">{new Date(setup.createdAt).toLocaleDateString()}</p>
-                </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); deleteSetup(setup.id); }}
-                  className="absolute top-2 right-2 p-1 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-            {setups.length === 0 && (
-              <div className="p-8 text-center opacity-20 flex flex-col items-center gap-2">
-                <FolderOpen size={32} />
-                <p className="text-[8px] font-black uppercase">Keine Setups gespeichert</p>
-              </div>
-            )}
+          <div className="flex-1 flex flex-col p-2 gap-2 overflow-hidden">
+            <button
+              onClick={handleNewSetup}
+              className="w-full bg-[#0D4433] text-white py-2 text-[9px] font-black uppercase border-2 border-black hover:bg-emerald-900 transition-all flex items-center justify-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] shrink-0"
+            >
+              <Plus size={12} /> Neues Setup erstellen
+            </button>
+
+            <input
+              type="text"
+              placeholder="Setups suchen..."
+              value={setupFilter}
+              onChange={(e) => setSetupFilter(e.target.value)}
+              className="w-full p-1.5 text-[9px] font-bold border-2 border-black bg-white outline-none shrink-0"
+            />
+
+            <div className="flex-1 overflow-auto custom-scrollbar space-y-2">
+              {filteredSetups.map(setup => {
+                const playerCount = setup.elements?.filter(e => e.type === 'player').length || 0;
+                const isCurrent = selectedSetupId === setup.id;
+
+                return (
+                  <div key={setup.id} className="group relative">
+                    <button
+                      onClick={() => handleLoadSetup(setup)}
+                      className={`w-full p-2.5 text-left border-2 border-black transition-all hover:bg-white ${isCurrent ? 'bg-amber-50 border-amber-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-100'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black uppercase truncate pr-6">{setup.name}</p>
+                        {isCurrent && <Check size={12} className="text-amber-600 shrink-0" />}
+                      </div>
+                      <div className="flex items-center justify-between mt-1 text-[7px] font-bold text-gray-500">
+                        <span>{new Date(setup.createdAt).toLocaleDateString('de-DE')}</span>
+                        <span className="bg-black/5 px-1 rounded">{playerCount} Spieler</span>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); deleteSetup(setup.id); if (selectedSetupId === setup.id) setSelectedSetupId(null); notify('Setup gelöscht.'); }}
+                      className="absolute top-2 right-2 p-1 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 rounded"
+                      title="Löschen"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+              {filteredSetups.length === 0 && (
+                <div className="p-8 text-center opacity-40 flex flex-col items-center gap-2">
+                  <FolderOpen size={28} />
+                  <p className="text-[8px] font-black uppercase">Keine Setups gefunden</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
       )}
 
-      {/* Main Board */}
+      {/* Main Board Stage Container */}
       <div className="flex-1 relative flex flex-col" ref={containerRef}>
+        {/* Top Control Bar: Drawing Tools & Colors & Sizes */}
         {isEditing && (
-          <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-            <div className="flex gap-2 bg-white/90 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 max-w-[calc(100%-220px)]">
+            <div className="flex flex-wrap items-center gap-1.5 bg-white/95 backdrop-blur border-2 border-black p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              {/* Werkzeuge */}
               {[
-                { id: 'select', icon: MousePointer2, label: 'Auswählen' },
-                { id: 'pen', icon: Pencil, label: 'Zeichnen' },
-                { id: 'arrow', icon: ArrowUpRight, label: 'Pfeil' },
+                { id: 'select', icon: MousePointer2, label: 'Auswählen & Verschieben' },
+                { id: 'pen', icon: Pencil, label: 'Freihand zeichnen' },
+                { id: 'arrow', icon: ArrowUpRight, label: 'Pfeil zeichnen' },
                 { id: 'rect', icon: Square, label: 'Rechteck' },
                 { id: 'circle', icon: CircleIcon, label: 'Kreis' },
+                { id: 'text', icon: Type, label: 'Textnotiz' },
               ].map(t => (
                 <button
                   key={t.id}
                   onClick={() => setTool(t.id as any)}
-                  className={`p-2 border-2 border-transparent hover:border-black transition-all ${tool === t.id ? 'bg-black text-white' : ''}`}
+                  className={`p-1.5 border-2 transition-all ${tool === t.id ? 'bg-black text-white border-black' : 'border-transparent hover:border-black/30'}`}
                   title={t.label}
                 >
-                  <t.icon size={16} />
+                  <t.icon size={15} />
                 </button>
               ))}
-              <div className="w-px bg-black/10 mx-1" />
+
+              <div className="w-px h-5 bg-black/20 mx-0.5" />
+
+              {/* Farbauswahl Palette */}
+              <div className="flex items-center gap-1">
+                {colorPresets.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => handleColorChange(c)}
+                    className={`w-5 h-5 border-2 transition-all ${selectedColor === c ? 'border-black scale-110 shadow-sm' : 'border-black/20 hover:border-black/60'}`}
+                    style={{ backgroundColor: c }}
+                    title={`Farbe ${c}`}
+                  />
+                ))}
+                <input 
+                  type="color" 
+                  value={selectedColor} 
+                  onChange={(e) => handleColorChange(e.target.value)} 
+                  className="w-5 h-5 border border-black cursor-pointer bg-transparent shrink-0" 
+                  title="Eigene Farbe wählen"
+                />
+              </div>
+
+              <div className="w-px h-5 bg-black/20 mx-0.5" />
+
+              {/* Linienstärke (Stroke Width) */}
+              <div className="flex items-center gap-1 text-[9px] font-black uppercase" title="Linienstärke">
+                {[2, 4, 6].map(w => (
+                  <button
+                    key={w}
+                    onClick={() => handleStrokeWidthChange(w)}
+                    className={`px-1.5 py-0.5 border text-[8px] font-bold ${strokeWidth === w ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-black'}`}
+                  >
+                    {w}px
+                  </button>
+                ))}
+              </div>
+
+              {/* Gestrichelte Linien Toggle */}
+              <button
+                onClick={() => handleDashToggle(!isDashedLine)}
+                className={`px-1.5 py-0.5 border text-[8px] font-bold ${isDashedLine ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-black'}`}
+                title="Linienstil: Gestrichelt / Durchgezogen"
+              >
+                {isDashedLine ? 'Gestrichelt' : 'Durchgezogen'}
+              </button>
+
+              <div className="w-px h-5 bg-black/20 mx-0.5" />
+
+              {/* Feldmodus Toggle */}
               <button
                 onClick={() => setFieldMode(fieldMode === 'full' ? 'half' : 'full')}
-                className={`p-2 border-2 border-transparent hover:border-black transition-all ${fieldMode === 'half' ? 'bg-black text-white' : ''}`}
-                title="Spielfeld-Modus (Ganz/Halb)"
+                className={`p-1.5 border-2 transition-all ${fieldMode === 'half' ? 'bg-black text-white border-black' : 'border-transparent hover:border-black/30'}`}
+                title="Spielfeld-Modus (Ganzfeld / Halbfeld)"
               >
-                {fieldMode === 'full' ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                {fieldMode === 'full' ? <Maximize2 size={15} /> : <Minimize2 size={15} />}
               </button>
-              <div className="w-px bg-black/10 mx-1" />
+
+              {/* Board leeren */}
               <button
                 onClick={clearBoard}
-                className="p-2 hover:bg-red-50 text-[#C00000] transition-all"
+                className="p-1.5 hover:bg-red-50 text-[#C00000] transition-all ml-auto"
                 title="Board leeren"
               >
-                <Eraser size={16} />
+                <Eraser size={15} />
               </button>
             </div>
 
-            <div className="flex gap-2 bg-white/90 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              {colors.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setSelectedColor(c)}
-                  className={`w-6 h-6 border-2 transition-all ${selectedColor === c ? 'border-black scale-110' : 'border-transparent'}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
+            {/* Selected Element Toolbar Inspector */}
+            {selectedElement && (
+              <div className="flex items-center gap-2 bg-amber-50 border-2 border-amber-600 p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black uppercase animate-fadeIn">
+                <span className="text-amber-800 flex items-center gap-1">
+                  <Sliders size={12} /> 
+                  {selectedElement.type === 'player' ? `Spieler: ${selectedElement.playerData?.lastName || 'Token'}` : 'Ausgewähltes Element'}
+                </span>
 
-            {selectedId && (
-              <div className="flex gap-2 bg-white/90 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                <button 
-                  onClick={() => updateElementSize(selectedId, 2)}
-                  className="p-1 hover:bg-gray-100"
-                  title="Vergrößern"
-                >
-                  <Maximize2 size={16} />
-                </button>
-                <button 
-                  onClick={() => updateElementSize(selectedId, -2)}
-                  className="p-1 hover:bg-gray-100"
-                  title="Verkleinern"
-                >
-                  <Minimize2 size={16} />
-                </button>
+                {/* Resizing controls for Player Token */}
+                {selectedElement.type === 'player' && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <span>Größe:</span>
+                    <input 
+                      type="range" 
+                      min="10" 
+                      max="40" 
+                      value={selectedElement.radius || symbolSize || 16} 
+                      onChange={(e) => handlePlayerRadiusChange(selectedElement.id, Number(e.target.value))}
+                      className="w-16 cursor-pointer accent-black h-1 bg-amber-200 rounded-lg appearance-none" 
+                    />
+                    <span className="w-6 text-right font-bold">{selectedElement.radius || symbolSize || 16}px</span>
+
+                    {/* Preset sizes for selected player */}
+                    <div className="flex gap-0.5 ml-1">
+                      {[12, 18, 24, 32].map(r => (
+                        <button
+                          key={r}
+                          onClick={() => handlePlayerRadiusChange(selectedElement.id, r)}
+                          className={`px-1 py-0.5 text-[7px] font-bold border ${selectedElement.radius === r ? 'bg-amber-600 text-white border-amber-700' : 'bg-white border-amber-300 hover:border-amber-600'}`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => handleApplyRadiusToAllPlayers(selectedElement.radius || 16)}
+                      className="ml-2 bg-amber-600 text-white px-1.5 py-0.5 text-[7px] font-bold hover:bg-amber-700 transition-colors"
+                      title="Diese Größe auf alle Spieler anwenden"
+                    >
+                      Alle anpassen
+                    </button>
+                  </div>
+                )}
+
+                {/* Duplizieren & Löschen */}
+                <div className="flex items-center gap-1 ml-auto">
+                  <button
+                    onClick={() => duplicateElement(selectedElement.id)}
+                    className="p-1 hover:bg-amber-200 text-amber-900 rounded"
+                    title="Element duplizieren"
+                  >
+                    <Copy size={13} />
+                  </button>
+                  <button
+                    onClick={() => removeElement(selectedElement.id)}
+                    className="p-1 hover:bg-red-100 text-red-600 rounded"
+                    title="Element löschen"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
+        {/* Top Right Save & Export Bar */}
+        <div className="absolute top-3 right-3 z-20 flex gap-2">
           {isEditing && (
-            <div className="flex gap-2 bg-white/90 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-1 bg-white/95 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               <input 
                 type="text" 
                 placeholder="Setup Name..." 
                 value={setupName}
                 onChange={(e) => setSetupName(e.target.value)}
-                className="text-[10px] font-black uppercase p-1 outline-none w-32"
+                className="text-[10px] font-black uppercase p-1 outline-none w-32 border-b border-transparent focus:border-black"
               />
               <button
                 onClick={handleSaveSetup}
-                className="p-2 hover:bg-gray-100 text-green-600 transition-all"
-                title="Setup speichern"
+                className="p-1.5 bg-green-700 text-white hover:bg-green-800 transition-all flex items-center gap-1 text-[9px] font-black uppercase px-2 shadow-sm"
+                title="In Datenbank speichern"
               >
-                <SaveIcon size={16} />
+                <SaveIcon size={14} /> Speichern
               </button>
+              {selectedSetupId && (
+                <button
+                  onClick={handleSaveAsNew}
+                  className="p-1.5 bg-gray-100 text-black hover:bg-gray-200 transition-all flex items-center gap-1 text-[9px] font-black uppercase px-2 border border-black/20"
+                  title="Als neues Setup kopieren"
+                >
+                  <Copy size={12} /> Kopie
+                </button>
+              )}
             </div>
           )}
+
+          {/* 3D Profi-Taktiktafel Button */}
           <button
-            onClick={handleExport}
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+            onClick={() => setShow3DProfiBoard(true)}
+            className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] border border-black cursor-pointer"
+            title="3D-Taktiktafel & Interaktive Laufwege im Profi-Modus öffnen"
           >
-            <Download size={14} /> Export PNG
+            <Layers size={14} className="text-amber-300 animate-pulse" />
+            <span>3D-Taktiktafel (Profi)</span>
           </button>
+
+          {/* Export Button & Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-1.5 bg-black text-white px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <Download size={14} /> Export <ChevronDown size={12} />
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute right-0 mt-1 w-52 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 flex flex-col p-1 text-[9px] font-black uppercase">
+                <button
+                  onClick={handleExportPNG}
+                  className="p-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <FileImage size={13} className="text-emerald-700" /> Als PNG-Bild (HD)
+                </button>
+                <button
+                  onClick={handleExportJPG}
+                  className="p-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <FileImage size={13} className="text-blue-700" /> Als JPG-Bild (HD)
+                </button>
+                <div className="w-full h-px bg-black/10 my-1" />
+                <button
+                  onClick={() => handleExportComposite('png')}
+                  className="p-2 text-left hover:bg-emerald-50 text-emerald-900 flex items-center gap-2"
+                >
+                  <Sparkles size={13} className="text-amber-600" /> Taktik-Report (PNG + Anweisungen)
+                </button>
+                <button
+                  onClick={() => handleExportComposite('jpg')}
+                  className="p-2 text-left hover:bg-emerald-50 text-emerald-900 flex items-center gap-2"
+                >
+                  <Sparkles size={13} className="text-amber-600" /> Taktik-Report (JPG + Anweisungen)
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Konva Stage Canvas */}
         <Stage
           width={stageSize.width}
           height={stageSize.height}
@@ -925,6 +1308,8 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
           </Layer>
           <Layer>
             {elements.map((el) => {
+              const isSelected = selectedId === el.id;
+
               if (el.type === 'photo') {
                 return (
                   <URLImage
@@ -947,7 +1332,10 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   />
                 );
               }
+
               if (el.type === 'player') {
+                const radius = el.radius || symbolSize || 16;
+
                 return (
                   <Group
                     key={el.id}
@@ -964,37 +1352,56 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                     }}
                     onDblClick={() => isEditing && removeElement(el.id)}
                   >
-                    <Circle radius={el.radius || 15} fill={el.color || "#C00000"} stroke="white" strokeWidth={2} shadowBlur={5} shadowOpacity={0.3} />
+                    {/* Selected Halo Ring */}
+                    {isSelected && (
+                      <Circle 
+                        radius={radius + 4} 
+                        stroke="#FFD700" 
+                        strokeWidth={2} 
+                        dash={[4, 4]} 
+                      />
+                    )}
+
+                    <Circle 
+                      radius={radius} 
+                      fill={el.color || "#C00000"} 
+                      stroke="white" 
+                      strokeWidth={2} 
+                      shadowBlur={5} 
+                      shadowOpacity={0.3} 
+                    />
                     <Text
                       text={el.playerData?.lastName.substring(0, 3).toUpperCase()}
-                      fontSize={(el.radius || 15) * 0.5}
+                      fontSize={radius * 0.5}
                       fontStyle="bold"
                       fill="white"
                       align="center"
-                      width={(el.radius || 15) * 2}
-                      x={-(el.radius || 15)}
-                      y={-(el.radius || 15) * 0.25}
+                      width={radius * 2}
+                      x={-radius}
+                      y={-radius * 0.25}
                     />
                     <Text
-                      text={el.playerData?.number.toString()}
-                      fontSize={(el.radius || 15) * 0.4}
+                      text={el.playerData?.number ? String(el.playerData.number) : ''}
+                      fontSize={radius * 0.4}
                       fill="white"
-                      opacity={0.6}
+                      opacity={0.7}
                       align="center"
-                      width={(el.radius || 15) * 2}
-                      x={-(el.radius || 15)}
-                      y={(el.radius || 15) * 0.25}
+                      width={radius * 2}
+                      x={-radius}
+                      y={radius * 0.25}
                     />
                   </Group>
                 );
               }
-              if (el.type === 'material') {
+
+              if (el.type === 'text') {
                 return (
                   <Group
                     key={el.id}
                     x={el.x}
                     y={el.y}
                     draggable={isEditing}
+                    onClick={() => isEditing && setSelectedId(el.id)}
                     onDragEnd={(e) => {
                       if (!isEditing) return;
                       const updated = elements.map(item => 
@@ -1004,6 +1411,49 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                     }}
                     onDblClick={() => isEditing && removeElement(el.id)}
                   >
+                    {isSelected && (
+                      <Rect
+                        x={-4}
+                        y={-4}
+                        width={(el.text?.length || 5) * 8 + 8}
+                        height={24}
+                        stroke="#FFD700"
+                        strokeWidth={1.5}
+                        dash={[3, 3]}
+                      />
+                    )}
+                    <Text
+                      text={el.text || ''}
+                      fontSize={14}
+                      fontStyle="bold"
+                      fill={el.color || '#000000'}
+                      padding={2}
+                    />
+                  </Group>
+                );
+              }
+
+              if (el.type === 'material') {
+                return (
+                  <Group
+                    key={el.id}
+                    x={el.x}
+                    y={el.y}
+                    draggable={isEditing}
+                    onClick={() => isEditing && setSelectedId(el.id)}
+                    onDragEnd={(e) => {
+                      if (!isEditing) return;
+                      const updated = elements.map(item => 
+                        item.id === el.id ? { ...item, x: e.target.x(), y: e.target.y() } : item
+                      );
+                      setElements(updated);
+                    }}
+                    onDblClick={() => isEditing && removeElement(el.id)}
+                  >
+                    {isSelected && (
+                      <Circle radius={18} stroke="#FFD700" strokeWidth={1.5} dash={[3, 3]} />
+                    )}
+
                     {el.materialType?.includes('Hütchen') ? (
                       <Line
                         points={[-10, 10, 0, -10, 10, 10]}
@@ -1036,17 +1486,20 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   </Group>
                 );
               }
+
               if (el.type === 'line') {
                 if (el.shapeType === 'arrow') {
                   return (
                     <Arrow
                       key={el.id}
                       points={el.points || []}
-                      stroke={el.color}
-                      strokeWidth={3}
+                      stroke={el.color || '#C00000'}
+                      strokeWidth={el.strokeWidth || 3}
+                      dash={el.dash}
                       pointerLength={10}
                       pointerWidth={10}
-                      fill={el.color}
+                      fill={el.color || '#C00000'}
+                      onClick={() => isEditing && setSelectedId(el.id)}
                       onDblClick={() => isEditing && removeElement(el.id)}
                     />
                   );
@@ -1055,14 +1508,17 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   <Line
                     key={el.id}
                     points={el.points || []}
-                    stroke={el.color}
-                    strokeWidth={3}
+                    stroke={el.color || '#C00000'}
+                    strokeWidth={el.strokeWidth || 3}
+                    dash={el.dash}
                     tension={0.5}
                     lineCap="round"
+                    onClick={() => isEditing && setSelectedId(el.id)}
                     onDblClick={() => isEditing && removeElement(el.id)}
                   />
                 );
               }
+
               if (el.type === 'shape') {
                 if (el.shapeType === 'rect') {
                   return (
@@ -1070,24 +1526,28 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                       key={el.id}
                       x={el.x}
                       y={el.y}
-                      width={el.points![0]}
-                      height={el.points![1]}
-                      stroke={el.color}
-                      strokeWidth={2}
+                      width={el.points ? el.points[0] : 40}
+                      height={el.points ? el.points[1] : 40}
+                      stroke={el.color || '#C00000'}
+                      strokeWidth={el.strokeWidth || 2}
+                      dash={el.dash}
+                      onClick={() => isEditing && setSelectedId(el.id)}
                       onDblClick={() => isEditing && removeElement(el.id)}
                     />
                   );
                 }
                 if (el.shapeType === 'circle') {
-                  const radius = Math.sqrt(Math.pow(el.points![0], 2) + Math.pow(el.points![1], 2));
+                  const radius = el.points ? Math.sqrt(Math.pow(el.points[0], 2) + Math.pow(el.points[1], 2)) : 30;
                   return (
                     <Circle
                       key={el.id}
                       x={el.x}
                       y={el.y}
                       radius={radius}
-                      stroke={el.color}
-                      strokeWidth={2}
+                      stroke={el.color || '#C00000'}
+                      strokeWidth={el.strokeWidth || 2}
+                      dash={el.dash}
+                      onClick={() => isEditing && setSelectedId(el.id)}
                       onDblClick={() => isEditing && removeElement(el.id)}
                     />
                   );
@@ -1098,8 +1558,10 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
           </Layer>
         </Stage>
 
+        {/* Toast Notification */}
         {notification && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] z-50 animate-bounce">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] z-50 animate-bounce flex items-center gap-2 border border-white">
+            <Check size={12} className="text-emerald-400" />
             {notification}
           </div>
         )}
@@ -1108,26 +1570,33 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
       {/* Right Sidebar: Materials / Instructions */}
       {isEditing && (
         <div className="w-72 border-l-2 border-black flex flex-col bg-gray-50">
-          <div className="p-4 border-b-2 border-black bg-black text-white">
-            <h3 className="font-black uppercase text-sm tracking-widest">Taktische Anweisungen</h3>
+          <div className="p-4 border-b-2 border-black bg-black text-white flex items-center justify-between">
+            <h3 className="font-black uppercase text-xs tracking-widest">Taktische Anweisungen</h3>
           </div>
         <div className="flex-1 overflow-auto custom-scrollbar p-4 space-y-6">
           <section className="space-y-2">
             <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Spielphase</p>
             <div className="grid grid-cols-2 gap-2">
               {['Offensiv', 'Defensiv', 'Umschalt M.', 'Umschalt O.'].map(phase => (
-                <button key={phase} className="p-2 border border-black text-[10px] font-black uppercase hover:bg-black hover:text-white transition-all">
-                  {phase}
+                <button 
+                  key={phase} 
+                  onClick={() => {
+                    const current = instructions ? `${instructions}\n` : '';
+                    onInstructionsChange(`${current}[${phase}]: `);
+                  }}
+                  className="p-2 border border-black text-[10px] font-black uppercase hover:bg-black hover:text-white transition-all text-left truncate"
+                >
+                  + {phase}
                 </button>
               ))}
             </div>
           </section>
 
           <section className="space-y-2">
-            <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Anweisungen</p>
+            <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Anweisungen & Vorgaben</p>
             <textarea 
-              className="w-full h-32 p-3 border-2 border-black text-xs font-bold focus:outline-none bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-              placeholder="Taktische Vorgaben hier eingeben..."
+              className="w-full h-36 p-3 border-2 border-black text-xs font-bold focus:outline-none bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              placeholder="Taktische Vorgaben und Anweisungen hier eingeben..."
               value={instructions}
               onChange={(e) => isEditing && onInstructionsChange(e.target.value)}
               disabled={!isEditing}
@@ -1135,7 +1604,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
           </section>
 
           <section className="space-y-2">
-            <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Materialien</p>
+            <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Materialien auf Board</p>
             <div className="space-y-2">
               {[
                 { name: 'Hütchen (Rot)', icon: '▲' },
@@ -1148,7 +1617,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   onClick={() => handleAddMaterial(item.name)}
                   className="w-full flex items-center gap-3 p-2 border border-black/10 bg-white hover:border-black transition-all group"
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-base">{item.icon}</span>
                   <span className="text-[10px] font-black uppercase">{item.name}</span>
                   <Plus size={10} className="ml-auto opacity-0 group-hover:opacity-100" />
                 </button>
@@ -1156,14 +1625,28 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
             </div>
           </section>
 
-          <div className="p-4 bg-[#C00000] text-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-[8px] font-black uppercase opacity-60">Hinweis</p>
-            <p className="text-[10px] font-bold leading-tight">Doppelklick auf ein Element zum Löschen.</p>
+          <div className="p-3 bg-[#0D4433] text-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[9px] space-y-1">
+            <p className="font-black uppercase opacity-80 flex items-center gap-1">
+              <Sparkles size={11} className="text-amber-300" /> Bediener-Hinweise
+            </p>
+            <p className="font-bold leading-tight text-emerald-100">
+              • Klicken Sie ein Element an, um dessen Farbe & Größe im Inspektionsfeld oben anzupassen.
+            </p>
+            <p className="font-bold leading-tight text-emerald-100">
+              • Doppelklick auf ein Element zum schnellen Löschen.
+            </p>
           </div>
         </div>
       </div>
       )}
+
+      {/* 3D PROFI TAKTIKTAFEL MODAL */}
+      {show3DProfiBoard && (
+        <Pro3DTacticBoardModal
+          players={players}
+          onClose={() => setShow3DProfiBoard(false)}
+        />
+      )}
     </div>
   );
 };
-

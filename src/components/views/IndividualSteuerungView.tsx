@@ -42,6 +42,7 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
   isEditing = false
 }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [ampelFilter, setAmpelFilter] = React.useState<'ALLE' | 'Grün' | 'Gelb' | 'Rot'>('ALLE');
   const [newPlayer, setNewPlayer] = React.useState({
     lastName: '',
     firstName: '',
@@ -51,11 +52,42 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
   });
 
   const sortedPlayers = sortPlayers(players);
-  const filteredPlayers = sortedPlayers.filter(p => 
-    p.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.number?.toString().includes(searchTerm)
-  );
+
+  // Helper to determine active Ampel status for a player
+  const getPlayerAmpelStatus = (player: Player): 'Grün' | 'Gelb' | 'Rot' => {
+    const record = individualTrainingData.find(r => r.playerId === player.id && r.date === selectedIndividualDate);
+    if (record?.loadAmpel) return record.loadAmpel;
+    if (player.loadAmpel) return player.loadAmpel;
+    if (player.isInjured || player.status === 'Verletzt') return 'Rot';
+    if (player.status === 'Reha' || player.status === 'Vorsicht' || record?.load === 'Pause') return 'Gelb';
+    return 'Grün';
+  };
+
+  const ampelCounts = React.useMemo(() => {
+    let green = 0;
+    let yellow = 0;
+    let red = 0;
+    sortedPlayers.forEach(p => {
+      const status = getPlayerAmpelStatus(p);
+      if (status === 'Grün') green++;
+      else if (status === 'Gelb') yellow++;
+      else if (status === 'Rot') red++;
+    });
+    return { green, yellow, red, total: sortedPlayers.length };
+  }, [sortedPlayers, individualTrainingData, selectedIndividualDate]);
+
+  const filteredPlayers = sortedPlayers.filter(p => {
+    const matchesSearch = p.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.number?.toString().includes(searchTerm);
+    if (!matchesSearch) return false;
+
+    if (ampelFilter !== 'ALLE') {
+      const status = getPlayerAmpelStatus(p);
+      return status === ampelFilter;
+    }
+    return true;
+  });
 
   const handleQuickAddPlayer = () => {
     if (!newPlayer.lastName || !newPlayer.position) {
@@ -83,43 +115,75 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
 
   return (
     <div className="flex flex-col h-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-      <div className="p-2 border-b-2 border-black bg-gray-50 flex justify-between items-center shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="p-2.5 border-b-2 border-black bg-slate-900 text-white flex flex-wrap justify-between items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Target size={14} className="text-[#C00000]" />
-            <h3 className="font-black uppercase text-xs tracking-widest">Individuelle Steuerung & Ziele</h3>
+            <Target size={14} className="text-amber-400" />
+            <h3 className="font-black uppercase text-xs tracking-wider">Individuelle Steuerung & Belastungs-Ampel</h3>
           </div>
-          <div className="flex items-center gap-2 border-l border-black/10 pl-4">
-            <Search size={10} className="opacity-40" />
+          <div className="flex items-center gap-2 border-l border-white/20 pl-3">
+            <Search size={10} className="text-slate-400" />
             <input 
               type="text" 
               placeholder="SPIELER SUCHEN..." 
-              className="bg-transparent text-[8px] font-black uppercase focus:outline-none w-32"
+              className="bg-slate-950 text-white text-[9px] font-black uppercase focus:outline-none px-2 py-1 rounded border border-white/10 w-32"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
+
+        {/* Belastungs-Ampel Schnell-Filter & Statistik */}
+        <div className="flex items-center gap-2 text-[9px] font-black uppercase">
+          <span className="text-slate-400 mr-1">Belastbarkeit:</span>
+          <button
+            onClick={() => setAmpelFilter('ALLE')}
+            className={`px-2 py-1 rounded border transition-all ${ampelFilter === 'ALLE' ? 'bg-white text-black border-white' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
+          >
+            ALLE ({ampelCounts.total})
+          </button>
+          <button
+            onClick={() => setAmpelFilter('Grün')}
+            className={`px-2 py-1 rounded border flex items-center gap-1 transition-all ${ampelFilter === 'Grün' ? 'bg-emerald-500 text-black border-emerald-400 font-extrabold shadow' : 'bg-emerald-950/60 text-emerald-300 border-emerald-800 hover:bg-emerald-900'}`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            🟢 VOLL ({ampelCounts.green})
+          </button>
+          <button
+            onClick={() => setAmpelFilter('Gelb')}
+            className={`px-2 py-1 rounded border flex items-center gap-1 transition-all ${ampelFilter === 'Gelb' ? 'bg-amber-400 text-black border-amber-300 font-extrabold shadow' : 'bg-amber-950/60 text-amber-300 border-amber-800 hover:bg-amber-900'}`}
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            🟡 TEIL ({ampelCounts.yellow})
+          </button>
+          <button
+            onClick={() => setAmpelFilter('Rot')}
+            className={`px-2 py-1 rounded border flex items-center gap-1 transition-all ${ampelFilter === 'Rot' ? 'bg-red-500 text-white border-red-400 font-extrabold shadow' : 'bg-red-950/60 text-red-300 border-red-800 hover:bg-red-900'}`}
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            🔴 AUSFALL ({ampelCounts.red})
+          </button>
+        </div>
+
         <div className="flex items-center gap-1">
           {isEditing && onAddPlayer && (
             <button 
               onClick={onAddPlayer}
-              className="flex items-center gap-1 px-2 py-1 bg-[#C00000] text-white rounded text-[8px] font-black uppercase tracking-widest hover:bg-red-700 transition-all mr-2"
+              className="flex items-center gap-1 px-2 py-1 bg-[#C00000] text-white rounded text-[8px] font-black uppercase tracking-widest hover:bg-red-700 transition-all mr-2 shadow"
             >
               <Plus size={10} />
               Spieler hinzufügen
             </button>
           )}
-          <div className="flex items-center gap-2 mr-4">
-            <Calendar size={10} className="opacity-40" />
+          <div className="flex items-center gap-2 mr-2">
+            <Calendar size={10} className="text-slate-400" />
             <input 
               type="date"
-              className="bg-transparent text-[8px] font-black uppercase focus:outline-none border-b border-black/20"
+              className="bg-slate-950 text-white text-[8px] font-black uppercase focus:outline-none px-1 py-0.5 rounded border border-white/20"
               value={selectedIndividualDate}
               onChange={(e) => setSelectedIndividualDate(e.target.value)}
             />
           </div>
-          <span className="text-[8px] font-black uppercase tracking-widest">Saison 26/27</span>
         </div>
       </div>
 
@@ -127,14 +191,15 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
         <table className="w-full border-collapse text-[10px] font-bold">
           <thead className="sticky top-0 bg-black text-white z-20">
             <tr>
-              <th className="p-3 border border-white/20 text-left w-12">Nr</th>
-              <th className="p-3 border border-white/20 text-left w-64">Spieler</th>
-              <th className="p-3 border border-white/20 text-center w-16">Pos</th>
-              <th className="p-3 border border-white/20 text-left w-32">Datum</th>
+              <th className="p-3 border border-white/20 text-left w-10">Nr</th>
+              <th className="p-3 border border-white/20 text-left w-56">Spieler</th>
+              <th className="p-3 border border-white/20 text-center w-14">Pos</th>
+              <th className="p-3 border border-white/20 text-center w-36">Belastungs-Ampel</th>
+              <th className="p-3 border border-white/20 text-left w-28">Datum</th>
               <th className="p-3 border border-white/20 text-left">Individueller Schwerpunkt</th>
               <th className="p-3 border border-white/20 text-left">Saisonziele</th>
               <th className="p-3 border border-white/20 text-left">Status / Fortschritt</th>
-              <th className="p-3 border border-white/20 text-center w-24">Belastung</th>
+              <th className="p-3 border border-white/20 text-center w-24">Intensität</th>
               <th className="p-3 border border-white/20 text-center w-8">EK</th>
               <th className="p-3 border border-white/20 text-center w-8">O</th>
               <th className="p-3 border border-white/20 text-center w-8">T</th>
@@ -223,6 +288,7 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                       goals: '',
                       status: '',
                       load: 'Normal',
+                      loadAmpel: undefined,
                       targetDate: '',
                       ek: '',
                       o: '',
@@ -231,6 +297,13 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                       s: '',
                       a: '',
                       w: ''
+                    };
+
+                    const currentAmpel = getPlayerAmpelStatus(player);
+
+                    const handleAmpelChange = (newAmpel: 'Grün' | 'Gelb' | 'Rot') => {
+                      handleUpdateIndividualTraining(player.id, 'loadAmpel', newAmpel);
+                      onUpdatePlayer(player.id, 'loadAmpel', newAmpel);
                     };
 
                     return (
@@ -253,6 +326,39 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                           </div>
                         </td>
                         <td className="p-3 border-r border-black/10 text-center text-[#C00000]">{player.position}</td>
+                        
+                        {/* Belastungs-Ampel (Grün / Gelb / Rot) */}
+                        <td className="p-2 border-r border-black/10 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleAmpelChange('Grün')}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${currentAmpel === 'Grün' ? 'bg-emerald-500 text-white border-emerald-700 shadow-[0_0_8px_rgba(16,185,129,0.8)] scale-110' : 'bg-emerald-100 text-emerald-700 border-emerald-300 opacity-40 hover:opacity-100'}`}
+                              title="🟢 GRÜN: 100% Voll belastbar & einsatzbereit"
+                            >
+                              🟢
+                            </button>
+                            <button
+                              onClick={() => handleAmpelChange('Gelb')}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${currentAmpel === 'Gelb' ? 'bg-amber-400 text-slate-950 border-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.8)] scale-110' : 'bg-amber-100 text-amber-700 border-amber-300 opacity-40 hover:opacity-100'}`}
+                              title="🟡 GELB: Teilbelastung (z.B. max. 45 Min / Reduzierte Intensität)"
+                            >
+                              🟡
+                            </button>
+                            <button
+                              onClick={() => handleAmpelChange('Rot')}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${currentAmpel === 'Rot' ? 'bg-red-600 text-white border-red-800 shadow-[0_0_8px_rgba(239,68,68,0.8)] scale-110' : 'bg-red-100 text-red-700 border-red-300 opacity-40 hover:opacity-100'}`}
+                              title="🔴 ROT: Keine Belastung (Verletzt / Schonung / Reha)"
+                            >
+                              🔴
+                            </button>
+                          </div>
+                          <div className="text-[8px] font-black uppercase mt-1">
+                            {currentAmpel === 'Grün' && <span className="text-emerald-700 font-extrabold">Voll (100%)</span>}
+                            {currentAmpel === 'Gelb' && <span className="text-amber-700 font-extrabold">Teil (Max 45m)</span>}
+                            {currentAmpel === 'Rot' && <span className="text-red-700 font-extrabold">Ausfall / Pause</span>}
+                          </div>
+                        </td>
+
                         <td className="p-3 border-r border-black/10">
                           <input 
                             type="date"

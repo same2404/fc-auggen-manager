@@ -9,7 +9,8 @@ import {
   Timer,
   Trophy,
   Map,
-  Flag
+  Flag,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -24,6 +25,31 @@ interface MatchDetailMaskProps {
 }
 
 // Local state component to prevent hanging
+const EditableTextarea = ({ value, onSave, placeholder, className }: { 
+  value: string, 
+  onSave: (val: string) => void, 
+  placeholder?: string, 
+  className?: string
+}) => {
+  const [localValue, setLocalValue] = React.useState(value);
+  
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  return (
+    <textarea 
+      className={className}
+      placeholder={placeholder}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={() => {
+        if (localValue !== value) onSave(localValue);
+      }}
+    />
+  );
+};
+
 const EditableInput = ({ value, onSave, placeholder, className, type = "text", listId }: { 
   value: string, 
   onSave: (val: string) => void, 
@@ -62,6 +88,52 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
   isEditing = false,
   opponents = []
 }) => {
+  const parseMatchDate = (dateStr?: string, timeStr?: string) => {
+    if (!dateStr) return new Date();
+    let normalizedDate = dateStr;
+    if (dateStr.includes('.')) {
+      const parts = dateStr.split('.');
+      if (parts.length === 3) {
+        normalizedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+    const time = timeStr || "00:00";
+    return new Date(`${normalizedDate}T${time}`);
+  };
+
+  const handleExportICS = () => {
+    const matchDate = parseMatchDate(match.date, match.kickOff);
+    const endDate = new Date(matchDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours duration
+
+    const formatDateToICS = (date: Date) => {
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    const icsLines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//FC Auggen Match Manager//NONSGML v1.0//EN',
+      'BEGIN:VEVENT',
+      `UID:${match.id}-${Date.now()}@fc-auggen`,
+      `DTSTAMP:${formatDateToICS(new Date())}`,
+      `DTSTART:${formatDateToICS(matchDate)}`,
+      `DTEND:${formatDateToICS(endDate)}`,
+      `SUMMARY:Spiel FC Auggen vs. ${match.opponent}`,
+      `DESCRIPTION:Spielort: ${match.location || 'Nicht festgelegt'}\\nTreffpunkt: ${match.meetingPoint || 'Nicht festgelegt'} (${match.meetingTime || '--:--'})\\nNotizen: ${match.notes || ''}\\nTorschützen: ${match.scorers || 'Keine'}\\nKarten: ${match.cards || 'Keine'}`,
+      `LOCATION:${match.location || 'Nicht festgelegt'}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ];
+
+    const blob = new Blob([icsLines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `spiel_${match.opponent || 'match'}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Filter players who have minutes in this match
   const matchPlayers = players.map(player => {
     const record = data.find(r => r.playerId === player.id);
@@ -140,12 +212,21 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
             </div>
           </div>
           
-          <button 
-            onClick={onClose}
-            className="bg-white text-black p-2 hover:bg-[#C00000] hover:text-white transition-colors border-2 border-black"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={handleExportICS}
+              className="bg-[#C00000] hover:bg-red-700 text-white font-black text-[9px] uppercase tracking-wider px-3 py-1.5 border-2 border-white flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+              title="In Kalender eintragen (ICS)"
+            >
+              <Calendar size={14} /> Kalender (.ics)
+            </button>
+            <button 
+              onClick={onClose}
+              className="bg-white text-black p-2 hover:bg-[#C00000] hover:text-white transition-colors border-2 border-black"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Info Bar */}
@@ -254,6 +335,63 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
                 <p className="font-bold text-gray-400 uppercase tracking-widest">Keine Spielerdaten für dieses Spiel vorhanden</p>
               </div>
             )}
+          </div>
+
+          {/* Scorers, Cards & Notes */}
+          <div className="mt-8 border-t-4 border-black pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <h4 className="font-black uppercase text-xs mb-3 flex items-center gap-1.5 text-red-600">
+                <span>⚽</span> Torschützen
+              </h4>
+              {isEditing ? (
+                <EditableInput 
+                  className="w-full border-2 border-black p-2 font-black text-xs uppercase outline-none focus:border-[#C00000] bg-white text-black"
+                  placeholder="Z.B. Müller (2), Meier (45')..."
+                  value={match.scorers || ''}
+                  onSave={(val) => onUpdateMatch?.(match.id, 'scorers', val)}
+                />
+              ) : (
+                <p className="font-bold text-xs uppercase opacity-80 min-h-[36px] bg-white p-2 border border-dashed border-black/10 text-black">
+                  {match.scorers || 'Keine Torschützen eingetragen'}
+                </p>
+              )}
+            </div>
+
+            <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <h4 className="font-black uppercase text-xs mb-3 flex items-center gap-1.5 text-yellow-600">
+                <span>🟨</span> Karten (Gelb/Rot)
+              </h4>
+              {isEditing ? (
+                <EditableInput 
+                  className="w-full border-2 border-black p-2 font-black text-xs uppercase outline-none focus:border-[#C00000] bg-white text-black"
+                  placeholder="Z.B. Müller (Gelb), Schmidt (Rot)..."
+                  value={match.cards || ''}
+                  onSave={(val) => onUpdateMatch?.(match.id, 'cards', val)}
+                />
+              ) : (
+                <p className="font-bold text-xs uppercase opacity-80 min-h-[36px] bg-white p-2 border border-dashed border-black/10 text-black">
+                  {match.cards || 'Keine Karten eingetragen'}
+                </p>
+              )}
+            </div>
+
+            <div className="col-span-full bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <h4 className="font-black uppercase text-xs mb-3 flex items-center gap-1.5 text-black">
+                <span>📝</span> Allgemeine Spielnotizen & Taktikberichte
+              </h4>
+              {isEditing ? (
+                <EditableTextarea 
+                  className="w-full border-2 border-black p-2 font-bold text-xs outline-none focus:border-[#C00000] min-h-[100px] bg-white text-black"
+                  placeholder="Allgemeine Spielnotizen, Aufstellungsdetails, Notizen..."
+                  value={match.notes || ''}
+                  onSave={(val) => onUpdateMatch?.(match.id, 'notes', val)}
+                />
+              ) : (
+                <p className="font-bold text-xs opacity-80 min-h-[60px] whitespace-pre-wrap bg-white p-2 border border-dashed border-black/10 text-black">
+                  {match.notes || 'Keine Spielnotizen vorhanden'}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

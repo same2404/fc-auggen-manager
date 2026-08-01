@@ -45,11 +45,13 @@ export interface SyncOperation {
 
 // Global DB instance cache
 let dbInstance: IDBDatabase | null = null;
+let initPromise: Promise<IDBDatabase> | null = null;
 
 export function initDB(): Promise<IDBDatabase> {
   if (dbInstance) return Promise.resolve(dbInstance);
+  if (initPromise) return initPromise;
 
-  return new Promise((resolve, reject) => {
+  initPromise = new Promise((resolve, reject) => {
     try {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -64,51 +66,112 @@ export function initDB(): Promise<IDBDatabase> {
       };
 
       request.onsuccess = (event: any) => {
-        dbInstance = event.target.result;
-        resolve(dbInstance!);
+        const db = event.target.result as IDBDatabase;
+        dbInstance = db;
+        initPromise = null;
+
+        // Reset connection cache if database gets closed or version changes
+        db.onversionchange = () => {
+          db.close();
+          if (dbInstance === db) {
+            dbInstance = null;
+          }
+          initPromise = null;
+        };
+
+        db.onclose = () => {
+          if (dbInstance === db) {
+            dbInstance = null;
+          }
+          initPromise = null;
+        };
+
+        resolve(db);
       };
 
       request.onerror = (event: any) => {
         console.error('IndexedDB open error:', event.target.error);
+        initPromise = null;
         reject(event.target.error);
       };
     } catch (err) {
       console.error('IndexedDB initialization error:', err);
+      initPromise = null;
+      reject(err);
+    }
+  });
+
+  return initPromise;
+}
+
+// Low-level executor that runs a callback inside a transaction block
+function executeWithDb<T>(
+  db: IDBDatabase,
+  storeName: string,
+  mode: IDBTransactionMode,
+  callback: (store: IDBObjectStore) => IDBRequest | Promise<T>
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    try {
+      const transaction = db.transaction(storeName, mode);
+      const store = transaction.objectStore(storeName);
+      
+      let requestOrPromise: any;
+      try {
+        requestOrPromise = callback(store);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      if (requestOrPromise instanceof Promise) {
+        requestOrPromise.then(resolve).catch(reject);
+      } else {
+        requestOrPromise.onsuccess = (event: any) => {
+          resolve(event.target.result);
+        };
+        requestOrPromise.onerror = (event: any) => {
+          reject(event.target.error);
+        };
+      }
+    } catch (err) {
       reject(err);
     }
   });
 }
 
-// Safe wrapper to execute operations on IndexedDB
+// Safe wrapper to execute operations on IndexedDB with automatic retry if connection is closed/closing
 async function withStore<T>(
   storeName: string,
   mode: IDBTransactionMode,
   callback: (store: IDBObjectStore) => IDBRequest | Promise<T>
 ): Promise<T> {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(storeName, mode);
-    const store = transaction.objectStore(storeName);
-    
-    let requestOrPromise: any;
-    try {
-      requestOrPromise = callback(store);
-    } catch (err) {
-      reject(err);
-      return;
-    }
+  let db = await initDB();
+  try {
+    return await executeWithDb(db, storeName, mode, callback);
+  } catch (err: any) {
+    const errName = err?.name || '';
+    const errMsg = String(err?.message || err).toLowerCase();
 
-    if (requestOrPromise instanceof Promise) {
-      requestOrPromise.then(resolve).catch(reject);
-    } else {
-      requestOrPromise.onsuccess = (event: any) => {
-        resolve(event.target.result);
-      };
-      requestOrPromise.onerror = (event: any) => {
-        reject(event.target.error);
-      };
+    // Check if the transaction failed because the database was closing or closed
+    if (
+      errName === 'InvalidStateError' ||
+      errMsg.includes('closing') ||
+      errMsg.includes('closed') ||
+      errMsg.includes('connection is closing')
+    ) {
+      if (dbInstance === db) {
+        console.warn('IndexedDB connection was closed or closing. Resetting connection and retrying...', err);
+        dbInstance = null; // Invalidate cache
+        initPromise = null; // Invalidate pending promise
+      } else {
+        console.warn('IndexedDB connection was closed or closing, but a new connection has already been set up. Retrying with new connection...', err);
+      }
+      db = await initDB(); // Force re-opening or getting the new connection
+      return executeWithDb(db, storeName, mode, callback); // Retry execution once
     }
-  });
+    throw err;
+  }
 }
 
 // Retrieve cached collection

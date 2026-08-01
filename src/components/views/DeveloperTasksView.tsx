@@ -73,12 +73,12 @@ const tasks: Task[] = [
     description: 'Verbesserung der Interaktivität und Bearbeitbarkeit von Elementen auf dem Taktikboard.',
     priority: 'medium',
     category: 'ui',
-    status: 'pending',
+    status: 'completed',
     steps: [
-      'Farbauswahl für gezeichnete Linien und Formen implementieren',
-      'Größenänderung von Spielersymbolen ermöglichen',
-      'Speichern von verschiedenen Taktik-Setups in der Datenbank',
-      'Export-Funktion als Bild (PNG/JPG)'
+      'Farbauswahl für gezeichnete Linien und Formen implementieren (Erledigt)',
+      'Größenänderung von Spielersymbolen ermöglichen (Erledigt)',
+      'Speichern von verschiedenen Taktik-Setups in der Datenbank (Erledigt)',
+      'Export-Funktion als Bild (PNG/JPG) (Erledigt)'
     ]
   },
   {

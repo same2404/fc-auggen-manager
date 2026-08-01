@@ -1,9 +1,12 @@
 import { TabId } from '../types';
 
 export const TABS: { id: TabId; label: string }[] = [
+  { id: 'dashboard', label: '🏠 Dashboard' },
   { id: 'personnel', label: 'Kader & Personal' },
   { id: 'team_list', label: 'Teamliste' },
   { id: 'player_portal', label: 'Spieler-Bereich 📝' },
+  { id: 'academy_analysis', label: '⚽ Performance (Training & Spiel)' },
+  { id: 'champions_cup', label: '🏆 Champions Cup PRO' },
   { id: 'competitive_planning', label: 'Pflichtspiele' },
   { id: 'test_planning', label: 'Testspiele' },
   { id: 'match_report', label: 'Spielbericht' },
@@ -20,8 +23,8 @@ export const TABS: { id: TabId; label: string }[] = [
   { id: 'tacticboard', label: 'Taktiktafel' },
   { id: 'trainer_view', label: 'Kaderübersicht & Grundordnung' },
   { id: 'training_planning', label: 'Trainingsplanung' },
+  { id: 'video_analysis', label: 'Videoanalyse (Beta) 📹' },
   { id: 'developer_tasks', label: 'Dev-Roadmap' },
-  { id: 'access_control', label: 'Zugriffsverwaltung' },
 ];
 
 import { data } from './data';
@@ -42,3 +45,4 @@ export const INITIAL_FORMATION = data.formation || '4-4-2';
 export const CARD_RECORDS = data.cardRecords || [];
 export const COMPETITIVE_MINUTES = data.competitiveMinutes || [];
 export const TEST_MINUTES = data.testMinutes || [];
+export const INITIAL_MATCH_ANALYSES = data.matchAnalyses || [];

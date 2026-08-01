@@ -324,6 +324,35 @@
         "kpis": { "type": "object" }
       },
       "required": ["id", "playerId", "date", "type", "focus", "duration", "rpe"]
+    },
+    "AcademySessionEvaluation": {
+      "title": "AcademySessionEvaluation",
+      "description": "Represents an AI evaluation of a football academy session or match.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "datum": { "type": "string" },
+        "typ": { "type": "string" },
+        "bewertungen": { "type": "array" },
+        "createdAt": { "type": "integer" },
+        "rawInputNotes": { "type": "string" }
+      },
+      "required": ["datum", "typ", "bewertungen"]
+    },
+    "AcademyWeeklyReport": {
+      "title": "AcademyWeeklyReport",
+      "description": "Represents an aggregated weekly report for the football academy.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "kwLabel": { "type": "string" },
+        "createdAt": { "type": "integer" },
+        "wochenbericht": { "type": "array" },
+        "top_spieler": { "type": "array" },
+        "kritisch": { "type": "array" },
+        "empfehlungen": { "type": "string" }
+      },
+      "required": ["wochenbericht", "top_spieler", "kritisch", "empfehlungen"]
     }
   },
   "firestore": {
@@ -361,6 +390,9 @@
     "tactic_setups": { "schema": "object", "description": "Tactic board formation setup items." },
     "player_performance": { "schema": "object", "description": "Individual player performance entries." },
     "player_performance_team": { "schema": "object", "description": "Overall team performance statistics." },
-    "player_session_logs": { "schema": "PlayerSessionLog", "description": "Performance and load session logs submitted by players." }
+    "player_session_logs": { "schema": "PlayerSessionLog", "description": "Performance and load session logs submitted by players." },
+    "academy_evaluations": { "schema": "AcademySessionEvaluation", "description": "Evaluations of football academy sessions." },
+    "academy_weekly_reports": { "schema": "AcademyWeeklyReport", "description": "Weekly reports of football academy." },
+    "video_analyses": { "schema": "object", "description": "AI video analysis tracking records and timelines." }
   }
 }
