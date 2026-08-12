@@ -14,7 +14,7 @@ export const UniformView: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
+          <div className="flex items-center justify-between p-4 bg-[#1E293B] rounded-xl border border-slate-200">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100" style={{ backgroundColor: primaryColor }} />
               <span className="text-sm font-medium">Primärfarbe</span>
@@ -27,7 +27,7 @@ export const UniformView: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
+          <div className="flex items-center justify-between p-4 bg-[#1E293B] rounded-xl border border-slate-200">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg shadow-inner border border-slate-100" style={{ backgroundColor: secondaryColor }} />
               <span className="text-sm font-medium">Sekundärfarbe</span>

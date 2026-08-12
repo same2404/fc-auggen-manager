@@ -143,7 +143,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
   };
 
   return (
-    <div className="bg-white border-4 border-black p-4 sm:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4">
+    <div className="bg-[#1E293B] border-4 border-black p-4 sm:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b-4 border-black pb-4">
         <div className="flex items-center gap-3">
@@ -299,7 +299,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                 </div>
                 <button 
                   onClick={() => setActiveClip(null)}
-                  className="text-white/60 hover:text-white p-1 hover:bg-white/10 transition-colors"
+                  className="text-white/60 hover:text-white p-1 hover:bg-[#1E293B]/10 transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -360,7 +360,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                       <span className="font-black uppercase text-amber-400">Beteiligte Spieler:</span>
                       <div className="flex flex-wrap gap-1">
                         {activeClip.playerNames.map((p, idx) => (
-                          <span key={idx} className="bg-white/10 px-2 py-0.5 font-bold uppercase text-slate-200">
+                          <span key={idx} className="bg-[#1E293B]/10 px-2 py-0.5 font-bold uppercase text-slate-200">
                             {p}
                           </span>
                         ))}
@@ -382,7 +382,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white border-4 border-black p-6 w-full max-w-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4 max-h-[90vh] overflow-y-auto"
+              className="bg-[#1E293B] border-4 border-black p-6 w-full max-w-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex justify-between items-center border-b-4 border-black pb-3">
                 <h3 className="font-black text-sm uppercase italic flex items-center gap-2">
@@ -517,7 +517,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                             key={p.id}
                             type="button"
                             onClick={() => togglePlayerSelection(name)}
-                            className={`text-[9px] font-black uppercase px-2 py-1 border transition-all ${isSelected ? 'bg-amber-400 text-black border-black font-black' : 'bg-white text-slate-700 border-slate-300'}`}
+                            className={`text-[9px] font-black uppercase px-2 py-1 border transition-all ${isSelected ? 'bg-amber-400 text-black border-black font-black' : 'bg-[#1E293B] text-slate-700 border-slate-300'}`}
                           >
                             {name}
                           </button>

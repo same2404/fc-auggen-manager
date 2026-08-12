@@ -1,11 +1,8 @@
 export type TacticalFormation = 
-  | '4-3-3' 
-  | '4-2-3-1' 
-  | '3-5-2' 
   | '4-4-2' 
-  | '3-4-3' 
+  | '4-2-3-1' 
   | '4-1-4-1' 
-  | '3-4-1-2';
+  | '3-4-3';
 
 export type GamePhase = 'mit_ball' | 'gegen_ball' | 'umschalten';
 export type LoadLevel = 'niedrig' | 'mittel' | 'hoch' | 'max';
@@ -18,15 +15,10 @@ export type TacticalPhilosophy =
   | 'kompaktheit';       // Simeone: Enge Staffelung, kurze Wege, Disziplin
 
 export type BuildUpVariant =
-  | '5_ecken'            // TW, IV-L, IV-R, LV, RV
-  | '6er_drehpunkt'      // DM als Drehpunkt im Zentrum
-  | 'av_fluegel'         // Spielaufbau über AV links/rechts
-  | '3er_kette_abkippen' // DM kippt zwischen die IVs
-  | '6_und_8_dreieck'    // Dreiecksspiel im Zentrum (DM + ZMs)
-  | 'fluegel_dreieck'    // RA/LA + AV + ZM am Flügel
-  | 'zehner_verbindung'  // OM als Verbindungsspieler in Zone 14
-  | 'doppelspitze'       // Spiel auf ST + Tandem partner
-  | 'fluegel_lang_st_ausweichen_10er_nachruecken'; // Spiel nach außen & Langer Ball auf ausweichenden ST (10er rückt nach)
+  | 'av_fluegel'     // 1. Aufbau über die Außenverteidiger
+  | 'sechzehner'     // 2. Aufbau im Sechzehner
+  | 'sechser'        // 3. Aufbau über die Sechser
+  | 'fluegel_lang';  // 4. Aufbau über den Außenspieler, der den langen Ball auf den Flügel spielt
 
 export interface PositionRunData {
   positionKey: string;
@@ -86,205 +78,8 @@ export const PHASE_COLOR: Record<GamePhase, string> = {
 // Helper to calculate load width
 export const getLoadWidth = (level: LoadLevel): number => LOAD_STROKE_WIDTH[level] || 5;
 
-// Comprehensive 7 Formations Data Repository
+// Comprehensive 4 Formations Data Repository
 export const FORMATION_REPOSITORY: Record<TacticalFormation, FormationAnalysis> = {
-  '4-3-3': {
-    formation: '4-3-3',
-    name: '4-3-3 Offensiv-Dominanz',
-    pressingHeight: 'Hoch',
-    kompaktheit: 'Ausgewogen',
-    offensiveFocus: 'Hohe Flügelbreite, Halbraum-Einbrüche der Wingers & tiefe ST-Läufe.',
-    defensiveFocus: 'Explosives Gegenpressing im 4-3-3 Dreieck, Außenverteidigung rückt aggressiv nach.',
-    positions: [
-      {
-        positionKey: 'ST',
-        positionLabel: 'Stürmer (ST)',
-        roleMitBall: 'Tiefenlauf hinter die Kette & Halbraum-Einbruch',
-        roleGegenBall: 'Pressing-Auslöser & Anlaufen der gegnerischen IVs',
-        mitBallPattern: '3D-Tiefenlauf hinter IV & diagonale Strafraumbewegung',
-        gegenBallPattern: 'Explosive Anlaufkurve auf ballführenden IV',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 400 220 Q 480 150 560 90',
-        pathDGegenBall: 'M 400 110 Q 460 160 380 220',
-        pathDUmschalten: 'M 400 110 L 400 240',
-        heatmapCoords: [{ x: 560, y: 110, r: 75 }, { x: 420, y: 180, r: 60 }],
-        trainerAdviceMitBall: 'Für die Position ST ist dieser diagonale 3D-Tiefenlauf typisch. Nutzt die Schnittstelle hinter der IV-Kette.',
-        trainerAdviceGegenBall: 'Für die Position ST ist dieser Pressing-Auslöser typisch. Schneidet den Passweg zum LV ab.',
-        nodeCoords2D: { x: 400, y: 110 },
-      },
-      {
-        positionKey: 'LA',
-        positionLabel: 'Linker Flügel (LA)',
-        roleMitBall: 'Außenbahn-Sprint & Halbraum-Diagonallauf',
-        roleGegenBall: 'Rückwärtige Sprints & Flügelabsicherung',
-        mitBallPattern: 'Iso-Sprint an der Außenbahn mit Cut-Inside',
-        gegenBallPattern: 'Rückwärtssprint zur Flügelabsicherung',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 150 260 Q 230 180 340 120',
-        pathDGegenBall: 'M 150 150 L 190 290',
-        pathDUmschalten: 'M 150 150 L 250 250',
-        heatmapCoords: [{ x: 260, y: 160, r: 70 }],
-        trainerAdviceMitBall: 'Für die Position LA ist dieser Halbraum-Diagonallauf typisch. Bindet den RV.',
-        trainerAdviceGegenBall: 'Für die Position LA sind rückwärtige Sprints typisch. Flügel absichern.',
-        nodeCoords2D: { x: 150, y: 150 },
-      },
-      {
-        positionKey: 'RA',
-        positionLabel: 'Rechter Flügel (RA)',
-        roleMitBall: 'Außenbahn-Sprint & 1v1 Iso-Lauf',
-        roleGegenBall: 'Rückwärtssprint & Flügelabsicherung',
-        mitBallPattern: 'Lange Sprintlinie Außenbahn bis Grundlinie',
-        gegenBallPattern: 'Rückwärtiges Doppelnetz mit RV',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 650 260 L 730 140 L 640 90',
-        pathDGegenBall: 'M 650 150 L 610 290',
-        pathDUmschalten: 'M 650 150 L 550 250',
-        heatmapCoords: [{ x: 680, y: 140, r: 70 }],
-        trainerAdviceMitBall: 'Für die Position RA ist dieser Tempo-Sprint typisch. Nutzt maximale Breite.',
-        trainerAdviceGegenBall: 'Für die Position RA ist der Rückwärtssprint überlastend. Belastung beachten.',
-        nodeCoords2D: { x: 650, y: 150 },
-      },
-      {
-        positionKey: 'ZM-L',
-        positionLabel: 'Zentrales Mittelfeld Links (ZM-L)',
-        roleMitBall: 'Pendelbewegung, Zwischenraum & Passverlagerung',
-        roleGegenBall: 'Kompaktes Verschieben & ballorientiertes Pressing',
-        mitBallPattern: 'Halbraum-Unterstützung & Nachrücken',
-        gegenBallPattern: 'Aggressiver Zweikampf-Anlauf im Halbraum',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 280 320 C 320 280, 260 220, 310 190',
-        pathDGegenBall: 'M 280 270 L 320 330',
-        pathDUmschalten: 'M 280 270 L 300 220',
-        heatmapCoords: [{ x: 300, y: 260, r: 75 }],
-        trainerAdviceMitBall: 'Für die Position ZM-L ist diese Pendelbewegung typisch. Bietet Passoption im Halbraum.',
-        trainerAdviceGegenBall: 'Für die Position ZM-L ist dieses kompakte Verschieben typisch. Zentrum schließen.',
-        nodeCoords2D: { x: 280, y: 270 },
-      },
-      {
-        positionKey: 'ZM-R',
-        positionLabel: 'Zentrales Mittelfeld Rechts (ZM-R)',
-        roleMitBall: 'Pendelbewegung, Vorstoß & Verlagerung',
-        roleGegenBall: 'Kompaktes Verschieben & Balleroberung',
-        mitBallPattern: 'Diagonale Zirkulation & Box-Entry',
-        gegenBallPattern: 'Anpressen des gegnerischen Sechsers',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 520 320 C 480 280, 540 220, 490 190',
-        pathDGegenBall: 'M 520 270 L 480 330',
-        pathDUmschalten: 'M 520 270 L 500 220',
-        heatmapCoords: [{ x: 500, y: 260, r: 75 }],
-        trainerAdviceMitBall: 'Für die Position ZM-R ist dieser Vorstoß typisch. Schafft Überzahl.',
-        trainerAdviceGegenBall: 'Für die Position ZM-R ist das Schließen der Passwege typisch.',
-        nodeCoords2D: { x: 520, y: 270 },
-      },
-      {
-        positionKey: 'DM',
-        positionLabel: 'Defensives Mittelfeld (DM)',
-        roleMitBall: 'Spielaufbau, Tiefes Anbieten & Absicherung',
-        roleGegenBall: 'Zentrum sperren & Restverteidigung',
-        mitBallPattern: 'Horizontale Zirkulationslinie vor der Kette',
-        gegenBallPattern: 'Querverschieben als Abwehrriegel',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 350 360 L 450 360',
-        pathDGegenBall: 'M 350 340 L 450 340',
-        pathDUmschalten: 'M 400 340 L 400 310',
-        heatmapCoords: [{ x: 400, y: 340, r: 85 }],
-        trainerAdviceMitBall: 'Für die Position DM ist die tiefe Aufbausteuerung typisch.',
-        trainerAdviceGegenBall: 'Für die Position DM ist das Sichern des Zentrums vor den IVs typisch.',
-        nodeCoords2D: { x: 400, y: 340 },
-      },
-      {
-        positionKey: 'LV',
-        positionLabel: 'Linker Außenverteidiger (LV)',
-        roleMitBall: 'Überlappung & Flügel-Aufrücken',
-        roleGegenBall: 'Rückwärtiger Sprint & Diagonales Verschieben',
-        mitBallPattern: 'Flügel-Aufrückbewegung & Hinterlaufen',
-        gegenBallPattern: 'Rückwärtssprint zur Absicherung',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 140 380 Q 120 280 180 210',
-        pathDGegenBall: 'M 140 380 L 180 420',
-        pathDUmschalten: 'M 140 380 L 140 300',
-        heatmapCoords: [{ x: 140, y: 320, r: 65 }],
-        trainerAdviceMitBall: 'Für die Position LV ist diese Überlappung typisch. Flankenoption erzeugen.',
-        trainerAdviceGegenBall: 'Für die Position LV ist der Rückwärtssprint entscheidend bei Ballverlust.',
-        nodeCoords2D: { x: 140, y: 380 },
-      },
-      {
-        positionKey: 'RV',
-        positionLabel: 'Rechter Außenverteidiger (RV)',
-        roleMitBall: 'Überlappung & Außenbahn-Vorstoß',
-        roleGegenBall: 'Rückwärtiger Sprint & Diagonales Verschieben',
-        mitBallPattern: 'Lange Außenbahn-Kurve über RA',
-        gegenBallPattern: 'Einrücken & Abdrängen nach außen',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 660 380 Q 740 280 720 210',
-        pathDGegenBall: 'M 660 380 L 620 420',
-        pathDUmschalten: 'M 660 380 L 660 300',
-        heatmapCoords: [{ x: 680, y: 320, r: 65 }],
-        trainerAdviceMitBall: 'Für die Position RV ist dieser Überlappungslauf typisch.',
-        trainerAdviceGegenBall: 'Für die Position RV ist das diagonale Einrücken typisch.',
-        nodeCoords2D: { x: 660, y: 380 },
-      },
-      {
-        positionKey: 'IV-L',
-        positionLabel: 'Innenverteidiger Links (IV-L)',
-        roleMitBall: 'Aufbaubewegung & Linien-Fächerung',
-        roleGegenBall: 'Blockverhalten & Restverteidigung',
-        mitBallPattern: 'Breites Anbieten im Spielaufbau',
-        gegenBallPattern: 'Tiefes Einrücken ins Zentrum',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 290 420 L 230 420',
-        pathDGegenBall: 'M 290 420 L 330 450',
-        pathDUmschalten: 'M 290 420 L 290 390',
-        heatmapCoords: [{ x: 280, y: 420, r: 75 }],
-        trainerAdviceMitBall: 'Für die Position IV-L ist die breite Aufbaubewegung typisch.',
-        trainerAdviceGegenBall: 'Für die Position IV-L ist die Restverteidigung gegen Konter typisch.',
-        nodeCoords2D: { x: 290, y: 420 },
-      },
-      {
-        positionKey: 'IV-R',
-        positionLabel: 'Innenverteidiger Rechts (IV-R)',
-        roleMitBall: 'Aufbaubewegung & Linien-Fächerung',
-        roleGegenBall: 'Blockverhalten & Restverteidigung',
-        mitBallPattern: 'Breites Anbieten im Spielaufbau',
-        gegenBallPattern: 'Tiefes Einrücken ins Zentrum',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 510 420 L 570 420',
-        pathDGegenBall: 'M 510 420 L 470 450',
-        pathDUmschalten: 'M 510 420 L 510 390',
-        heatmapCoords: [{ x: 520, y: 420, r: 75 }],
-        trainerAdviceMitBall: 'Für die Position IV-R ist die breite Aufbaubewegung typisch.',
-        trainerAdviceGegenBall: 'Für die Position IV-R ist die Restverteidigung gegen Konter typisch.',
-        nodeCoords2D: { x: 510, y: 420 },
-      },
-      {
-        positionKey: 'TW',
-        positionLabel: 'Torwart (TW)',
-        roleMitBall: 'Spieleröffnung & Rückpassoption',
-        roleGegenBall: 'Positionierung bei Kontern & Kastenabsicherung',
-        mitBallPattern: 'Vorstoß zur Strafraumgrenze als Anspielstation',
-        gegenBallPattern: 'Grundstellung auf der Torlinie',
-        loadLevel: 'niedrig',
-        strokeWidth: 3,
-        pathDMitBall: 'M 400 460 L 400 435',
-        pathDGegenBall: 'M 400 460 Q 380 465 420 465',
-        pathDUmschalten: 'M 400 460 L 400 450',
-        heatmapCoords: [{ x: 400, y: 460, r: 35 }],
-        trainerAdviceMitBall: 'Für die Position TW ist der mutige Schritt zur Spieleröffnung typisch.',
-        trainerAdviceGegenBall: 'Für die Position TW ist die Grundstellung auf der Linie typisch.',
-        nodeCoords2D: { x: 400, y: 460 },
-      }
-    ]
-  },
   '4-2-3-1': {
     formation: '4-2-3-1',
     name: '4-2-3-1 Kontrolle & Doppel-Sechs',
@@ -478,203 +273,6 @@ export const FORMATION_REPOSITORY: Record<TacticalFormation, FormationAnalysis> 
         heatmapCoords: [{ x: 400, y: 460, r: 35 }],
         trainerAdviceMitBall: 'Für TW ist die präzise Spieleröffnung typisch.',
         trainerAdviceGegenBall: 'Für TW ist die Konzentration auf der Linie typisch.',
-        nodeCoords2D: { x: 400, y: 460 },
-      }
-    ]
-  },
-  '3-5-2': {
-    formation: '3-5-2',
-    name: '3-5-2 Zentrums-Macht & Flügel-Power',
-    pressingHeight: 'Hoch',
-    kompaktheit: 'Breit-Fächernd',
-    offensiveFocus: 'Extrem hohe Belastung für LM/RM (ganze Schiene), 2 Spitzen kreuzen & besetzen den Strafraum.',
-    defensiveFocus: '5er-Kette entsteht bei tiefem gegnerischem Ballbesitz, 3 IVs sichern das Zentrum lückenlos.',
-    positions: [
-      {
-        positionKey: 'ST-L',
-        positionLabel: 'Stürmer Links (ST-L)',
-        roleMitBall: 'Tiefenlauf & Ausweichen in Halbraum',
-        roleGegenBall: 'Pressing-Auslöser & Anlaufen IV',
-        mitBallPattern: 'Diagonaler Tiefenlauf nach links',
-        gegenBallPattern: 'Aggressiver Anlauf auf IV-R',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 330 180 Q 250 130 300 80',
-        pathDGegenBall: 'M 330 110 L 260 170',
-        pathDUmschalten: 'M 330 110 L 330 200',
-        heatmapCoords: [{ x: 300, y: 110, r: 75 }],
-        trainerAdviceMitBall: 'Für ST-L ist das Ausweichen in den linken Halbraum typisch.',
-        trainerAdviceGegenBall: 'Für ST-L ist dieser Pressing-Auslöser typisch.',
-        nodeCoords2D: { x: 330, y: 110 },
-      },
-      {
-        positionKey: 'ST-R',
-        positionLabel: 'Stürmer Rechts (ST-R)',
-        roleMitBall: 'Tiefenlauf & Strafraumbewegung',
-        roleGegenBall: 'Pressing-Auslöser & Anlaufen IV',
-        mitBallPattern: 'Zentraler Tiefenlauf & Box-Klatscher',
-        gegenBallPattern: 'Aggressiver Anlauf auf IV-L',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 470 180 Q 550 130 500 80',
-        pathDGegenBall: 'M 470 110 L 540 170',
-        pathDUmschalten: 'M 470 110 L 470 200',
-        heatmapCoords: [{ x: 500, y: 110, r: 75 }],
-        trainerAdviceMitBall: 'Für ST-R ist der diagonale Box-Einlauf typisch.',
-        trainerAdviceGegenBall: 'Für ST-R ist das Schließen der Mitte typisch.',
-        nodeCoords2D: { x: 470, y: 110 },
-      },
-      {
-        positionKey: 'LM',
-        positionLabel: 'Linker Schienenläufer (LM)',
-        roleMitBall: 'Flügel-Aufrücken, Sprints & Flanken',
-        roleGegenBall: 'Rückwärtssprint & 5er-Kette auffüllen',
-        mitBallPattern: 'Gewaltige Sprintlinie über die komplette Außenbahn',
-        gegenBallPattern: 'Tiefer Rückwärtssprint auf LV-Höhe',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 110 320 L 110 120',
-        pathDGegenBall: 'M 110 280 L 150 420',
-        pathDUmschalten: 'M 110 280 L 110 360',
-        heatmapCoords: [{ x: 110, y: 250, r: 90 }],
-        trainerAdviceMitBall: 'Für LM ist das Bearbeiten der gesamten Schiene typisch. Maximale Belastung!',
-        trainerAdviceGegenBall: 'Für LM ist das unverzügliche Auffüllen der 5er-Kette Pflicht.',
-        nodeCoords2D: { x: 110, y: 280 },
-      },
-      {
-        positionKey: 'RM',
-        positionLabel: 'Rechter Schienenläufer (RM)',
-        roleMitBall: 'Flügel-Aufrücken, Sprints & Flanken',
-        roleGegenBall: 'Rückwärtssprint & 5er-Kette auffüllen',
-        mitBallPattern: 'Gewaltige Sprintlinie über die komplette Außenbahn',
-        gegenBallPattern: 'Tiefer Rückwärtssprint auf RV-Höhe',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 690 320 L 690 120',
-        pathDGegenBall: 'M 690 280 L 650 420',
-        pathDUmschalten: 'M 690 280 L 690 360',
-        heatmapCoords: [{ x: 690, y: 250, r: 90 }],
-        trainerAdviceMitBall: 'Für RM ist der permanente Vorstoß über außen typisch.',
-        trainerAdviceGegenBall: 'Für RM ist der tiefe Rückwärtssprint zur 5er-Kette typisch.',
-        nodeCoords2D: { x: 690, y: 280 },
-      },
-      {
-        positionKey: 'ZM-L',
-        positionLabel: 'Zentrales Mittelfeld Links (ZM-L)',
-        roleMitBall: 'Halbraum-Vorstoß & Verbindungsspiel',
-        roleGegenBall: 'Kompaktes Verschieben & Ballorientiertes Pressing',
-        mitBallPattern: 'Vorstoß-Sprint in die Offensive',
-        gegenBallPattern: 'Zentrumsverdichtung Links',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 290 300 L 250 180',
-        pathDGegenBall: 'M 290 260 L 330 320',
-        pathDUmschalten: 'M 290 260 L 290 220',
-        heatmapCoords: [{ x: 280, y: 250, r: 75 }],
-        trainerAdviceMitBall: 'Für ZM-L ist der Vorstoß in den Halbraum typisch.',
-        trainerAdviceGegenBall: 'Für ZM-L ist das Schließen der Lücke zum LM typisch.',
-        nodeCoords2D: { x: 290, y: 260 },
-      },
-      {
-        positionKey: 'ZM-R',
-        positionLabel: 'Zentrales Mittelfeld Rechts (ZM-R)',
-        roleMitBall: 'Halbraum-Vorstoß & Ballverlagerung',
-        roleGegenBall: 'Kompaktes Verschieben & Zweikampf',
-        mitBallPattern: 'Vorstoß-Sprint in die Offensive',
-        gegenBallPattern: 'Zentrumsverdichtung Rechts',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 510 300 L 550 180',
-        pathDGegenBall: 'M 510 260 L 470 320',
-        pathDUmschalten: 'M 510 260 L 510 220',
-        heatmapCoords: [{ x: 520, y: 250, r: 75 }],
-        trainerAdviceMitBall: 'Für ZM-R ist das Nachrücken an die Box typisch.',
-        trainerAdviceGegenBall: 'Für ZM-R ist die Absicherung des rechten Halbraums typisch.',
-        nodeCoords2D: { x: 510, y: 260 },
-      },
-      {
-        positionKey: 'DM',
-        positionLabel: 'Defensives Mittelfeld (DM)',
-        roleMitBall: 'Spielaufbau & Absicherung',
-        roleGegenBall: 'Abwehrriegel vor der 3er/5er Kette',
-        mitBallPattern: 'Tiefe Zirkulation & Pendelbewegung',
-        gegenBallPattern: 'Querverschieben im Sechserraum',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 350 370 L 450 370',
-        pathDGegenBall: 'M 350 350 L 450 350',
-        pathDUmschalten: 'M 400 350 L 400 320',
-        heatmapCoords: [{ x: 400, y: 350, r: 85 }],
-        trainerAdviceMitBall: 'Für DM ist das Verteilen der Bälle auf die Schienen typisch.',
-        trainerAdviceGegenBall: 'Für DM ist das Halten der Zentrumsbalance typisch.',
-        nodeCoords2D: { x: 400, y: 350 },
-      },
-      {
-        positionKey: 'IV-L',
-        positionLabel: 'Innenverteidiger Links (IV-L)',
-        roleMitBall: 'Aufbau-Einrücken & Flügel-Absicherung',
-        roleGegenBall: 'Kompakt-Block & Vorwärts-Verteidigen',
-        mitBallPattern: 'Vorstoß im linken Halbraum',
-        gegenBallPattern: 'Verschieben nach links',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 240 430 L 190 380',
-        pathDGegenBall: 'M 240 430 L 280 440',
-        pathDUmschalten: 'M 240 430 L 240 400',
-        heatmapCoords: [{ x: 230, y: 420, r: 75 }],
-        trainerAdviceMitBall: 'Für IV-L ist das mutige Andribbeln typisch.',
-        trainerAdviceGegenBall: 'Für IV-L ist das Rausrücken bei LM-Aufrücken typisch.',
-        nodeCoords2D: { x: 240, y: 430 },
-      },
-      {
-        positionKey: 'IV-C',
-        positionLabel: 'Zentraler Innenverteidiger (IV-C)',
-        roleMitBall: 'Zentraler Aufbau & Restverteidigung',
-        roleGegenBall: 'Luftduelle & Letzter Riegel',
-        mitBallPattern: 'Zentraler Passgeber',
-        gegenBallPattern: 'Zentrales Blockverhalten',
-        loadLevel: 'niedrig',
-        strokeWidth: 3,
-        pathDMitBall: 'M 370 430 L 430 430',
-        pathDGegenBall: 'M 400 430 L 400 450',
-        pathDUmschalten: 'M 400 430 L 400 410',
-        heatmapCoords: [{ x: 400, y: 430, r: 85 }],
-        trainerAdviceMitBall: 'Für IV-C ist der ruhige Spielaufbau typisch.',
-        trainerAdviceGegenBall: 'Für IV-C ist die Dominanz bei hohen Bällen typisch.',
-        nodeCoords2D: { x: 400, y: 430 },
-      },
-      {
-        positionKey: 'IV-R',
-        positionLabel: 'Innenverteidiger Rechts (IV-R)',
-        roleMitBall: 'Aufbau-Einrücken & Flügel-Absicherung',
-        roleGegenBall: 'Kompakt-Block & Vorwärts-Verteidigen',
-        mitBallPattern: 'Vorstoß im rechten Halbraum',
-        gegenBallPattern: 'Verschieben nach rechts',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 560 430 L 610 380',
-        pathDGegenBall: 'M 560 430 L 520 440',
-        pathDUmschalten: 'M 560 430 L 560 400',
-        heatmapCoords: [{ x: 570, y: 420, r: 75 }],
-        trainerAdviceMitBall: 'Für IV-R ist das Andribbeln im Halbraum typisch.',
-        trainerAdviceGegenBall: 'Für IV-R ist die Absicherung hinter RM typisch.',
-        nodeCoords2D: { x: 560, y: 430 },
-      },
-      {
-        positionKey: 'TW',
-        positionLabel: 'Torwart (TW)',
-        roleMitBall: 'Spieleröffnung',
-        roleGegenBall: 'Positionierung bei Kontern',
-        mitBallPattern: 'Kurzer Schritt zur Anspielstation',
-        gegenBallPattern: 'Torlinien-Stellung',
-        loadLevel: 'niedrig',
-        strokeWidth: 3,
-        pathDMitBall: 'M 400 460 L 400 440',
-        pathDGegenBall: 'M 400 460 Q 380 465 420 465',
-        pathDUmschalten: 'M 400 460 L 400 450',
-        heatmapCoords: [{ x: 400, y: 460, r: 35 }],
-        trainerAdviceMitBall: 'Für TW ist die präzise Eröffnung typisch.',
-        trainerAdviceGegenBall: 'Für TW ist die Konzentration im Kasten typisch.',
         nodeCoords2D: { x: 400, y: 460 },
       }
     ]
@@ -1269,203 +867,6 @@ export const FORMATION_REPOSITORY: Record<TacticalFormation, FormationAnalysis> 
         nodeCoords2D: { x: 400, y: 460 },
       }
     ]
-  },
-  '3-4-1-2': {
-    formation: '3-4-1-2',
-    name: '3-4-1-2 Variabel & Doppelspitze mit Spielmacher',
-    pressingHeight: 'Hoch',
-    kompaktheit: 'Ausgewogen',
-    offensiveFocus: '10er verbindet 2 Sturmspitzen, Schienenläufer erzeugen maximale Breite.',
-    defensiveFocus: '3er-Abwehrkette sichert gegen gegnerische Konter ab, 10er arbeitet rückwärts mit.',
-    positions: [
-      {
-        positionKey: 'ST-L',
-        positionLabel: 'Stürmer Links (ST-L)',
-        roleMitBall: 'Tiefenlauf & Halbraum-Sprint',
-        roleGegenBall: 'Pressing-Auslöser & Anlaufen IV',
-        mitBallPattern: 'Diagonaler Tiefensprint',
-        gegenBallPattern: 'Anlaufen auf IV-R',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 330 180 L 270 90',
-        pathDGegenBall: 'M 330 110 L 270 180',
-        pathDUmschalten: 'M 330 110 L 330 200',
-        heatmapCoords: [{ x: 300, y: 110, r: 75 }],
-        trainerAdviceMitBall: 'Für ST-L ist der diagonale Ausweichlauf typisch.',
-        trainerAdviceGegenBall: 'Für ST-L ist das Anpressen typisch.',
-        nodeCoords2D: { x: 330, y: 110 },
-      },
-      {
-        positionKey: 'ST-R',
-        positionLabel: 'Stürmer Rechts (ST-R)',
-        roleMitBall: 'Tiefenlauf & Strafraumbewegung',
-        roleGegenBall: 'Pressing-Auslöser & Anlaufen IV',
-        mitBallPattern: 'Zentraler Tiefensprint',
-        gegenBallPattern: 'Anlaufen auf IV-L',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 470 180 L 530 90',
-        pathDGegenBall: 'M 470 110 L 530 180',
-        pathDUmschalten: 'M 470 110 L 470 200',
-        heatmapCoords: [{ x: 500, y: 110, r: 75 }],
-        trainerAdviceMitBall: 'Für ST-R ist der tiefe Box-Lauf typisch.',
-        trainerAdviceGegenBall: 'Für ST-R ist das Anpressen typisch.',
-        nodeCoords2D: { x: 470, y: 110 },
-      },
-      {
-        positionKey: 'OM',
-        positionLabel: 'Offensives Mittelfeld (OM)',
-        roleMitBall: 'Zwischenraumbewegung & Schlüsselpass',
-        roleGegenBall: 'Gegenpressing & Rückzug ins Mittelfeld',
-        mitBallPattern: 'Freiraumsuche in Zone 14',
-        gegenBallPattern: 'Zentrumsverdichtung hinter den Spitzen',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 400 270 C 350 230, 450 200, 400 160',
-        pathDGegenBall: 'M 400 220 L 400 300',
-        pathDUmschalten: 'M 400 220 L 400 270',
-        heatmapCoords: [{ x: 400, y: 220, r: 85 }],
-        trainerAdviceMitBall: 'Für OM ist die Freiraumsuche typisch.',
-        trainerAdviceGegenBall: 'Für OM ist das Gegenpressing typisch.',
-        nodeCoords2D: { x: 400, y: 220 },
-      },
-      {
-        positionKey: 'LM',
-        positionLabel: 'Linker Schienenläufer (LM)',
-        roleMitBall: 'Flügel-Aufrücken & Flanken',
-        roleGegenBall: 'Rückwärtssprint & 5er-Kette',
-        mitBallPattern: 'Gewaltige Sprintlinie über Außen',
-        gegenBallPattern: 'Rückwärtssprint auf LV-Höhe',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 110 330 L 110 130',
-        pathDGegenBall: 'M 110 290 L 150 420',
-        pathDUmschalten: 'M 110 290 L 110 350',
-        heatmapCoords: [{ x: 110, y: 260, r: 85 }],
-        trainerAdviceMitBall: 'Für LM ist das Durchlaufen der Schiene typisch.',
-        trainerAdviceGegenBall: 'Für LM ist der Rückwärtssprint zur 5er-Kette Pflicht.',
-        nodeCoords2D: { x: 110, y: 290 },
-      },
-      {
-        positionKey: 'RM',
-        positionLabel: 'Rechter Schienenläufer (RM)',
-        roleMitBall: 'Flügel-Aufrücken & Flanken',
-        roleGegenBall: 'Rückwärtssprint & 5er-Kette',
-        mitBallPattern: 'Gewaltige Sprintlinie über Außen',
-        gegenBallPattern: 'Rückwärtssprint auf RV-Höhe',
-        loadLevel: 'max',
-        strokeWidth: 12,
-        pathDMitBall: 'M 690 330 L 690 130',
-        pathDGegenBall: 'M 690 290 L 650 420',
-        pathDUmschalten: 'M 690 290 L 690 350',
-        heatmapCoords: [{ x: 690, y: 260, r: 85 }],
-        trainerAdviceMitBall: 'Für RM ist das Durchlaufen der Schiene typisch.',
-        trainerAdviceGegenBall: 'Für RM ist der Rückwärtssprint zur 5er-Kette Pflicht.',
-        nodeCoords2D: { x: 690, y: 290 },
-      },
-      {
-        positionKey: 'ZM-L',
-        positionLabel: 'Zentrales Mittelfeld Links (ZM-L)',
-        roleMitBall: 'Pendelbewegung & Absicherung',
-        roleGegenBall: 'Kompaktes Verschieben',
-        mitBallPattern: 'Verteilungs- & Halbraumlauf',
-        gegenBallPattern: 'Zentrumsabdeckung Links',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 310 390 L 310 270',
-        pathDGegenBall: 'M 310 340 L 350 390',
-        pathDUmschalten: 'M 310 340 L 310 290',
-        heatmapCoords: [{ x: 310, y: 320, r: 75 }],
-        trainerAdviceMitBall: 'Für ZM-L ist das Absichern typisch.',
-        trainerAdviceGegenBall: 'Für ZM-L ist das Verdichten typisch.',
-        nodeCoords2D: { x: 310, y: 340 },
-      },
-      {
-        positionKey: 'ZM-R',
-        positionLabel: 'Zentrales Mittelfeld Rechts (ZM-R)',
-        roleMitBall: 'Pendelbewegung & Absicherung',
-        roleGegenBall: 'Kompaktes Verschieben',
-        mitBallPattern: 'Verteilungs- & Halbraumlauf',
-        gegenBallPattern: 'Zentrumsabdeckung Rechts',
-        loadLevel: 'hoch',
-        strokeWidth: 8,
-        pathDMitBall: 'M 490 390 L 490 270',
-        pathDGegenBall: 'M 490 340 L 450 390',
-        pathDUmschalten: 'M 490 340 L 490 290',
-        heatmapCoords: [{ x: 490, y: 320, r: 75 }],
-        trainerAdviceMitBall: 'Für ZM-R ist das Absichern typisch.',
-        trainerAdviceGegenBall: 'Für ZM-R ist das Verdichten typisch.',
-        nodeCoords2D: { x: 490, y: 340 },
-      },
-      {
-        positionKey: 'IV-L',
-        positionLabel: 'Innenverteidiger Links (IV-L)',
-        roleMitBall: 'Aufbaubewegung',
-        roleGegenBall: 'Blockverhalten',
-        mitBallPattern: 'Halbraum-Aufbau',
-        gegenBallPattern: 'Verschieben nach links',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 240 430 L 190 370',
-        pathDGegenBall: 'M 240 430 L 280 440',
-        pathDUmschalten: 'M 240 430 L 240 400',
-        heatmapCoords: [{ x: 230, y: 420, r: 75 }],
-        trainerAdviceMitBall: 'Für IV-L ist das Andribbeln typisch.',
-        trainerAdviceGegenBall: 'Für IV-L ist die Absicherung typisch.',
-        nodeCoords2D: { x: 240, y: 430 },
-      },
-      {
-        positionKey: 'IV-C',
-        positionLabel: 'Zentraler Innenverteidiger (IV-C)',
-        roleMitBall: 'Zentraler Aufbau',
-        roleGegenBall: 'Absicherung',
-        mitBallPattern: 'Passgeber im Zentrum',
-        gegenBallPattern: 'Kopfball-Absicherung',
-        loadLevel: 'niedrig',
-        strokeWidth: 3,
-        pathDMitBall: 'M 370 430 L 430 430',
-        pathDGegenBall: 'M 400 430 L 400 450',
-        pathDUmschalten: 'M 400 430 L 400 410',
-        heatmapCoords: [{ x: 400, y: 430, r: 85 }],
-        trainerAdviceMitBall: 'Für IV-C ist die Spieleröffnung typisch.',
-        trainerAdviceGegenBall: 'Für IV-C ist der Luft-Block typisch.',
-        nodeCoords2D: { x: 400, y: 430 },
-      },
-      {
-        positionKey: 'IV-R',
-        positionLabel: 'Innenverteidiger Rechts (IV-R)',
-        roleMitBall: 'Aufbaubewegung',
-        roleGegenBall: 'Blockverhalten',
-        mitBallPattern: 'Halbraum-Aufbau',
-        gegenBallPattern: 'Verschieben nach rechts',
-        loadLevel: 'mittel',
-        strokeWidth: 5,
-        pathDMitBall: 'M 560 430 L 610 370',
-        pathDGegenBall: 'M 560 430 L 520 440',
-        pathDUmschalten: 'M 560 430 L 560 400',
-        heatmapCoords: [{ x: 570, y: 420, r: 75 }],
-        trainerAdviceMitBall: 'Für IV-R ist das Andribbeln typisch.',
-        trainerAdviceGegenBall: 'Für IV-R ist die Absicherung typisch.',
-        nodeCoords2D: { x: 560, y: 430 },
-      },
-      {
-        positionKey: 'TW',
-        positionLabel: 'Torwart (TW)',
-        roleMitBall: 'Spieleröffnung',
-        roleGegenBall: 'Positionierung',
-        mitBallPattern: 'Kurzer Schritt zur Anspielstation',
-        gegenBallPattern: 'Torlinienstellung',
-        loadLevel: 'niedrig',
-        strokeWidth: 3,
-        pathDMitBall: 'M 400 460 L 400 440',
-        pathDGegenBall: 'M 400 460 Q 380 465 420 465',
-        pathDUmschalten: 'M 400 460 L 400 450',
-        heatmapCoords: [{ x: 400, y: 460, r: 35 }],
-        trainerAdviceMitBall: 'Für TW ist die geordnete Eröffnung typisch.',
-        trainerAdviceGegenBall: 'Für TW ist das Stellungsspiel typisch.',
-        nodeCoords2D: { x: 400, y: 460 },
-      }
-    ]
   }
 };
 
@@ -1474,8 +875,8 @@ export function compareFormations(
   fromForm: TacticalFormation,
   toForm: TacticalFormation
 ): FormationComparison {
-  const fromData = FORMATION_REPOSITORY[fromForm] || FORMATION_REPOSITORY['4-3-3'];
-  const toData = FORMATION_REPOSITORY[toForm] || FORMATION_REPOSITORY['4-3-3'];
+  const fromData = FORMATION_REPOSITORY[fromForm] || FORMATION_REPOSITORY['4-4-2'];
+  const toData = FORMATION_REPOSITORY[toForm] || FORMATION_REPOSITORY['4-4-2'];
 
   const mitBallChanges: string[] = [];
   const gegenBallChanges: string[] = [];
@@ -1509,9 +910,6 @@ export function compareFormations(
   if (toForm === '4-2-3-1') {
     roleChanges.push('OM besetzt die Zone 14 als Spielmacher. Doppel-Sechs sichert das Zentrum voll ab.');
     mitBallChanges.push('Gezieltes Verbindungsspiel über den 10er in die Halbräume.');
-  } else if (toForm === '3-5-2') {
-    roleChanges.push('Doppelspitze (ST-L & ST-R) kreuzt vor der Box. 3 ZMs kontrollieren das Zentrum.');
-    mitBallChanges.push('Flanken-Fokus durch aufrückende LM/RM Schienenläufer.');
   } else if (toForm === '3-4-3') {
     roleChanges.push('3 echte Spitzen setzen den gegnerischen Spielaufbau sofort unter Dauerdruck.');
     loadChanges.push('Angriffstrio hat maximale Belastung im Gegenpressing.');
@@ -1589,68 +987,159 @@ export const TACTICAL_PHILOSOPHIES: Record<TacticalPhilosophy, {
   }
 };
 
-// BUILD-UP VARIANTS REPOSITORY (8 Profi-Varianten)
+// BUILD-UP VARIANTS REPOSITORY (EXACTLY 4 VARIANTS)
 export const BUILD_UP_VARIANTS: Record<BuildUpVariant, {
   name: string;
   keyPlayers: string;
   tacticalGoal: string;
   recommendation: string;
 }> = {
-  '5_ecken': {
-    name: 'Aufbau über 5 Ecken (TW, IV-L, IV-R, LV, RV)',
-    keyPlayers: 'TW, IV-L, IV-R, LV, RV',
-    tacticalGoal: 'Maximale Spielfeld-Breite in erster Linie, um gegnerische Pressingreihe auseinanderzuziehen.',
-    recommendation: 'AVs stehen extrem breit an der Seitenlinie; TW agiert als vollwertiger Feldspieler.'
-  },
-  '6er_drehpunkt': {
-    name: 'Aufbau über 6er-Position (DM als Drehpunkt)',
-    keyPlayers: 'DM, TW, IV-L, IV-R',
-    tacticalGoal: 'Zentraler Aufbauspieler verarbeitet Ball unter Druck und verteilt in die Halbräume.',
-    recommendation: 'Bei Aufbau über 6er: ZM-L muss tiefer stehen und die Gegenbewegung absichern.'
-  },
   'av_fluegel': {
-    name: 'Aufbau über AV links/rechts (Flügelspiel)',
-    keyPlayers: 'LV, RV, LA, RA, ZM',
-    tacticalGoal: 'Umschiffen des vollen Zentrums über die Außenbahn mit Hinterlaufen des AVs.',
+    name: '1. Aufbau über die Außenverteidiger',
+    keyPlayers: 'LV, RV, TW, IV-L, IV-R',
+    tacticalGoal: 'Spielaufbau über die Außenverteidiger, die an der Seitenlinie hochschieben und den Flügel ansteuern.',
     recommendation: 'AV schiebt mutig hoch, Flügelstürmer zieht in den Halbraum, um Passweg freizumachen.'
   },
-  '3er_kette_abkippen': {
-    name: 'Aufbau über 3er-Kette (DM kippt ab)',
-    keyPlayers: 'DM, IV-L, IV-R, LV, RV',
-    tacticalGoal: 'DM kippt zwischen die IVs. IVs schieben breiter, AVs schieben fast auf Flügelhöhe.',
-    recommendation: 'DM übernimmt das Andribbeln; die 8er besetzen spiegelbildlich die Halbräume.'
+  'sechzehner': {
+    name: '2. Aufbau im Sechzehner',
+    keyPlayers: 'TW, IV-L, IV-R, DM',
+    tacticalGoal: 'Kurzes, ruhiges Kombinationsspiel direkt im eigenen Sechzehnmeterraum zur Überwindung des ersten Pressingblocks.',
+    recommendation: 'TW agiert als zusätzlicher Passgeber, IVs lassen sich tief an die Grundlinie fallen.'
   },
-  '6_und_8_dreieck': {
-    name: 'Aufbau über 6 & 8 (Dreiecksspiel im Zentrum)',
-    keyPlayers: 'DM, ZM-L, ZM-R',
-    tacticalGoal: 'Schnelles Flachpass-Dreieck im Zentrum zur Hebelung des gegnerischen Blocks.',
-    recommendation: 'Zentrales Mittelfeld agiert mit nur 2 Kontakten (Klatschen lassen & steil spielen).'
+  'sechser': {
+    name: '3. Aufbau über die Sechser',
+    keyPlayers: 'DM, ZM-L, ZM-R, IV',
+    tacticalGoal: 'Zentraler Spielaufbau über die 6er-Position als Drehpunkt zur Raum- & Spielverlagerung.',
+    recommendation: 'Sechser fordert den Ball zwischen den gegnerischen Linien und verteilt flach in die Spitze.'
   },
-  'fluegel_dreieck': {
-    name: 'Aufbau über Flügel (RA/LA + AV + ZM)',
-    keyPlayers: 'RA/LA, LV/RV, ZM',
-    tacticalGoal: 'Lokale 3v2 Überzahl am Flügel kreieren, um die gegnerische Kette zu durchbrechen.',
-    recommendation: 'Bei Flügelüberladung: RA soll diagonal in den Halbraum starten.'
-  },
-  'zehner_verbindung': {
-    name: 'Aufbau über 10 (OM als Verbindungsspieler)',
-    keyPlayers: 'OM, ST, DM',
-    tacticalGoal: 'Direktes Anspiel zwischen die gegnerischen Abwehr- & Mittelfeldlinien in Zone 14.',
-    recommendation: 'OM sucht gezielt die Tasche hinter der gegnerischen Sechs und dreht auf.'
-  },
-  'doppelspitze': {
-    name: 'Aufbau über Doppelspitze (ST + RA/LA oder ST + OM)',
-    keyPlayers: 'ST, OM/RA, ZM',
-    tacticalGoal: 'Vertikaler Flugball auf Target-Man ST, der auf nachrückende Mitspieler prallen lässt.',
-    recommendation: 'Zweite Welle rückt geschlossen auf die Kugel nach; IVs sichern sofort ab.'
-  },
-  'fluegel_lang_st_ausweichen_10er_nachruecken': {
-    name: 'Spiel nach außen & Flugball auf ausweichenden ST (10er rückt nach)',
-    keyPlayers: 'AV/Flügel, ST, OM (10er), 8er, IVs',
-    tacticalGoal: 'Pass nach außen auf AV/Flügel, gefolgt von gezieltem Flugball auf den nach außen ausweichenden Stürmer (ST), während der 10er (OM) explosiv in die freie Mitte nachrückt.',
-    recommendation: 'ST zieht die IVs ins Aus/Halbraum. Der 10er sprintet steil in die freie Box. Das Gesamtkollektiv schiebt zur Restverteidigung nach.'
+  'fluegel_lang': {
+    name: '4. Aufbau über den Außenspieler, der den langen Ball auf den Flügel spielt',
+    keyPlayers: 'Außenspieler (LV/RV/LM/RM), ST, Flügel',
+    tacticalGoal: 'Aufbau über den Außenspieler, der mit einem präzisen langen Flugball auf den gegnerischen Flügel verlagert.',
+    recommendation: 'Außenspieler blickt auf und schlägt den gezielten Diagonalball hinter die gegnerische Abwehrkette.'
   }
 };
+
+export interface SetPieceVariant {
+  id: string;
+  category: 'Ecke' | 'Freistoß' | 'Einwurf';
+  name: string;
+  erfolgsquote: number; // percentage e.g. 42
+  torgefahrLevel: 'Sehr Hoch' | 'Hoch' | 'Mittel';
+  executionSteps: string[];
+  targetZone: string;
+  participatingPositions: string[];
+  trainerNote: string;
+}
+
+export const SET_PIECES_DATABASE: SetPieceVariant[] = [
+  {
+    id: 'ecke_kurz',
+    category: 'Ecke',
+    name: '1. Kurze Ecke mit 2v1 Überzahl & Rückraum-Drop',
+    erfolgsquote: 44,
+    torgefahrLevel: 'Sehr Hoch',
+    executionSteps: [
+      'RA fordert den Ball an der Eckfahne kurz an.',
+      'OM läuft entgegen und kreiert sofort eine 2v1 Überzahl gegen den gegnerischen Außenverteidiger.',
+      'Doppelpass & flacher Rückpass an die 16m-Kante auf den nachrückenden 8er (ZM-L) zum Platzierungsschuss.'
+    ],
+    targetZone: 'Rückraum Zone 14 (16m-Linie)',
+    participatingPositions: ['RA', 'OM', 'ZM-L', 'ST'],
+    trainerNote: 'Besonders effektiv gegen tiefstehende Teams mit vielen großen Kopfballspielern im Fünfmeterraum.'
+  },
+  {
+    id: 'ecke_2pfosten',
+    category: 'Ecke',
+    name: '2. Schnittstellen-Flanke auf den 2. Pfosten',
+    erfolgsquote: 48,
+    torgefahrLevel: 'Sehr Hoch',
+    executionSteps: [
+      'IV-L und IV-R starten von der 16m-Linie im gegengleichen Lauf in den Fünfmeterraum.',
+      'IV-L zieht den gegnerischen Innenverteidiger am 1. Pfosten auf sich.',
+      'Scharfe Schnittstellen-Flanke mit Schnitt vom Tor weg auf den heranbrausenden kopfballstarken ST am 2. Pfosten.'
+    ],
+    targetZone: 'Fünfmeterraum / 2. Pfosten',
+    participatingPositions: ['ST', 'IV-L', 'IV-R', 'LA'],
+    trainerNote: 'Standardschütze schlägt den Ball mit Drall vom Tor weg, damit der Torwart auf der Linie gebunden bleibt.'
+  },
+  {
+    id: 'freistoss_mauer',
+    category: 'Freistoß',
+    name: '3. Einstudierte Mauer-Lücke & Chip-Pass hinter Kette',
+    erfolgsquote: 52,
+    torgefahrLevel: 'Sehr Hoch',
+    executionSteps: [
+      '2 eigene Spieler (LA & OM) stellen sich direkt vor die gegnerische Mauer und lösen sich im Moment des Anlaufs.',
+      'Schütze täuscht Torschuss an, chippt den Ball stattdessen über die Mauer in den Lauf von ST.',
+      'ST schließt direkt volley aus 8 Metern ab.'
+    ],
+    targetZone: 'Strafraumzentrum (8m vor dem Tor)',
+    participatingPositions: ['ST', 'LA', 'OM', 'ZM-R'],
+    trainerNote: 'Perfekt bei Freistößen aus 20-25m Torentfernung in zentraler Position.'
+  },
+  {
+    id: 'einwurf_lang',
+    category: 'Einwurf',
+    name: '4. Katapult-Einwurf in den Strafraum & Verlängerung',
+    erfolgsquote: 38,
+    torgefahrLevel: 'Hoch',
+    executionSteps: [
+      'LV nimmt langen Anlauf an der Seitenlinie.',
+      'ST blockt den gegnerischen IV frei, damit IV-R oder ST am 1. Pfosten per Kopf ins Zentrum verlängern kann.',
+      'Nachrückender RA schließt am 2. Pfosten ab.'
+    ],
+    targetZone: '1. Pfosten / Fünfmeterkante',
+    participatingPositions: ['LV', 'ST', 'IV-R', 'RA'],
+    trainerNote: 'Setzt maximale physische Präsenz und genaues Timing beim Kopfball-Drop voraus.'
+  }
+];
+
+export interface PlayerScoutingProfile {
+  positionKey: string;
+  playerName: string;
+  matchRating: number;
+  runDistanceKm: number;
+  passAccuracyPct: number;
+  tackleWinPct: number;
+  sprintsCount: number;
+  marketValueEstimate: string;
+  topStrengths: string[];
+  webScoutingInsights: string;
+  level3MandatorySentence: string;
+}
+
+export function generatePlayerScoutingProfile(positionKey: string, squadPlayers: any[] = []): PlayerScoutingProfile {
+  const matchingPlayer = squadPlayers.find(p => p.position?.toUpperCase() === positionKey || p.name?.includes(positionKey));
+  const name = matchingPlayer ? `${matchingPlayer.firstName || ''} ${matchingPlayer.lastName || matchingPlayer.name}`.trim() : `FC Auggen ${positionKey}-Spezialist`;
+  
+  const seed = positionKey.charCodeAt(0) + (positionKey.charCodeAt(1) || 0);
+  const rating = Math.round((7.8 + (seed % 15) / 10) * 10) / 10;
+  const dist = Math.round((10.2 + (seed % 22) / 10) * 10) / 10;
+  const pass = Math.round(78 + (seed % 18));
+  const tackle = Math.round(58 + (seed % 32));
+  const sprints = 18 + (seed % 16);
+
+  const level3Sentence = `Für die Position [${positionKey}] ist diese Laufbewegung typisch und entspricht dem Verbandsliga-Anforderungsprofil des FC Auggen.`;
+
+  return {
+    positionKey,
+    playerName: name,
+    matchRating: Math.min(9.8, rating),
+    runDistanceKm: dist,
+    passAccuracyPct: pass,
+    tackleWinPct: tackle,
+    sprintsCount: sprints,
+    marketValueEstimate: `${120 + (seed % 200)}k €`,
+    topStrengths: [
+      'Hohe Umschaltgeschwindigkeit & Antritt',
+      'Taktisches Raumverständnis & Vororientierung',
+      'Passgenauigkeit unter Pressingdruck'
+    ],
+    webScoutingInsights: `Erhöhte Laufleistungsdaten im Bereich High-Intensity-Sprints. Sehr hohe Effizienz im Ballbesitzspiel.`,
+    level3MandatorySentence: level3Sentence
+  };
+}
 
 export interface ProTrainerAnalysisResult {
   formation: TacticalFormation;
@@ -1685,9 +1174,9 @@ export function generateProTrainerAnalysis(
   buildUpVariant: BuildUpVariant,
   selectedPosition: string
 ): ProTrainerAnalysisResult {
-  const formDetails = FORMATION_REPOSITORY[formation] || FORMATION_REPOSITORY['4-3-3'];
+  const formDetails = FORMATION_REPOSITORY[formation] || FORMATION_REPOSITORY['4-4-2'];
   const philDetails = TACTICAL_PHILOSOPHIES[philosophy] || TACTICAL_PHILOSOPHIES['positionsspiel'];
-  const buDetails = BUILD_UP_VARIANTS[buildUpVariant] || BUILD_UP_VARIANTS['6er_drehpunkt'];
+  const buDetails = BUILD_UP_VARIANTS[buildUpVariant] || BUILD_UP_VARIANTS['av_fluegel'];
 
   const posData = formDetails.positions.find(p => p.positionKey === selectedPosition) || formDetails.positions[0];
 

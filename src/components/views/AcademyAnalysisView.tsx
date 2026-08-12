@@ -370,7 +370,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Fehler bei der KI-Analyse");
+        throw new Error(errData.error || "Fehler bei der Analyse");
       }
 
       const data: AcademySessionEvaluation = await response.json();
@@ -384,7 +384,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
       };
       await saveSessionEvaluation(newItem);
 
-      setSuccessMessage(`KI-Bewertung für "${effectiveBezeichnung}" (${data.bewertungen.length} Spieler) gespeichert!`);
+      setSuccessMessage(`Bewertung für "${effectiveBezeichnung}" (${data.bewertungen.length} Spieler) gespeichert!`);
       setInputText('');
       setTimeout(() => setSuccessMessage(null), 4000);
 
@@ -611,64 +611,64 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
   return (
     <div className="space-y-8 animate-fadeIn max-w-7xl mx-auto px-2 sm:px-4 py-6">
       
-      {/* Header Banner - FC Auggen Colors (Rot, Schwarz, Weiß) */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-950 via-slate-900 to-black border border-red-500/40 p-6 sm:p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 p-8 opacity-15 pointer-events-none">
-          <Trophy className="w-64 h-64 text-red-500" />
+      {/* Header Banner - Scouting 26/27 Theme */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#121824] border border-[#334155] p-6 sm:p-8 shadow-xl">
+        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+          <Trophy className="w-64 h-64 text-[#10B981]" />
         </div>
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-red-600/30 text-red-300 border border-red-500/40 mb-3 shadow-md">
-              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-              <span>Performance, Kognition & Entwicklung (FC Auggen)</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#1E293B] text-[#F8FAFC] border border-[#334155] mb-3 shadow-xs">
+              <Star className="w-3.5 h-3.5 text-[#F59E0B] fill-[#F59E0B]" />
+              <span className="uppercase tracking-wider">Performance, Kognition & Entwicklung (FC Auggen)</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tracking-tight uppercase flex items-center gap-3">
               <span>Performance Training & Spiele</span>
-              <span className="text-xs bg-red-600 text-white font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow">
+              <span className="text-xs bg-[#10B981] text-[#0A0E17] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-xs">
                 FC Auggen
               </span>
             </h1>
-            <p className="text-slate-300 text-sm mt-1 max-w-2xl">
-              Vergib Leistungsnoten (1.0 bis 6.0) für Training & Spiele und erfasse <strong>kognitive & mentale Eigenschaften</strong> (z.B. extrem konzentriert, motiviert). Kognitive Stärken bringen <strong>Extra-Bonuspunkte</strong> für die Gesamtwertung (aus 5.0 Punkten)!
+            <p className="text-[#94A3B8] text-sm mt-1 max-w-2xl">
+              Vergib Leistungsnoten (1.0 bis 6.0) für Training & Spiele und erfasse <strong className="text-[#F8FAFC]">kognitive & mentale Eigenschaften</strong> (z.B. extrem konzentriert, motiviert). Kognitive Stärken bringen <strong className="text-[#10B981]">Extra-Bonuspunkte</strong> für die Gesamtwertung!
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={() => setViewTab('manual')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
                 viewTab === 'manual'
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/40 border border-red-500'
-                  : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                  ? 'bg-[#10B981] text-white shadow-md border border-[#10B981]'
+                  : 'bg-[#1E293B] text-[#F8FAFC] hover:bg-[#334155] border border-[#334155]'
               }`}
             >
-              <UserCheck className="w-4 h-4 text-white" />
+              <UserCheck className="w-4 h-4" />
               <span>Bewertung & Kognition eintragen</span>
             </button>
 
             <button
               onClick={() => setViewTab('weekly_report')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
                 viewTab === 'weekly_report'
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/40 border border-red-500'
-                  : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                  ? 'bg-[#10B981] text-white shadow-md border border-[#10B981]'
+                  : 'bg-[#1E293B] text-[#F8FAFC] hover:bg-[#334155] border border-[#334155]'
               }`}
             >
-              <Trophy className="w-4 h-4 text-amber-400" />
+              <Trophy className="w-4 h-4 text-[#F59E0B]" />
               <span>Gesamttabelle ({sessionEvaluations.length} Einheiten)</span>
             </button>
 
             <button
               onClick={() => setViewTab('ai_evaluator')}
-              className={`px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center gap-2 ${
                 viewTab === 'ai_evaluator'
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/40 border border-red-500'
-                  : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                  ? 'bg-[#10B981] text-white shadow-md border border-[#10B981]'
+                  : 'bg-[#1E293B] text-[#F8FAFC] hover:bg-[#334155] border border-[#334155]'
               }`}
             >
-              <Sparkles className="w-4 h-4 text-red-400" />
-              <span>KI-Noten per Freitext</span>
+              <Sparkles className="w-4 h-4 text-[#10B981]" />
+              <span>Noten per Freitext</span>
             </button>
           </div>
         </div>
@@ -708,15 +708,15 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
             </div>
           )}
 
-          <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+          <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
             
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 border-b border-slate-800 pb-5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 border-b border-[#334155] pb-5">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-red-500" />
+                <h2 className="text-lg font-bold text-[#F8FAFC] flex items-center gap-2 uppercase tracking-wide">
+                  <UserCheck className="w-5 h-5 text-[#10B981]" />
                   {editingSessionId ? 'Bewertung & Kognition korrigieren' : 'Bewertung & Kognitive Fähigkeiten eintragen'}
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[#94A3B8] mt-0.5">
                   Noten (1 = Sehr gut bis 6 = Ungenügend) + schnelle Tags für Konzentration, Motivation & Spielintelligenz (bringen Extra-Bonuspunkte).
                 </p>
               </div>
@@ -724,7 +724,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
               {/* Type, Session Name Presets, & Date Selector */}
               <div className="flex flex-wrap items-center gap-3">
                 {/* Type switch */}
-                <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+                <div className="flex rounded-xl bg-[#1E293B] p-1 border border-[#334155]">
                   <button
                     type="button"
                     onClick={() => {
@@ -732,10 +732,10 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                       setBezeichnung('Training 1');
                       setCustomBezeichnung('');
                     }}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all ${
                       typ === 'Training'
-                        ? 'bg-red-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-[#10B981] text-white shadow-xs'
+                        : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                     }`}
                   >
                     ⚽ Training
@@ -747,10 +747,10 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                       setBezeichnung('Spiel 1 (Liga)');
                       setCustomBezeichnung('');
                     }}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    className={`px-3 py-1.5 text-xs font-bold uppercase rounded-lg transition-all ${
                       typ === 'Spiel'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-[#10B981] text-white shadow-xs'
+                        : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                     }`}
                   >
                     🏆 Spiel
@@ -758,21 +758,21 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                 </div>
 
                 {/* Date */}
-                <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 border border-slate-800 rounded-xl">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-1.5 bg-[#1E293B] px-3 py-1.5 border border-[#334155] rounded-xl text-[#F8FAFC]">
+                  <Calendar className="w-3.5 h-3.5 text-[#94A3B8]" />
                   <input
                     type="date"
                     value={datum}
                     onChange={(e) => setDatum(e.target.value)}
-                    className="bg-transparent text-xs text-white focus:outline-none"
+                    className="bg-transparent text-xs text-[#F8FAFC] font-bold focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Presets Row for designating Training 1, 2, 3 or Spiel 1, 2 */}
-            <div className="mb-6 p-4 bg-slate-950/80 border border-slate-800 rounded-xl">
-              <label className="block text-xs font-semibold text-slate-300 mb-2">
+            <div className="mb-6 p-4 bg-[#1E293B] border border-[#334155] rounded-xl">
+              <label className="block text-xs font-semibold uppercase text-[#F8FAFC] mb-2">
                 Bezeichnung der Einheit / des Spiels:
               </label>
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -784,10 +784,10 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                       setBezeichnung(preset);
                       setCustomBezeichnung('');
                     }}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all uppercase tracking-wider ${
                       bezeichnung === preset && !customBezeichnung
-                        ? 'bg-red-600/30 text-red-300 border-red-500/60 shadow-md font-bold'
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        ? 'bg-[#10B981] text-white border-[#10B981] shadow-xs font-bold'
+                        : 'bg-[#121824] text-[#F8FAFC] border-[#334155] hover:bg-[#334155]'
                     }`}
                   >
                     {preset}
@@ -797,13 +797,13 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
 
               {/* Custom Title Input */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 shrink-0">Oder eigener Name:</span>
+                <span className="text-xs text-[#94A3B8] shrink-0">Oder eigener Name:</span>
                 <input
                   type="text"
                   placeholder="z.B. Testspiel vs. Basel, Athletikeinheit, Hallenturnier..."
                   value={customBezeichnung}
                   onChange={(e) => setCustomBezeichnung(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-red-500 flex-1 max-w-md"
+                  className="bg-[#121824] border border-[#334155] rounded-lg px-3 py-1.5 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#10B981] flex-1 max-w-md"
                 />
               </div>
             </div>
@@ -818,37 +818,37 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                   return (
                     <div 
                       key={player.id}
-                      className="bg-slate-950/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 transition-all space-y-4"
+                      className="bg-[#121824] border border-[#334155] rounded-2xl p-5 transition-all space-y-4 shadow-xs"
                     >
                       {/* Top Row: Player Info & Grade Selector */}
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         {/* Player Info */}
                         <div className="lg:w-48 shrink-0 flex items-center gap-3">
-                          <span className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-red-400 font-mono text-sm font-extrabold flex items-center justify-center shrink-0">
+                          <span className="w-9 h-9 rounded-full bg-[#1E293B] border border-[#334155] text-[#F8FAFC] font-mono text-sm font-extrabold flex items-center justify-center shrink-0 shadow-xs">
                             {player.number || '#'}
                           </span>
                           <div>
-                            <h4 className="font-bold text-white text-sm truncate">{pName}</h4>
-                            <span className="text-[10px] text-slate-400 uppercase tracking-wider">{player.position || 'Spieler'}</span>
+                            <h4 className="font-bold text-[#F8FAFC] text-sm truncate">{pName}</h4>
+                            <span className="text-[10px] text-[#94A3B8] uppercase tracking-wider">{player.position || 'Spieler'}</span>
                           </div>
                         </div>
 
                         {/* German School Grade Selector (1.0 to 6.0) + Clear option */}
                         <div className="flex-1 space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                              <Award className="w-3.5 h-3.5 text-amber-400" />
+                            <label className="text-xs font-bold text-[#F8FAFC] flex items-center gap-1.5">
+                              <Award className="w-3.5 h-3.5 text-[#F1C40F]" />
                               <span>Leistungsnote:</span>
                             </label>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-xs text-red-300 bg-red-950/60 border border-red-500/40 px-2.5 py-0.5 rounded-lg">
+                              <span className="font-mono font-bold text-xs text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/30 px-2.5 py-0.5 rounded-lg">
                                 {getSchulnoteText(currentEntry.note)}
                               </span>
                               {currentEntry.note > 0 && (
                                 <button
                                   type="button"
                                   onClick={() => handleGradeChange(pName, 'note', 0)}
-                                  className="px-2 py-0.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500/40 text-[10px] font-bold rounded-lg flex items-center gap-1 transition-all"
+                                  className="px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[10px] font-bold rounded-lg flex items-center gap-1 transition-all"
                                   title="Note für diesen Spieler entfernen"
                                 >
                                   <Trash2 className="w-3 h-3" /> Note entfernen
@@ -864,8 +864,8 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                               onClick={() => handleGradeChange(pName, 'note', 0)}
                               className={`py-2 px-1 text-xs font-extrabold rounded-xl border transition-all flex flex-col items-center justify-center ${
                                 !currentEntry.note || currentEntry.note === 0
-                                  ? 'bg-rose-950/80 text-rose-300 border-rose-500/50 shadow font-bold ring-2 ring-rose-500/40'
-                                  : 'bg-slate-900 text-slate-500 border-slate-800 hover:bg-slate-800'
+                                  ? 'bg-rose-600 text-white border-rose-600 shadow-xs font-bold'
+                                  : 'bg-[#1E293B] text-[#94A3B8] border-[#334155] hover:bg-[#334155]'
                               }`}
                               title="Keine Note vergeben / entfernen"
                             >
@@ -880,8 +880,8 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                 onClick={() => handleGradeChange(pName, 'note', sg.value)}
                                 className={`py-2 px-1 text-xs font-extrabold rounded-xl border transition-all flex flex-col items-center justify-center ${
                                   currentEntry.note === sg.value
-                                    ? 'bg-red-600 text-white border-red-400 shadow-lg scale-105 ring-2 ring-red-400/50'
-                                    : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                                    ? 'bg-[#10B981] text-white border-[#10B981] shadow-xs scale-105'
+                                    : 'bg-[#1E293B] text-[#F8FAFC] border-[#334155] hover:bg-[#334155]'
                                 }`}
                               >
                                 <span>{sg.label}</span>
@@ -892,13 +892,13 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                       </div>
 
                       {/* Middle Row: Cognitive & Mental Attributes (Kognitive Fähigkeiten) */}
-                      <div className="p-3 bg-slate-900/80 border border-slate-800/80 rounded-xl space-y-2">
+                      <div className="p-3 bg-[#1E293B] border border-[#334155] rounded-xl space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-red-400 flex items-center gap-1.5">
-                            <BrainCircuit className="w-4 h-4 text-red-400" />
+                          <label className="text-xs font-bold text-[#F8FAFC] flex items-center gap-1.5">
+                            <BrainCircuit className="w-4 h-4 text-[#10B981]" />
                             <span>Kognitive & Mentale Fähigkeiten (Tags antippen zum Auswählen):</span>
                           </label>
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-[#94A3B8]">
                             {currentEntry.kognitive?.length || 0} Eigenschaften gewählt
                           </span>
                         </div>
@@ -913,12 +913,12 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                 onClick={() => toggleCognitiveTag(pName, tag)}
                                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1 ${
                                   isSelected
-                                    ? 'bg-red-600/30 text-red-200 border-red-500/80 font-bold shadow-md'
-                                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                                    ? 'bg-[#10B981] text-white border-[#10B981] font-bold shadow-xs'
+                                    : 'bg-[#121824] text-[#F8FAFC] border-[#334155] hover:bg-[#334155]'
                                 }`}
                               >
                                 <span>{tag}</span>
-                                {isSelected && <CheckCircle2 className="w-3 h-3 text-red-400 shrink-0" />}
+                                {isSelected && <CheckCircle2 className="w-3 h-3 text-white shrink-0" />}
                               </button>
                             );
                           })}
@@ -932,27 +932,27 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                           placeholder="Begründung (z.B. Starkes 1v1, hohes Tempo)"
                           value={currentEntry.begründung}
                           onChange={(e) => handleGradeChange(pName, 'begründung', e.target.value)}
-                          className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                          className="bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-2 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#10B981]"
                         />
                         <input
                           type="text"
                           placeholder="Fokuspunkt (z.B. Torabschluss mit links)"
                           value={currentEntry.fokus}
                           onChange={(e) => handleGradeChange(pName, 'fokus', e.target.value)}
-                          className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                          className="bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-2 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#10B981]"
                         />
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <p className="text-xs text-slate-400 p-4 text-center">Keine Spieler im Kader gefunden.</p>
+                <p className="text-xs text-[#94A3B8] p-4 text-center">Keine Spieler im Kader gefunden.</p>
               )}
             </div>
 
             {/* Save Action Bar */}
-            <div className="mt-6 pt-5 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs text-slate-400">
+            <div className="mt-6 pt-5 border-t border-[#334155] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs text-[#94A3B8]">
                 Speichern für <strong>{effectiveBezeichnung}</strong> ({datum}) – {Object.values(manualGrades).filter(g => g.note > 0).length} Spieler bewertet.
               </span>
 
@@ -960,7 +960,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                 type="button"
                 onClick={handleSaveManualSession}
                 disabled={loading}
-                className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 border border-red-500/40"
+                className="w-full sm:w-auto bg-[#10B981] hover:bg-[#059669] text-white font-bold uppercase tracking-wider text-xs py-3 px-6 rounded-xl shadow-md border border-[#10B981] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>{editingSessionId ? 'Änderungen Speichern' : 'Einheit Speichern & In Tabelle übernehmen'}</span>
@@ -976,31 +976,31 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
         <div className="space-y-8 animate-fadeIn">
           
           {/* Target Weekly Units Selector Bar */}
-          <div className="bg-gradient-to-r from-red-950/80 via-slate-900 to-black border border-red-500/40 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+          <div className="bg-[#121824] border border-[#334155] p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-red-600/30 text-red-400 border border-red-500/40 shadow-inner">
+              <div className="p-2.5 rounded-xl bg-[#1E293B] text-[#10B981] border border-[#334155]">
                 <Calculator className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2">
                   <span>Wochen-Zielberechnung (Standard: 5 Einheiten)</span>
-                  <span className="text-[10px] bg-red-600/30 text-red-300 px-2 py-0.5 rounded-full border border-red-500/40 font-bold">
+                  <span className="text-[10px] bg-[#1E293B] text-[#10B981] px-2 py-0.5 rounded-full border border-[#334155] font-bold">
                     3 Trainings + 2 Spiele = 5 Einheiten
                   </span>
                 </h3>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Schulnoten (70%) + Trainingsbeteiligung (30%) fließen live in das <strong>Gesamtergebnis aus 5.0 Punkten</strong> ein.
+                <p className="text-xs text-[#94A3B8] mt-0.5">
+                  Schulnoten (70%) + Trainingsbeteiligung (30%) fließen live in das <strong className="text-[#F8FAFC]">Gesamtergebnis aus 5.0 Punkten</strong> ein.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-slate-950 px-4 py-2 border border-slate-800 rounded-xl">
-              <Target className="w-4 h-4 text-red-400 shrink-0" />
-              <label className="text-xs font-semibold text-slate-300">Ziel-Anzahl Einheiten:</label>
+            <div className="flex items-center gap-2 bg-[#1E293B] px-4 py-2 border border-[#334155] rounded-xl text-[#F8FAFC]">
+              <Target className="w-4 h-4 text-[#10B981] shrink-0" />
+              <label className="text-xs font-semibold text-[#F8FAFC]">Ziel-Anzahl Einheiten:</label>
               <select
                 value={targetWeeklyUnits}
                 onChange={(e) => setTargetWeeklyUnits(Number(e.target.value))}
-                className="bg-slate-900 text-red-300 font-bold text-xs rounded-lg px-2.5 py-1 border border-slate-700 focus:outline-none focus:border-red-500"
+                className="bg-[#121824] text-[#F8FAFC] font-bold text-xs rounded-lg px-2.5 py-1 border border-[#334155] focus:outline-none focus:border-[#10B981]"
               >
                 {[3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                   <option key={num} value={num}>
@@ -1012,26 +1012,26 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
           </div>
 
           {/* Controls Header: Filters (Type & Month) */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/95 border border-slate-800 p-5 rounded-2xl gap-4 shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between bg-[#121824] border border-[#334155] p-5 rounded-2xl gap-4 shadow-xl">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-400" />
+              <h2 className="text-lg font-bold uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-[#F59E0B]" />
                 Performance-Tabelle & Wochenauswertung
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#94A3B8]">
                 Vergleiche die Schulnoten, Kognition & Beteiligung deines Kaders. Top 3 werden mit Gold, Silber & Bronze geehrt.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               {/* Type Filter */}
-              <div className="flex items-center gap-1.5 bg-slate-950 p-1 border border-slate-800 rounded-xl">
-                <Filter className="w-3.5 h-3.5 text-slate-400 ml-2" />
+              <div className="flex items-center gap-1.5 bg-[#1E293B] p-1 border border-[#334155] rounded-xl">
+                <Filter className="w-3.5 h-3.5 text-[#94A3B8] ml-2" />
                 <button
                   type="button"
                   onClick={() => setFilterType('Alle')}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                    filterType === 'Alle' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  className={`px-2.5 py-1 text-xs font-semibold uppercase rounded-lg transition-all ${
+                    filterType === 'Alle' ? 'bg-[#10B981] text-white font-bold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                   }`}
                 >
                   Alle ({sessionEvaluations.length})
@@ -1039,8 +1039,8 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterType('Training')}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                    filterType === 'Training' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  className={`px-2.5 py-1 text-xs font-semibold uppercase rounded-lg transition-all ${
+                    filterType === 'Training' ? 'bg-[#10B981] text-white font-bold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                   }`}
                 >
                   Nur Trainings
@@ -1048,8 +1048,8 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterType('Spiel')}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                    filterType === 'Spiel' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  className={`px-2.5 py-1 text-xs font-semibold uppercase rounded-lg transition-all ${
+                    filterType === 'Spiel' ? 'bg-[#10B981] text-white font-bold' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
                   }`}
                 >
                   Nur Spiele
@@ -1058,17 +1058,17 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
 
               {/* Month Filter */}
               {availableMonths.length > 0 && (
-                <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 border border-slate-800 rounded-xl">
-                  <Calendar className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                  <span className="text-xs text-slate-400 font-semibold">Monat:</span>
+                <div className="flex items-center gap-1.5 bg-[#1E293B] px-3 py-1.5 border border-[#334155] rounded-xl">
+                  <Calendar className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
+                  <span className="text-xs text-[#94A3B8] font-semibold">Monat:</span>
                   <select
                     value={filterMonth}
                     onChange={(e) => setFilterMonth(e.target.value)}
-                    className="bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
+                    className="bg-transparent text-xs text-[#F8FAFC] font-bold focus:outline-none cursor-pointer"
                   >
-                    <option value="Alle" className="bg-slate-900 text-white">Alle Monate</option>
+                    <option value="Alle" className="bg-[#121824] text-[#F8FAFC]">Alle Monate</option>
                     {availableMonths.map(m => (
-                      <option key={m} value={m} className="bg-slate-900 text-white">
+                      <option key={m} value={m} className="bg-[#121824] text-[#F8FAFC]">
                         {formatMonthLabel(m)}
                       </option>
                     ))}
@@ -1080,30 +1080,30 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                 type="button"
                 onClick={handleGenerateWeeklyReport}
                 disabled={loading}
-                className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-red-600/30 flex items-center gap-2 transition-all disabled:opacity-50 border border-red-500/40"
+                className="bg-[#10B981] hover:bg-[#059669] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50 border border-[#10B981]"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>KI-Wochenbericht</span>
+                <span>Wochenbericht</span>
               </button>
             </div>
           </div>
 
           {/* Leaderboard Table with Gold/Silver/Bronze Highlighting */}
-          <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-4 flex items-center justify-between">
+          <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
+            <h3 className="text-base font-bold text-[#F8FAFC] mb-4 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-red-500" />
+                <Flame className="w-5 h-5 text-[#3A7BFF]" />
                 Rangliste & Performance ({leaderboardData.length} Spieler)
               </span>
-              <span className="text-xs text-slate-400 font-normal">
+              <span className="text-xs text-[#94A3B8] font-normal">
                 Klicke auf eine Zeile für die Aufschlüsselung aller Noten & kognitiven Merkmale
               </span>
             </h3>
 
             {leaderboardData.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300 border-collapse">
-                  <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <table className="w-full text-left text-xs text-[#F8FAFC] border-collapse">
+                  <thead className="bg-[#121824] text-[#F8FAFC] uppercase text-[10px] tracking-wider border-b border-[#334155]">
                     <tr>
                       <th className="p-3">Rang</th>
                       <th className="p-3">Spieler</th>
@@ -1116,20 +1116,20 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                       <th className="p-3 text-right">Details</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/80">
+                  <tbody className="divide-y divide-[#334155]">
                     {leaderboardData.map((item, idx) => {
                       const isExpanded = expandedPlayer === item.spieler;
                       const isGold = idx === 0;
                       const isSilver = idx === 1;
                       const isBronze = idx === 2;
 
-                      let rowClass = "hover:bg-slate-800/50 transition-all cursor-pointer ";
+                      let rowClass = "hover:bg-[#1E293B]/60 transition-all cursor-pointer ";
                       if (isGold) {
-                        rowClass += "bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border-l-4 border-amber-400 ";
+                        rowClass += "bg-[#F59E0B]/10 border-l-4 border-[#F59E0B] ";
                       } else if (isSilver) {
-                        rowClass += "bg-gradient-to-r from-slate-300/15 via-slate-900 to-slate-900 border-l-4 border-slate-300 ";
+                        rowClass += "bg-[#1E293B]/40 border-l-4 border-[#94A3B8] ";
                       } else if (isBronze) {
-                        rowClass += "bg-gradient-to-r from-amber-800/15 via-slate-900 to-slate-900 border-l-4 border-amber-600 ";
+                        rowClass += "bg-[#D97706]/10 border-l-4 border-[#D97706] ";
                       }
 
                       return (
@@ -1141,32 +1141,32 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                             {/* Rank Badge (Gold, Silver, Bronze) */}
                             <td className="p-3 font-bold">
                               {isGold && (
-                                <span className="inline-flex items-center gap-1 font-extrabold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-md border border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.25)]">
+                                <span className="inline-flex items-center gap-1 font-extrabold text-[#F59E0B] bg-[#F59E0B]/20 px-2.5 py-1 rounded-md border border-[#F59E0B]/30">
                                   🥇 Gold (#1)
                                 </span>
                               )}
                               {isSilver && (
-                                <span className="inline-flex items-center gap-1 font-extrabold text-slate-200 bg-slate-300/20 px-2.5 py-1 rounded-md border border-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.2)]">
+                                <span className="inline-flex items-center gap-1 font-extrabold text-[#F8FAFC] bg-[#1E293B] px-2.5 py-1 rounded-md border border-[#334155]">
                                   🥈 Silber (#2)
                                 </span>
                               )}
                               {isBronze && (
-                                <span className="inline-flex items-center gap-1 font-extrabold text-amber-500 bg-amber-800/30 px-2.5 py-1 rounded-md border border-amber-600 shadow-[0_0_10px_rgba(217,119,6,0.2)]">
+                                <span className="inline-flex items-center gap-1 font-extrabold text-[#D97706] bg-[#D97706]/20 px-2.5 py-1 rounded-md border border-[#D97706]/30">
                                   🥉 Bronze (#3)
                                 </span>
                               )}
                               {!isGold && !isSilver && !isBronze && (
-                                <span className="font-mono font-bold text-slate-400 pl-2">
+                                <span className="font-mono font-bold text-[#94A3B8] pl-2">
                                   #{idx + 1}
                                 </span>
                               )}
                             </td>
 
                             {/* Player name */}
-                            <td className="p-3 font-bold text-white text-sm">
+                            <td className="p-3 font-bold text-[#F8FAFC] text-sm">
                               <div className="flex items-center gap-2">
                                 <span>{item.spieler}</span>
-                                {isGold && <span className="text-amber-400 text-xs">⭐ Top Spieler</span>}
+                                {isGold && <span className="text-[#F1C40F] text-xs">⭐ Top Spieler</span>}
                               </div>
                             </td>
 
@@ -1190,22 +1190,22 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                 <div className="flex flex-wrap gap-1">
                                   {item.cognitiveList.length > 0 ? (
                                     item.cognitiveList.slice(0, 2).map((tag, tIdx) => (
-                                      <span key={tIdx} className="bg-slate-800 text-red-300 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">
+                                      <span key={tIdx} className="bg-[#121824] text-[#F8FAFC] border border-[#334155] px-2 py-0.5 rounded text-[10px] font-semibold">
                                         {tag}
                                       </span>
                                     ))
                                   ) : (
-                                    <span className="text-slate-500 text-[10px] italic">-</span>
+                                    <span className="text-[#94A3B8] text-[10px] italic">-</span>
                                   )}
                                   {item.cognitiveList.length > 2 && (
-                                    <span className="text-slate-400 text-[10px] font-mono">+{item.cognitiveList.length - 2}</span>
+                                    <span className="text-[#94A3B8] text-[10px] font-mono">+{item.cognitiveList.length - 2}</span>
                                   )}
                                 </div>
                                 {item.cogBonusPoints !== 0 && (
                                   <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-1.5 py-0.5 rounded border w-fit ${
                                     item.cogBonusPoints > 0 
-                                      ? 'bg-purple-950/80 text-purple-300 border-purple-500/40' 
-                                      : 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                                      ? 'bg-purple-100 text-purple-800 border-purple-300' 
+                                      : 'bg-rose-100 text-rose-800 border-rose-300'
                                   }`}>
                                     🧠 {item.cogBonusPoints > 0 ? `+${item.cogBonusPoints}` : item.cogBonusPoints} Bonus-Pkt
                                   </span>
@@ -1216,9 +1216,9 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                             {/* Attendance % directly integrated */}
                             <td className="p-3">
                               <div className="flex items-center gap-2">
-                                <Activity className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                                <Activity className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
                                 <span className={`font-mono font-bold text-xs ${
-                                  item.attendanceQuote >= 85 ? 'text-emerald-400' : item.attendanceQuote >= 65 ? 'text-amber-400' : 'text-rose-400'
+                                  item.attendanceQuote >= 85 ? 'text-[#10B981]' : item.attendanceQuote >= 65 ? 'text-[#F59E0B]' : 'text-rose-400'
                                 }`}>
                                   {item.attendanceQuote}% Beteiligung
                                 </span>
@@ -1229,11 +1229,11 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                             <td className="p-3">
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="bg-slate-800 text-red-300 font-mono font-bold px-2 py-0.5 rounded text-[11px] border border-slate-700">
+                                  <span className="bg-[#121824] text-[#F8FAFC] font-mono font-bold px-2 py-0.5 rounded text-[11px] border border-[#334155]">
                                     {item.anzahlEinheiten} / {targetWeeklyUnits} Einheiten
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                                <div className="flex items-center gap-1 text-[10px] text-[#94A3B8]">
                                   <span>{item.trainingsCount} TE</span>
                                   <span>•</span>
                                   <span>{item.matchesCount} Spiele</span>
@@ -1242,13 +1242,13 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                             </td>
 
                             {/* Focus */}
-                            <td className="p-3 text-slate-300 max-w-xs truncate">{item.letzterFokus}</td>
+                            <td className="p-3 text-[#F8FAFC] max-w-xs truncate">{item.letzterFokus}</td>
 
                             {/* Toggle Button */}
                             <td className="p-3 text-right">
                               <button 
                                 type="button"
-                                className="p-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
+                                className="p-1 rounded bg-[#121824] text-[#F8FAFC] hover:bg-[#334155] border border-[#334155]"
                               >
                                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                               </button>
@@ -1257,27 +1257,27 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
 
                           {/* Expanded breakdown row */}
                           {isExpanded && (
-                            <tr className="bg-slate-950 border-b border-slate-800">
+                            <tr className="bg-[#121824] border-b border-[#334155]">
                               <td colSpan={9} className="p-4">
                                 <div className="space-y-4">
-                                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
-                                    <h4 className="font-bold text-red-400 text-xs flex items-center gap-1.5">
-                                      <BrainCircuit className="w-4 h-4 text-red-400" />
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#334155] pb-2">
+                                    <h4 className="font-bold text-[#F8FAFC] text-xs flex items-center gap-1.5">
+                                      <BrainCircuit className="w-4 h-4 text-[#3A7BFF]" />
                                       Detaillierte Leistungsbewertung & Kognition von {item.spieler}:
                                     </h4>
-                                    <span className="text-xs text-slate-300">
+                                    <span className="text-xs text-[#94A3B8]">
                                       Ergebnis: <strong>{item.scoreOutof5} / 5.0 Punkte</strong> (Beteiligung {item.attendanceQuote}%)
                                     </span>
                                   </div>
 
                                   {/* Cognitive attributes summary */}
                                   {item.cognitiveList.length > 0 && (
-                                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
-                                      <span className="text-[11px] font-bold text-slate-300 block mb-1.5">🧠 Kognitives Profil / Mentale Stärken:</span>
+                                    <div className="p-3 bg-[#1E293B] border border-[#334155] rounded-xl">
+                                      <span className="text-[11px] font-bold text-[#F8FAFC] block mb-1.5">🧠 Kognitives Profil / Mentale Stärken:</span>
                                       <div className="flex flex-wrap gap-1.5">
                                         {item.cognitiveList.map((cog, cIdx) => (
-                                          <span key={cIdx} className="bg-red-950/80 text-red-200 border border-red-500/40 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1">
-                                            <Sparkles className="w-3 h-3 text-red-400" />
+                                          <span key={cIdx} className="bg-[#3A7BFF]/10 text-[#3A7BFF] border border-[#3A7BFF]/30 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1">
+                                            <Sparkles className="w-3 h-3 text-[#3A7BFF]" />
                                             <span>{cog}</span>
                                           </span>
                                         ))}
@@ -1287,18 +1287,18 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                     {item.history.map((h, hIdx) => (
-                                      <div key={hIdx} className="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+                                      <div key={hIdx} className="bg-[#1E293B] border border-[#334155] rounded-xl p-3 space-y-2 shadow-xs">
                                         <div className="flex items-center justify-between">
                                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                            h.typ === 'Spiel' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                            h.typ === 'Spiel' ? 'bg-[#2ECC71]/20 text-[#155724] border border-[#2ECC71]/40' : 'bg-[#3A7BFF]/20 text-[#004085] border border-[#3A7BFF]/40'
                                           }`}>
                                             {h.bezeichnung || h.typ}
                                           </span>
-                                          <span className="text-[10px] font-mono text-slate-400">{h.datum}</span>
+                                          <span className="text-[10px] font-mono text-[#94A3B8]">{h.datum}</span>
                                         </div>
 
                                         <div className="flex items-baseline justify-between">
-                                          <span className="text-xs font-semibold text-slate-300">Note:</span>
+                                          <span className="text-xs font-semibold text-[#F8FAFC]">Note:</span>
                                           <div className="flex items-center gap-1.5">
                                             <span className={`font-mono font-bold text-xs px-2 py-0.5 rounded border ${getSchulnoteBadgeClass(h.note)}`}>
                                               {getSchulnoteText(h.note)}
@@ -1309,7 +1309,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                                 const fullEval = sessionEvaluations.find(s => s.id === h.id);
                                                 if (fullEval) handleStartEditSession(fullEval);
                                               }}
-                                              className="text-red-400 hover:text-red-300 p-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition-colors"
+                                              className="text-[#3A7BFF] hover:text-[#2865E0] p-1 bg-[#121824] hover:bg-[#334155] rounded border border-[#334155] transition-colors"
                                               title="Diese Einheit/Note korrigieren"
                                             >
                                               <Edit3 className="w-3 h-3" />
@@ -1323,7 +1323,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                                   setTimeout(() => setSuccessMessage(null), 3000);
                                                 }
                                               }}
-                                              className="text-slate-400 hover:text-rose-400 p-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition-colors"
+                                              className="text-[#94A3B8] hover:text-rose-600 p-1 bg-[#121824] hover:bg-[#334155] rounded border border-[#334155] transition-colors"
                                               title="Diese Einheit/Note löschen"
                                             >
                                               <Trash2 className="w-3 h-3" />
@@ -1334,7 +1334,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                         {h.kognitive && h.kognitive.length > 0 && (
                                           <div className="flex flex-wrap gap-1 pt-1">
                                             {h.kognitive.map((c, idxC) => (
-                                              <span key={idxC} className="text-[9px] bg-slate-950 text-slate-300 border border-slate-800 px-1.5 py-0.5 rounded">
+                                              <span key={idxC} className="text-[9px] bg-[#121824] text-[#F8FAFC] border border-[#334155] px-1.5 py-0.5 rounded">
                                                 {c}
                                               </span>
                                             ))}
@@ -1342,7 +1342,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                                         )}
 
                                         {h.begründung && (
-                                          <p className="text-[11px] text-slate-400 italic">"{h.begründung}"</p>
+                                          <p className="text-[11px] text-[#94A3B8] italic">"{h.begründung}"</p>
                                         )}
                                       </div>
                                     ))}
@@ -1358,9 +1358,9 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                 </table>
               </div>
             ) : (
-              <div className="p-8 text-center bg-slate-950 rounded-xl border border-slate-800">
-                <Trophy className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                <p className="text-xs text-slate-400">
+              <div className="p-8 text-center bg-[#121824] rounded-xl border border-[#334155]">
+                <Trophy className="w-10 h-10 text-[#94A3B8] mx-auto mb-2" />
+                <p className="text-xs text-[#94A3B8]">
                   Noch keine Schulnoten für den ausgewählten Filter ({filterMonth !== 'Alle' ? formatMonthLabel(filterMonth) : 'alle Monate'}) eingetragen.
                 </p>
               </div>
@@ -1373,41 +1373,41 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Top 3 Players */}
-                <div className="bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/40 rounded-2xl p-6 shadow-xl">
-                  <h3 className="text-base font-bold text-amber-300 flex items-center gap-2 mb-4">
-                    <Award className="w-5 h-5 text-amber-400" />
-                    KI-Top 3 der Woche
+                <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-base font-bold uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2 mb-4">
+                    <Award className="w-5 h-5 text-[#F59E0B]" />
+                    Top 3 der Woche
                   </h3>
                   
                   <div className="space-y-3">
                     {currentWeeklyReportResult.top_spieler?.map((name, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-slate-950/90 border border-amber-500/30 p-3 rounded-xl">
-                        <span className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center border border-amber-500/30">
+                      <div key={idx} className="flex items-center gap-3 bg-[#1E293B] border border-[#334155] p-3 rounded-xl">
+                        <span className="w-7 h-7 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] font-bold text-xs flex items-center justify-center border border-[#F59E0B]/30">
                           #{idx + 1}
                         </span>
-                        <span className="font-bold text-white text-sm">{name}</span>
+                        <span className="font-bold text-[#F8FAFC] text-sm">{name}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Critical Attention Players */}
-                <div className="bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-900 border border-rose-500/40 rounded-2xl p-6 shadow-xl">
-                  <h3 className="text-base font-bold text-rose-300 flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
+                  <h3 className="text-base font-bold uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2 mb-4">
+                    <AlertTriangle className="w-5 h-5 text-rose-500" />
                     Besondere Aufmerksamkeit ("Kritisch")
                   </h3>
 
                   <div className="space-y-3">
                     {currentWeeklyReportResult.kritisch?.length > 0 ? (
                       currentWeeklyReportResult.kritisch.map((name, idx) => (
-                        <div key={idx} className="flex items-center gap-3 bg-slate-950/90 border border-rose-500/30 p-3 rounded-xl">
+                        <div key={idx} className="flex items-center gap-3 bg-[#1E293B] border border-[#334155] p-3 rounded-xl">
                           <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-                          <span className="font-bold text-white text-sm">{name}</span>
+                          <span className="font-bold text-[#F8FAFC] text-sm">{name}</span>
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-slate-400">Keine auffällig kritischen Spieler in dieser Woche.</p>
+                      <p className="text-xs text-[#94A3B8]">Keine auffällig kritischen Spieler in dieser Woche.</p>
                     )}
                   </div>
                 </div>
@@ -1415,12 +1415,12 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
               </div>
 
               {/* Recommendations Box */}
-              <div className="bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 border border-red-500/40 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-base font-bold text-red-300 flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-red-400" />
-                  KI-Empfehlungen für die kommende Woche
+              <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
+                <h3 className="text-base font-bold uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-[#10B981]" />
+                  Empfehlungen für die kommende Woche
                 </h3>
-                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-[#94A3B8] leading-relaxed whitespace-pre-line">
                   {currentWeeklyReportResult.empfehlungen}
                 </p>
               </div>
@@ -1433,24 +1433,24 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
       {/* VIEW TAB 3: AI Text Evaluator */}
       {viewTab === 'ai_evaluator' && (
         <div className="space-y-6 animate-fadeIn">
-          <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-md">
-            <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-red-500" />
+          <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
+            <h2 className="text-lg font-bold uppercase tracking-wider text-[#F8FAFC] mb-2 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#10B981]" />
               Bewertung & Kognition aus Freitext-Notizen generieren
             </h2>
-            <p className="text-xs text-slate-400 mb-4">
-              Schreibe Stichpunkte zu deinen Spielern – die KI bewertet automatisch jeden genannten Spieler mit einer Leistungsnote (1.0 bis 6.0), ermittelt kognitive Fähigkeiten und formuliert Begründungen & Fokus-Punkte.
+            <p className="text-xs text-[#94A3B8] mb-4">
+              Schreibe Stichpunkte zu deinen Spielern – das System bewertet automatisch jeden genannten Spieler mit einer Leistungsnote (1.0 bis 6.0), ermittelt kognitive Fähigkeiten und formuliert Begründungen & Fokus-Punkte.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Typ & Bezeichnung</label>
+                <label className="block text-xs font-semibold text-[#F8FAFC] mb-1">Typ & Bezeichnung</label>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <button
                     type="button"
                     onClick={() => { setTyp('Training'); setBezeichnung('Training 1'); }}
-                    className={`py-1.5 px-3 text-xs font-bold rounded-xl border ${
-                      typ === 'Training' ? 'bg-red-600 text-white border-red-500' : 'bg-slate-800 text-slate-400'
+                    className={`py-1.5 px-3 text-xs font-bold uppercase rounded-xl border ${
+                      typ === 'Training' ? 'bg-[#10B981] text-white border-[#10B981]' : 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]'
                     }`}
                   >
                     ⚽ Training
@@ -1458,8 +1458,8 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                   <button
                     type="button"
                     onClick={() => { setTyp('Spiel'); setBezeichnung('Spiel 1 (Liga)'); }}
-                    className={`py-1.5 px-3 text-xs font-bold rounded-xl border ${
-                      typ === 'Spiel' ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400'
+                    className={`py-1.5 px-3 text-xs font-bold uppercase rounded-xl border ${
+                      typ === 'Spiel' ? 'bg-[#10B981] text-white border-[#10B981]' : 'bg-[#1E293B] text-[#F8FAFC] border-[#334155]'
                     }`}
                   >
                     🏆 Spiel
@@ -1468,12 +1468,12 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Datum</label>
+                <label className="block text-xs font-semibold text-[#F8FAFC] mb-1">Datum</label>
                 <input
                   type="date"
                   value={datum}
                   onChange={(e) => setDatum(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-[#1E293B] border border-[#334155] rounded-xl px-3 py-1.5 text-xs text-[#F8FAFC]"
                 />
               </div>
             </div>
@@ -1483,24 +1483,24 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="z.B. Lukas war extrem konzentriert und zweikampfstark (Note 1). Felix war hoch motiviert, hatte aber Pech im Abschluss. Noah wirkte unkonzentriert..."
-              className="w-full bg-slate-800/80 border border-slate-700 rounded-xl p-3 text-sm text-white font-mono focus:outline-none focus:border-red-500 mb-4"
+              className="w-full bg-[#1E293B] border border-[#334155] rounded-xl p-3 text-sm text-[#F8FAFC] font-mono focus:outline-none focus:border-[#10B981] mb-4"
             />
 
             <button
               type="button"
               onClick={handleRunAiSessionEvaluation}
               disabled={loading}
-              className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 border border-red-500/40"
+              className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-bold uppercase tracking-wider text-xs py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50 border border-[#10B981]"
             >
               {loading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Analysiere mit KI...</span>
+                  <span>Analysiere...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>KI-Bewertung generieren</span>
+                  <span>Bewertung generieren</span>
                 </>
               )}
             </button>
@@ -1509,13 +1509,13 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
       )}
 
       {/* History / Saved Sessions with Edit & Delete */}
-      <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-[#121824] border border-[#334155] rounded-2xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-red-500" />
+          <h3 className="text-base font-bold uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-[#10B981]" />
             Alle gespeicherten Einheiten & Spiele ({sessionEvaluations.length})
           </h3>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-[#94A3B8]">
             Klicke auf "Bearbeiten / Korrigieren", um falsche Noten oder Kognition sofort anzupassen
           </span>
         </div>
@@ -1525,44 +1525,44 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
             {sessionEvaluations.map((evalItem) => (
               <div 
                 key={evalItem.id} 
-                className="bg-slate-950/90 border border-slate-800 hover:border-red-500/40 rounded-xl p-4 transition-all flex flex-col justify-between gap-3"
+                className="bg-[#1E293B] border border-[#334155] hover:border-[#10B981] rounded-xl p-4 transition-all flex flex-col justify-between gap-3 shadow-xs"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md border ${
-                      evalItem.typ === 'Spiel' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'
+                      evalItem.typ === 'Spiel' ? 'bg-[#10B981]/20 text-[#10B981] border-[#10B981]/40' : 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'
                     }`}>
                       {evalItem.bezeichnung || evalItem.typ}
                     </span>
-                    <span className="text-xs text-slate-400 font-mono">{evalItem.datum}</span>
+                    <span className="text-xs text-[#94A3B8] font-mono">{evalItem.datum}</span>
                   </div>
 
-                  <p className="text-xs text-slate-300 font-semibold mb-2">
+                  <p className="text-xs text-[#F8FAFC] font-semibold mb-2">
                     {evalItem.bewertungen?.length || 0} Spieler bewertet
                   </p>
 
-                  <div className="text-[11px] text-slate-400 space-y-1.5 mb-3">
+                  <div className="text-[11px] text-[#94A3B8] space-y-1.5 mb-3">
                     {evalItem.bewertungen?.slice(0, 4).map((b, i) => (
                       <div key={i} className="flex justify-between items-center">
-                        <span className="truncate max-w-[140px]">{b.spieler}</span>
+                        <span className="truncate max-w-[140px] text-[#F8FAFC]">{b.spieler}</span>
                         <span className={`font-mono font-bold text-[10px] px-1.5 py-0.5 rounded border ${getSchulnoteBadgeClass(b.note)}`}>
                           {getSchulnoteText(b.note)}
                         </span>
                       </div>
                     ))}
                     {(evalItem.bewertungen?.length || 0) > 4 && (
-                      <p className="text-[10px] text-slate-500 italic">+ weitere Spieler</p>
+                      <p className="text-[10px] text-[#94A3B8] italic">+ weitere Spieler</p>
                     )}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="pt-3 border-t border-[#334155] flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => handleStartEditSession(evalItem)}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-red-300 font-semibold px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all"
+                    className="text-xs bg-[#1E293B] hover:bg-[#334155] text-[#3A7BFF] font-semibold px-2.5 py-1 rounded-lg border border-[#334155] flex items-center gap-1.5 transition-all shadow-xs"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-red-400" />
+                    <Edit3 className="w-3.5 h-3.5 text-[#3A7BFF]" />
                     <span>Bearbeiten / Korrigieren</span>
                   </button>
 
@@ -1575,7 +1575,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
                         setTimeout(() => setSuccessMessage(null), 3000);
                       }
                     }}
-                    className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+                    className="text-[#94A3B8] hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
                     title="Einheit löschen"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1585,7 +1585,7 @@ export const AcademyAnalysisView: React.FC<AcademyAnalysisViewProps> = ({
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">Noch keine Einheiten eingetragen.</p>
+          <p className="text-xs text-[#94A3B8] italic">Noch keine Einheiten eingetragen.</p>
         )}
       </div>
 

@@ -363,16 +363,21 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 p-4 bg-gray-50 min-h-screen">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+    <div className="space-y-6 p-2 sm:p-4 bg-[#0F0F0F] text-[#F5F5F5] min-h-screen rounded-xl border border-[#2A2A2A] shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1A1A1A] p-5 rounded-xl border border-[#2A2A2A] shadow-md">
         <div className="flex items-center gap-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter italic">{title}</h2>
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-[#F5F5F5] flex items-center gap-2">
+            <Trophy className="text-[#FFD54F]" size={26} />
+            {title}
+          </h2>
           
-          <div className="flex items-center gap-2 bg-black/5 p-1 rounded-lg">
+          <div className="flex items-center gap-1.5 bg-[#202020] p-1 rounded-lg border border-[#2A2A2A]">
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
-                viewMode === 'list' ? 'bg-black text-white' : 'hover:bg-black/5'
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                viewMode === 'list' 
+                  ? 'bg-[#FFD54F] text-[#0F0F0F] font-black shadow-[0_0_10px_rgba(255,213,79,0.4)] border border-[#FFD54F]' 
+                  : 'text-[#C7C7C7] hover:text-[#F5F5F5] hover:bg-[#2A2A2A]'
               }`}
             >
               <LayoutGrid size={14} />
@@ -380,8 +385,10 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
-                viewMode === 'table' ? 'bg-black text-white' : 'hover:bg-black/5'
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                viewMode === 'table' 
+                  ? 'bg-[#FFD54F] text-[#0F0F0F] font-black shadow-[0_0_10px_rgba(255,213,79,0.4)] border border-[#FFD54F]' 
+                  : 'text-[#C7C7C7] hover:text-[#F5F5F5] hover:bg-[#2A2A2A]'
               }`}
             >
               <List size={14} />
@@ -389,8 +396,10 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             </button>
             <button
               onClick={() => setViewMode('detail')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
-                viewMode === 'detail' ? 'bg-black text-white' : 'hover:bg-black/5'
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                viewMode === 'detail' 
+                  ? 'bg-[#FFD54F] text-[#0F0F0F] font-black shadow-[0_0_10px_rgba(255,213,79,0.4)] border border-[#FFD54F]' 
+                  : 'text-[#C7C7C7] hover:text-[#F5F5F5] hover:bg-[#2A2A2A]'
               }`}
             >
               <Target size={14} />
@@ -399,32 +408,32 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {onRestoreMatches && (
             <button 
               onClick={onRestoreMatches}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-emerald-800 px-3 py-2 font-black uppercase text-xs transition-colors flex items-center gap-2 shadow-sm"
+              className="bg-[#202020] text-[#F5F5F5] hover:bg-[#2A2A2A] border border-[#2A2A2A] px-3 py-2 font-black uppercase text-xs transition-colors flex items-center gap-2 rounded-lg shadow-xs"
               title="Alle 32 Pflichtspiele der Saison 2026/2027 wiederherstellen"
             >
-              <RotateCcw size={14} /> Pflichtspiele wiederherstellen
+              <RotateCcw size={14} className="text-[#FFD54F]" /> Pflichtspiele wiederherstellen
             </button>
           )}
           {onWipeAllMatches && (
             confirmWipe ? (
-              <div className="flex gap-1 items-center bg-red-50 p-1 border-2 border-[#C00000] rounded">
-                <span className="text-[10px] font-black uppercase text-[#C00000] px-1">Sicher?</span>
+              <div className="flex gap-1 items-center bg-rose-950/40 p-1 border border-rose-800 rounded-lg">
+                <span className="text-[10px] font-black uppercase text-rose-300 px-1">Sicher?</span>
                 <button 
                   onClick={async () => {
                     await onWipeAllMatches();
                     setConfirmWipe(false);
                   }}
-                  className="bg-[#C00000] text-white px-2 py-1 font-black uppercase text-[10px] hover:bg-red-800 transition-colors flex items-center gap-1"
+                  className="bg-rose-600 text-white px-2 py-1 font-black uppercase text-[10px] hover:bg-rose-700 transition-colors flex items-center gap-1 rounded"
                 >
                   <Trash2 size={12} /> Ja, alle löschen
                 </button>
                 <button 
                   onClick={() => setConfirmWipe(false)}
-                  className="bg-white text-black px-2 py-1 font-black uppercase text-[10px] hover:bg-gray-100 transition-colors border border-black"
+                  className="bg-[#202020] text-[#F5F5F5] px-2 py-1 font-black uppercase text-[10px] hover:bg-[#2A2A2A] transition-colors border border-[#2A2A2A] rounded"
                 >
                   Abbrechen
                 </button>
@@ -432,7 +441,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             ) : (
               <button 
                 onClick={() => setConfirmWipe(true)}
-                className="bg-red-50 text-[#C00000] border-2 border-[#C00000] px-4 py-2 font-black uppercase text-xs hover:bg-red-100 transition-colors flex items-center gap-2"
+                className="bg-rose-950/30 text-rose-400 border border-rose-800/60 px-4 py-2 font-black uppercase text-xs hover:bg-rose-900/40 transition-colors flex items-center gap-2 rounded-lg"
                 title="Alle Pflichtspiele, Tabellenplanung und Spielerstatistiken komplett zurücksetzen"
               >
                 <Trash2 size={14} /> Alle löschen
@@ -441,20 +450,20 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
           )}
           <button 
             onClick={() => handleExportICS()}
-            className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 font-black uppercase text-xs transition-colors border-2 border-black flex items-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="bg-[#202020] text-[#F5F5F5] hover:bg-[#2A2A2A] border border-[#2A2A2A] px-4 py-2 font-black uppercase text-xs rounded-lg transition-colors flex items-center gap-2 shadow-xs"
             title="Spieltermine als ICS-Kalenderdatei exportieren"
           >
-            <Download size={14} /> Kalender (.ics)
+            <Download size={14} className="text-[#FFD54F]" /> Kalender (.ics)
           </button>
           <button 
             onClick={handleAddMatch}
-            className="bg-black text-white px-4 py-2 font-black uppercase text-xs hover:bg-[#C00000] transition-colors border-2 border-black flex items-center gap-2"
+            className="bg-[#FFD54F] hover:bg-[#FFE082] text-[#0F0F0F] px-4 py-2 font-black uppercase text-xs rounded-lg transition-colors flex items-center gap-2 shadow-md border border-[#FFD54F]"
           >
             <Plus size={14} /> Neues Spiel
           </button>
           <button 
             onClick={() => setShowOpponentModal(true)}
-            className="bg-white text-black px-4 py-2 font-black uppercase text-xs hover:bg-gray-100 transition-colors border-2 border-black flex items-center gap-2"
+            className="bg-[#202020] text-[#F5F5F5] hover:bg-[#2A2A2A] border border-[#2A2A2A] px-4 py-2 font-black uppercase text-xs rounded-lg transition-colors flex items-center gap-2"
           >
             <Users size={14} /> Gegner verwalten
           </button>
@@ -463,43 +472,43 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
 
       {/* Aggregated Statistics Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] p-4 rounded-xl shadow-md flex items-center justify-between text-[#F5F5F5]">
           <div>
-            <div className="text-[10px] font-black uppercase text-gray-500">Spiele & Bilanz</div>
-            <div className="text-2xl font-black">{matchStats.played} / {matchStats.total}</div>
-            <div className="text-[10px] font-bold text-emerald-600 uppercase">
+            <div className="text-[10px] font-black uppercase text-[#C7C7C7] tracking-wider">Spiele & Bilanz</div>
+            <div className="text-2xl font-black text-[#F5F5F5]">{matchStats.played} / {matchStats.total}</div>
+            <div className="text-[10px] font-bold text-[#00D47A] uppercase">
               {matchStats.wins}S - {matchStats.draws}U - {matchStats.losses}N
             </div>
           </div>
-          <Trophy className="text-amber-500 h-8 w-8 opacity-80" />
+          <Trophy className="text-[#FFD54F] h-8 w-8 opacity-90" />
         </div>
 
-        <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] p-4 rounded-xl shadow-md flex items-center justify-between text-[#F5F5F5]">
           <div>
-            <div className="text-[10px] font-black uppercase text-gray-500">Torverhältnis</div>
-            <div className="text-2xl font-black">{matchStats.goalsFor} : {matchStats.goalsAgainst}</div>
-            <div className="text-[10px] font-bold text-blue-600 uppercase">
+            <div className="text-[10px] font-black uppercase text-[#C7C7C7] tracking-wider">Torverhältnis</div>
+            <div className="text-2xl font-black text-[#F5F5F5]">{matchStats.goalsFor} : {matchStats.goalsAgainst}</div>
+            <div className="text-[10px] font-bold text-[#FFD54F] uppercase">
               Diff: {matchStats.diff > 0 ? `+${matchStats.diff}` : matchStats.diff}
             </div>
           </div>
-          <Target className="text-[#C00000] h-8 w-8 opacity-80" />
+          <Target className="text-[#FFD54F] h-8 w-8 opacity-90" />
         </div>
 
-        <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between col-span-2 sm:col-span-2">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] p-4 rounded-xl shadow-md flex items-center justify-between col-span-2 sm:col-span-2 text-[#F5F5F5]">
           <div className="w-full">
-            <div className="text-[10px] font-black uppercase text-gray-500 mb-1 flex items-center gap-1">
-              <Award size={12} className="text-amber-500" /> Top-Torschützen ({title.includes('Test') ? 'Testspiele' : 'Pflichtspiele'})
+            <div className="text-[10px] font-black uppercase text-[#C7C7C7] tracking-wider mb-1 flex items-center gap-1">
+              <Award size={12} className="text-[#FFD54F]" /> Top-Torschützen ({title.includes('Test') ? 'Testspiele' : 'Pflichtspiele'})
             </div>
             {matchStats.topScorers.length > 0 ? (
               <div className="flex flex-wrap gap-2 text-xs">
                 {matchStats.topScorers.map(([name, goals]) => (
-                  <span key={name} className="bg-black text-white px-2.5 py-1 rounded font-black text-[10px] uppercase flex items-center gap-1">
-                    {name}: <span className="text-amber-400 font-extrabold">{goals} Tore</span>
+                  <span key={name} className="bg-[#202020] border border-[#2A2A2A] text-[#F5F5F5] px-2.5 py-1 rounded-md font-black text-[10px] uppercase flex items-center gap-1">
+                    {name}: <span className="text-[#FFD54F] font-extrabold">{goals} Tore</span>
                   </span>
                 ))}
               </div>
             ) : (
-              <span className="text-xs text-gray-400 italic">Noch keine Torschützen erfasst</span>
+              <span className="text-xs text-[#C7C7C7]/60 italic">Noch keine Torschützen erfasst</span>
             )}
           </div>
         </div>
@@ -519,7 +528,6 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
               const now = new Date().toISOString().split('T')[0];
               const upcoming = sortedMatches.filter(m => {
                 if (!m.date) return false;
-                // Handle both ISO (YYYY-MM-DD) and German (DD.MM.YYYY)
                 const dateISO = m.date.includes('.') ? m.date.split('.').reverse().join('-') : m.date;
                 return dateISO >= now;
               }).sort((a,b) => {
@@ -532,29 +540,29 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
               if (!nextMatch) return null;
               
               return (
-                <div className="bg-[#C00000] border-4 border-black p-6 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-white relative overflow-hidden group">
-                  <div className="absolute right-[-20px] top-[-20px] opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                <div className="bg-[#1A1A1A] border border-[#2A2A2A] p-6 rounded-xl shadow-lg text-[#F5F5F5] relative overflow-hidden group">
+                  <div className="absolute right-[-20px] top-[-20px] opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-700 text-[#FFD54F]">
                     <Trophy size={200} />
                   </div>
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                      <span className="text-xs font-black uppercase tracking-[0.3em]">Nächstes Spiel</span>
+                      <div className="w-2.5 h-2.5 bg-[#FFD54F] rounded-full animate-pulse shadow-[0_0_8px_rgba(255,213,79,0.8)]" />
+                      <span className="text-xs font-black uppercase tracking-[0.3em] text-[#FFD54F]">Nächstes Spiel</span>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                       <div>
-                        <h3 className="text-5xl font-black uppercase tracking-tighter italic leading-none mb-2">
+                        <h3 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter italic leading-none mb-3 text-[#F5F5F5]">
                           {nextMatch.opponent}
                         </h3>
-                        <div className="flex flex-wrap gap-4 text-xs font-black uppercase">
-                          <span className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded">
-                            <Calendar size={14} /> {formatDate(nextMatch.date)}
+                        <div className="flex flex-wrap gap-3 text-xs font-black uppercase">
+                          <span className="flex items-center gap-2 bg-[#202020] border border-[#2A2A2A] px-3 py-1.5 rounded-md text-[#F5F5F5]">
+                            <Calendar size={14} className="text-[#FFD54F]" /> {formatDate(nextMatch.date)}
                           </span>
-                          <span className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded">
-                            <Clock size={14} /> {nextMatch.kickOff} Uhr
+                          <span className="flex items-center gap-2 bg-[#202020] border border-[#2A2A2A] px-3 py-1.5 rounded-md text-[#F5F5F5]">
+                            <Clock size={14} className="text-[#FFD54F]" /> {nextMatch.kickOff} Uhr
                           </span>
-                          <span className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded">
-                            <MapPin size={14} /> {nextMatch.location}
+                          <span className="flex items-center gap-2 bg-[#202020] border border-[#2A2A2A] px-3 py-1.5 rounded-md text-[#F5F5F5]">
+                            <MapPin size={14} className="text-[#FFD54F]" /> {nextMatch.location}
                           </span>
                         </div>
                       </div>
@@ -563,7 +571,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                           setSelectedMatchId(nextMatch.id);
                           setViewMode('detail');
                         }}
-                        className="bg-white text-black px-8 py-3 font-black uppercase text-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)]"
+                        className="bg-[#FFD54F] hover:bg-[#FFE082] text-[#0F0F0F] px-8 py-3 font-black uppercase text-sm rounded-lg transition-all shadow-md border border-[#FFD54F]"
                       >
                         Details & Zeiten
                       </button>
@@ -578,71 +586,71 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
               {sortedMatches.map((match) => (
                 <motion.div
                   key={match.id}
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_0px_rgba(192,0,0,1)] transition-all cursor-pointer flex flex-col group"
+                  whileHover={{ scale: 1.01 }}
+                  className="bg-[#202020] border border-[#2A2A2A] rounded-xl shadow-md hover:border-[#FFD54F] transition-all cursor-pointer flex flex-col group overflow-hidden"
                   onClick={() => {
                     setSelectedMatchId(match.id);
                     setViewMode('detail');
                   }}
                 >
-                  <div className="p-4 bg-black text-white flex justify-between items-start">
+                  <div className="p-4 bg-[#1A1A1A] text-[#F5F5F5] flex justify-between items-start border-b border-[#2A2A2A]">
                     <div>
-                      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[#C00000] mb-1">
+                      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[#FFD54F] mb-1">
                         {title.includes('Test') ? 'TESTSPIEL' : 'PFLICHTSPIEL'}
                       </div>
-                      <div className="text-lg font-black uppercase truncate max-w-[180px]">
+                      <div className="text-lg font-black uppercase truncate max-w-[180px] text-[#F5F5F5]">
                         {match.opponent}
                       </div>
                     </div>
-                    <div className="bg-white text-black p-2 font-black text-sm">
+                    <div className="bg-[#202020] text-[#FFD54F] border border-[#FFD54F]/30 px-2.5 py-1 rounded font-black text-xs uppercase">
                        {match.isHome ? 'HEIM' : 'AW'}
                     </div>
                   </div>
                   
                   <div className="p-4 flex-1 grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
-                      <Calendar size={14} className="text-[#C00000]" />
-                      <span className="text-[10px] font-black uppercase whitespace-nowrap">
+                      <Calendar size={14} className="text-[#FFD54F]" />
+                      <span className="text-[10px] font-black uppercase whitespace-nowrap text-[#F5F5F5]">
                         {formatDate(match.date)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-[#C00000]" />
-                      <span className="text-[10px] font-black uppercase">{match.kickOff || '--:--'} Uhr</span>
+                      <Clock size={14} className="text-[#FFD54F]" />
+                      <span className="text-[10px] font-black uppercase text-[#F5F5F5]">{match.kickOff || '--:--'} Uhr</span>
                     </div>
                     <div className="flex items-center gap-2 col-span-2">
-                       <MapPin size={14} className="text-[#C00000]" />
-                      <span className="text-[10px] font-black uppercase truncate">{match.location}</span>
+                       <MapPin size={14} className="text-[#FFD54F]" />
+                      <span className="text-[10px] font-black uppercase truncate text-[#C7C7C7]">{match.location}</span>
                     </div>
 
                     {match.result && (
-                      <div className="col-span-2 bg-black/5 p-2 rounded border border-black/10 flex justify-between items-center text-[11px] font-black">
-                        <span className="text-gray-500 text-[9px] uppercase">Ergebnis:</span>
-                        <span className="bg-[#C00000] text-white px-2 py-0.5 rounded text-xs">{match.result}</span>
+                      <div className="col-span-2 bg-[#1A1A1A] p-2.5 rounded-md border border-[#2A2A2A] flex justify-between items-center text-[11px] font-black">
+                        <span className="text-[#C7C7C7] text-[9px] uppercase">Ergebnis:</span>
+                        <span className="bg-[#FFD54F] text-[#0F0F0F] px-2.5 py-0.5 rounded text-xs font-black">{match.result}</span>
                       </div>
                     )}
 
                     {match.scorers && (
-                      <div className="col-span-2 text-[10px] bg-amber-50 p-2 rounded border border-amber-200">
-                        <span className="font-black text-amber-800 uppercase block mb-0.5">⚽ Torschützen:</span>
-                        <span className="font-bold text-gray-800">{match.scorers}</span>
+                      <div className="col-span-2 text-[10px] bg-[#1A1A1A] p-2.5 rounded-md border border-[#2A2A2A] text-[#F5F5F5]">
+                        <span className="font-black text-[#FFD54F] uppercase block mb-0.5">⚽ Torschützen:</span>
+                        <span className="font-bold text-[#F5F5F5]">{match.scorers}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="px-4 pb-4 flex justify-between items-center text-[8px] font-black uppercase border-t border-black/5 pt-2">
+                  <div className="px-4 py-3 flex justify-between items-center text-[9px] font-black uppercase border-t border-[#2A2A2A] bg-[#1A1A1A]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleExportICS(match);
                       }}
-                      className="text-sky-700 hover:text-sky-900 hover:underline flex items-center gap-1"
+                      className="text-[#FFD54F] hover:underline flex items-center gap-1"
                       title="Termin im Kalender speichern"
                     >
-                      <Download size={10} /> ICS Kalender
+                      <Download size={12} /> ICS Kalender
                     </button>
-                    <div className="group-hover:text-[#C00000] transition-colors flex items-center gap-1">
-                      Details <ExternalLink size={10} />
+                    <div className="group-hover:text-[#FFD54F] transition-colors flex items-center gap-1 text-[#C7C7C7]">
+                      Details <ExternalLink size={12} />
                     </div>
                   </div>
                 </motion.div>
@@ -655,51 +663,51 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
+            className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl shadow-md overflow-hidden text-[#F5F5F5]"
           >
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left shrink-0">
                 <thead>
-                  <tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest">
-                    <th className="p-3 border border-white/10 w-12 text-center">ID</th>
-                    <th className="p-3 border border-white/10 w-12 text-center">KW</th>
-                    <th className="p-3 border border-white/10 w-32">Datum</th>
-                    <th className="p-3 border border-white/10 w-20">Anstoß</th>
-                    <th className="p-3 border border-white/10 w-20 text-center">H/A</th>
-                    <th className="p-3 border border-white/10 min-w-[180px]">Gegner</th>
-                    <th className="p-3 border border-white/10 min-w-[130px]">Ort</th>
-                    <th className="p-3 border border-white/10 w-24 text-center">Ergebnis</th>
-                    <th className="p-3 border border-white/10 min-w-[160px]">Torschützen</th>
-                    <th className="p-3 border border-white/10 w-20 text-center">Treff</th>
-                    <th className="p-3 border border-white/10 w-20 text-center">Ende</th>
-                    <th className="p-3 border border-white/10 min-w-[180px]">Notizen</th>
-                    <th className="p-3 border border-white/10 w-12 text-center"></th>
+                  <tr className="bg-[#202020] text-[#F5F5F5] text-[10px] font-black uppercase tracking-widest border-b border-[#2A2A2A]">
+                    <th className="p-3 border-r border-[#2A2A2A] w-12 text-center">ID</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-12 text-center">KW</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-32">Datum</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-20">Anstoß</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-20 text-center">H/A</th>
+                    <th className="p-3 border-r border-[#2A2A2A] min-w-[180px]">Gegner</th>
+                    <th className="p-3 border-r border-[#2A2A2A] min-w-[130px]">Ort</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-24 text-center">Ergebnis</th>
+                    <th className="p-3 border-r border-[#2A2A2A] min-w-[160px]">Torschützen</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-20 text-center">Treff</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-20 text-center">Ende</th>
+                    <th className="p-3 border-r border-[#2A2A2A] min-w-[180px]">Notizen</th>
+                    <th className="p-3 border-r border-[#2A2A2A] w-12 text-center"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y-2 divide-black/10">
+                <tbody className="divide-y divide-[#2A2A2A]">
                   {sortedMatches.map((match) => (
-                    <tr key={match.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="p-3 border-r border-black/10 font-black text-center">{match.index}</td>
-                      <td className="p-3 border-r border-black/10 font-black text-center text-[10px] opacity-40">{getKW(match.date || '')}</td>
-                      <td className="p-3 border-r border-black/10">
+                    <tr key={match.id} className="hover:bg-[#202020] transition-colors border-b border-[#2A2A2A] text-[#F5F5F5]">
+                      <td className="p-3 border-r border-[#2A2A2A] font-black text-center text-[#FFD54F]">{match.index}</td>
+                      <td className="p-3 border-r border-[#2A2A2A] font-black text-center text-[10px] text-[#C7C7C7]">{getKW(match.date || '')}</td>
+                      <td className="p-3 border-r border-[#2A2A2A]">
                         <EditableField 
                           type="date"
-                          className="w-full bg-transparent focus:outline-none font-bold"
+                          className="w-full bg-transparent focus:outline-none font-bold text-[#F5F5F5]"
                           value={match.date || ''}
                           onSave={(val) => onSaveMatch({ ...match, date: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10">
+                      <td className="p-3 border-r border-[#2A2A2A]">
                         <EditableField 
                           type="time"
-                          className="w-full bg-transparent focus:outline-none font-black"
+                          className="w-full bg-transparent focus:outline-none font-black text-[#FFD54F]"
                           value={match.kickOff || ''}
                           onSave={(val) => onSaveMatch({ ...match, kickOff: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10 text-center">
+                      <td className="p-3 border-r border-[#2A2A2A] text-center">
                         <select 
-                          className="bg-transparent font-black uppercase text-[10px] focus:outline-none cursor-pointer"
+                          className="bg-[#202020] text-[#FFD54F] border border-[#2A2A2A] rounded px-1.5 py-0.5 font-black uppercase text-[10px] focus:outline-none cursor-pointer"
                           value={match.isHome ? 'H' : 'A'}
                           onChange={(e) => onSaveMatch({ ...match, isHome: e.target.value === 'H' })}
                         >
@@ -707,10 +715,10 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                           <option value="A">AW</option>
                         </select>
                       </td>
-                      <td className="p-3 border-r border-black/10">
+                      <td className="p-3 border-r border-[#2A2A2A]">
                         <EditableField 
                           listId="opponents-list-table"
-                          className="w-full bg-transparent focus:outline-none font-black uppercase text-[12px] text-[#C00000]"
+                          className="w-full bg-transparent focus:outline-none font-black uppercase text-[12px] text-[#F5F5F5]"
                           value={match.opponent || ''}
                           onSave={(val) => onSaveMatch({ ...match, opponent: val })}
                         />
@@ -718,48 +726,48 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                           {opponents.map(opp => <option key={opp.id} value={opp.name} />)}
                         </datalist>
                       </td>
-                      <td className="p-3 border-r border-black/10">
+                      <td className="p-3 border-r border-[#2A2A2A]">
                         <EditableField 
-                          className="w-full bg-transparent focus:outline-none font-bold text-[10px] uppercase opacity-70"
+                          className="w-full bg-transparent focus:outline-none font-bold text-[10px] uppercase text-[#C7C7C7]"
                           value={match.location || ''}
                           onSave={(val) => onSaveMatch({ ...match, location: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10 text-center">
+                      <td className="p-3 border-r border-[#2A2A2A] text-center">
                         <EditableField 
                           placeholder="z.B. 3:1"
-                          className="w-full bg-transparent focus:outline-none font-black text-xs text-[#C00000] text-center uppercase"
+                          className="w-full bg-transparent focus:outline-none font-black text-xs text-rose-400 text-center uppercase"
                           value={match.result || ''}
                           onSave={(val) => onSaveMatch({ ...match, result: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10">
+                      <td className="p-3 border-r border-[#2A2A2A]">
                         <EditableField 
                           placeholder="Torschützen..."
-                          className="w-full bg-transparent focus:outline-none font-bold text-[10px] text-slate-800"
+                          className="w-full bg-transparent focus:outline-none font-bold text-[10px] text-[#F5F5F5]"
                           value={match.scorers || ''}
                           onSave={(val) => onSaveMatch({ ...match, scorers: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10 text-center">
+                      <td className="p-3 border-r border-[#2A2A2A] text-center">
                          <EditableField 
                           type="time"
-                          className="w-full bg-transparent focus:outline-none font-black opacity-50"
+                          className="w-full bg-transparent focus:outline-none font-black text-[#C7C7C7]"
                           value={match.meetingTime || ''}
                           onSave={(val) => onSaveMatch({ ...match, meetingTime: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10 text-center">
+                      <td className="p-3 border-r border-[#2A2A2A] text-center">
                         <EditableField 
                           type="time"
-                          className="w-full bg-transparent focus:outline-none font-black opacity-50"
+                          className="w-full bg-transparent focus:outline-none font-black text-[#C7C7C7]"
                           value={match.endTime || ''}
                           onSave={(val) => onSaveMatch({ ...match, endTime: val })}
                         />
                       </td>
-                      <td className="p-3 border-r border-black/10">
+                      <td className="p-3 border-r border-[#2A2A2A]">
                         <EditableField 
-                          className="w-full bg-transparent focus:outline-none italic opacity-60 text-[10px]"
+                          className="w-full bg-transparent focus:outline-none italic text-[#C7C7C7] text-[10px]"
                           value={match.notes || ''}
                           onSave={(val) => onSaveMatch({ ...match, notes: val })}
                         />
@@ -770,7 +778,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                             setSelectedMatchId(match.id);
                             setShowDeleteMatchConfirm(true);
                           }}
-                          className="text-red-500 hover:text-red-700 p-1"
+                          className="text-rose-400 hover:text-rose-300 p-1 transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -779,16 +787,16 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                   ))}
                   {sortedMatches.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="p-12 text-center italic opacity-30">Keine Spiele angelegt</td>
+                      <td colSpan={13} className="p-12 text-center italic text-[#C7C7C7]/60">Keine Spiele angelegt</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="p-4 bg-black/5 text-center">
+            <div className="p-4 bg-[#202020] text-center border-t border-[#2A2A2A]">
               <button 
                 onClick={handleAddMatch}
-                className="bg-black text-white px-8 py-3 font-black uppercase text-xs hover:bg-[#C00000] transition-all border-2 border-black"
+                className="bg-[#FFD54F] hover:bg-[#FFE082] text-[#0F0F0F] px-8 py-3 font-black uppercase text-xs rounded-lg transition-all shadow-md border border-[#FFD54F]"
               >
                 + Weiteres Spiel hinzufügen
               </button>
@@ -804,25 +812,25 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
             {selectedMatch ? (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-1 space-y-6">
-            <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6">
-              <h3 className="text-xl font-black uppercase mb-6 flex items-center gap-2">
-                <Calendar className="h-6 w-6" /> Spiel-Details
+            <div className="bg-[#1A1A1A] border border-[#2A2A2A] shadow-md rounded-xl p-6 text-[#F5F5F5]">
+              <h3 className="text-xl font-black uppercase mb-6 flex items-center gap-2 text-[#F5F5F5] border-b border-[#2A2A2A] pb-3">
+                <Calendar className="h-6 w-6 text-[#FFD54F]" /> Spiel-Details
               </h3>
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs font-black uppercase opacity-60">Gegner</label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-black uppercase text-[#4A4A4A] tracking-wider">GEGNER</label>
                     <div className="flex gap-3 items-center">
                       <button 
                         onClick={() => handleExportICS(selectedMatch)}
-                        className="text-[10px] font-black uppercase text-sky-700 hover:underline flex items-center gap-1"
+                        className="text-[10px] font-black uppercase text-[#1A73E8] hover:underline flex items-center gap-1"
                         title="Diesen Spieltermin als ICS-Kalenderdatei herunterladen"
                       >
                         <Download size={12} /> ICS Export
                       </button>
                       <button 
                         onClick={() => setShowDeleteMatchConfirm(true)}
-                        className="text-[10px] font-black uppercase text-red-600 hover:underline"
+                        className="text-[10px] font-black uppercase text-rose-400 hover:underline"
                       >
                         Spiel löschen
                       </button>
@@ -831,7 +839,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                   <div className="relative group">
                     <EditableField 
                       listId="opponents-list-planning"
-                      className="w-full border-2 border-black p-2 font-bold bg-white focus:border-[#C00000] focus:outline-none uppercase" 
+                      className="w-full border border-[#2A2A2A] p-2.5 font-black bg-[#202020] text-[#F5F5F5] focus:border-[#FFD54F] focus:outline-none uppercase rounded-lg text-sm" 
                       value={selectedMatch.opponent} 
                       onSave={(val) => handleMatchChange('opponent', val)}
                     />
@@ -845,20 +853,20 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1 text-[#C00000]">
-                      <Trophy className="h-3 w-3" /> Ergebnis / Endstand
+                    <label className="text-xs font-black uppercase flex items-center gap-1 text-rose-400 tracking-wider">
+                      <Trophy className="h-3 w-3 text-rose-400" /> ERGEBNIS / ENDSTAND
                     </label>
                     <EditableField 
                       placeholder="z.B. 3:1"
-                      className="w-full border-2 border-black p-2 font-black text-sm bg-red-50 focus:bg-white"
+                      className="w-full border border-[#2A2A2A] p-2.5 font-black text-sm bg-[#202020] text-rose-400 placeholder-[#C7C7C7]/50 focus:border-[#FFD54F] rounded-lg text-center"
                       value={selectedMatch.result || ''} 
                       onSave={(val) => handleMatchChange('result', val)}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase opacity-60">Heim/Auswärts</label>
+                    <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider">HEIM / AUSWÄRTS</label>
                     <select 
-                      className="w-full border-2 border-black p-2 font-bold"
+                      className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#F5F5F5] focus:border-[#FFD54F] rounded-lg text-sm cursor-pointer"
                       value={selectedMatch.isHome ? 'Heim' : 'Auswärts'}
                       onChange={(e) => handleMatchChange('isHome', e.target.value === 'Heim')}
                     >
@@ -869,12 +877,12 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
-                    ⚽ Torschützen (Name, Min / Anzahl)
+                  <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider flex items-center gap-1">
+                    ⚽ TORSCHÜTZEN (NAME, MIN / ANZAHL)
                   </label>
                   <EditableField 
                     placeholder="z.B. J. Ehret (2), D. Valchuk (45')"
-                    className="w-full border-2 border-black p-2 font-bold bg-amber-50/50"
+                    className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#FFD54F] placeholder-[#C7C7C7]/50 focus:border-[#FFD54F] rounded-lg text-xs"
                     value={selectedMatch.scorers || ''} 
                     onSave={(val) => handleMatchChange('scorers', val)}
                   />
@@ -882,20 +890,20 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-black uppercase opacity-60">Datum</label>
+                    <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider">DATUM</label>
                     <EditableField 
                       type="date" 
-                      className="w-full border-2 border-black p-2 font-bold"
+                      className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#F5F5F5] focus:border-[#FFD54F] rounded-lg text-sm"
                       value={selectedMatch.date || ''} 
                       onSave={(val) => handleMatchChange('date', val)}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> Ort
+                    <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-[#FFD54F]" /> ORT
                     </label>
                     <EditableField 
-                      className="w-full border-2 border-black p-2 font-bold"
+                      className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#F5F5F5] focus:border-[#FFD54F] rounded-lg text-sm"
                       value={selectedMatch.location || ''} 
                       onSave={(val) => handleMatchChange('location', val)}
                     />
@@ -903,33 +911,33 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Beginn
+                    <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-[#FFD54F]" /> BEGINN
                     </label>
                     <EditableField 
                       type="time" 
-                      className="w-full border-2 border-black p-2 font-bold"
+                      className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#F5F5F5] focus:border-[#FFD54F] rounded-lg text-sm"
                       value={selectedMatch.kickOff || ''} 
                       onSave={(val) => handleMatchChange('kickOff', val)}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-black uppercase opacity-60 flex items-center gap-1">
-                      <Timer className="h-3 w-3" /> Ende
+                    <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider flex items-center gap-1">
+                      <Timer className="h-3 w-3 text-[#FFD54F]" /> ENDE
                     </label>
                     <EditableField 
                       type="time" 
-                      className="w-full border-2 border-black p-2 font-bold"
+                      className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#F5F5F5] focus:border-[#FFD54F] rounded-lg text-sm"
                       value={selectedMatch.endTime || ''} 
                       onSave={(val) => handleMatchChange('endTime', val)}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-black uppercase opacity-60">Notizen</label>
+                  <label className="text-xs font-black uppercase text-[#C7C7C7] tracking-wider">NOTIZEN</label>
                   <EditableField 
                     isTextArea
-                    className="w-full border-2 border-black p-2 font-bold min-h-[100px]"
+                    className="w-full border border-[#2A2A2A] p-2.5 font-bold bg-[#202020] text-[#F5F5F5] placeholder-[#C7C7C7]/50 focus:border-[#FFD54F] rounded-lg min-h-[100px] text-xs"
                     value={selectedMatch.notes || ''}
                     onSave={(val) => handleMatchChange('notes', val)}
                   />
@@ -939,26 +947,28 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
           </div>
 
           <div className="xl:col-span-2">
-            <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-              <div className="p-6 border-b-4 border-black flex items-center justify-between bg-gray-50">
-                <h3 className="text-xl font-black uppercase">Spieler-Einsatzzeiten</h3>
-                <div className="text-xs font-bold uppercase opacity-60">
+            <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl shadow-md overflow-hidden">
+              <div className="p-5 border-b border-[#2A2A2A] flex items-center justify-between bg-[#202020]">
+                <h3 className="text-xl font-black uppercase text-[#F5F5F5] flex items-center gap-2">
+                  <Users className="text-[#FFD54F] h-5 w-5" /> SPIELER-EINSATZZEITEN
+                </h3>
+                <div className="text-xs font-bold uppercase text-[#C7C7C7]">
                   Wird automatisch berechnet
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-black text-white uppercase text-xs font-black tracking-widest">
-                      <th className="p-4">Spieler</th>
-                      <th className="p-4">Gesamt</th>
-                      <th className="p-4">Start</th>
-                      <th className="p-4">Ende</th>
-                      <th className="p-4 text-center">Min</th>
-                      <th className="p-4">Notizen</th>
+                    <tr className="bg-[#202020] text-[#F5F5F5] uppercase text-xs font-black tracking-widest border-b border-[#2A2A2A]">
+                      <th className="p-4">SPIELER</th>
+                      <th className="p-4">GESAMT</th>
+                      <th className="p-4">START</th>
+                      <th className="p-4">ENDE</th>
+                      <th className="p-4 text-center">MIN</th>
+                      <th className="p-4">NOTIZEN</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y-2 divide-black">
+                  <tbody className="divide-y divide-[#2A2A2A]">
                     {players.filter(isPlayer).map(player => {
                       const record = matchMinutes.find(r => r.playerId === player.id);
                       const details = record?.details?.[selectedMatchId] || { start: '', end: '', notes: '' };
@@ -966,17 +976,17 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                       const totalMinutes = calculateTotalMinutes(player.id);
 
                       return (
-                        <tr key={player.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-4 font-black uppercase text-sm">
+                        <tr key={player.id} className="hover:bg-[#202020] transition-colors text-[#F5F5F5]">
+                          <td className="p-4 font-black uppercase text-sm text-[#F5F5F5]">
                             {player.lastName}
                           </td>
-                          <td className="p-4 text-xs font-bold opacity-60">
+                          <td className="p-4 text-xs font-bold text-[#FFD54F]">
                             <div className="flex items-center gap-2">
                               {totalMinutes} MIN
                               {totalMinutes > 0 && (
                                 <button 
                                   onClick={() => setPlayerToReset(player)}
-                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                  className="text-rose-400 hover:text-rose-300 transition-colors"
                                   title="Alle Zeiten für diesen Spieler zurücksetzen"
                                 >
                                   <Trash2 size={12} />
@@ -987,7 +997,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                           <td className="p-4">
                             <EditableField 
                               type="time" 
-                              className="border-2 border-black p-1 font-bold text-xs w-24" 
+                              className="border border-[#2A2A2A] bg-[#202020] text-[#F5F5F5] p-1.5 font-bold text-xs w-28 rounded-md text-center focus:border-[#FFD54F]" 
                               value={details.start}
                               onSave={(val) => handleMinuteChange(player.id, 'start', val)}
                             />
@@ -995,17 +1005,17 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                           <td className="p-4">
                             <EditableField 
                               type="time" 
-                              className="border-2 border-black p-1 font-bold text-xs w-24" 
+                              className="border border-[#2A2A2A] bg-[#202020] text-[#F5F5F5] p-1.5 font-bold text-xs w-28 rounded-md text-center focus:border-[#FFD54F]" 
                               value={details.end}
                               onSave={(val) => handleMinuteChange(player.id, 'end', val)}
                             />
                           </td>
-                          <td className="p-4 text-center font-black text-lg">
+                          <td className="p-4 text-center font-black text-lg text-[#00D47A]">
                             {minutes}
                           </td>
                           <td className="p-4">
                             <EditableField 
-                              className="w-full border-2 border-black p-1 font-bold text-xs" 
+                              className="w-full border border-[#2A2A2A] bg-[#202020] text-[#F5F5F5] p-1.5 font-bold text-xs rounded-md focus:border-[#FFD54F]" 
                               value={details.notes}
                               onSave={(val) => handleMinuteChange(player.id, 'notes', val)}
                             />
@@ -1020,10 +1030,10 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
           </div>
         </div>
           ) : (
-            <div className="bg-white border-4 border-black p-12 text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-              <Calendar className="h-16 w-16 mx-auto mb-4 text-black/20" />
-              <h3 className="text-xl font-black uppercase text-black/40">Kein Spiel ausgewählt</h3>
-              <p className="text-xs font-bold opacity-40 mt-2">Bitte wähle ein Spiel aus der Übersicht oder erstelle ein neues.</p>
+            <div className="bg-[#1A1A1A] border border-[#2A2A2A] p-12 text-center rounded-xl shadow-md">
+              <Calendar className="h-16 w-16 mx-auto mb-4 text-[#C7C7C7]/40" />
+              <h3 className="text-xl font-black uppercase text-[#C7C7C7]">Kein Spiel ausgewählt</h3>
+              <p className="text-xs font-bold text-[#C7C7C7]/60 mt-2">Bitte wähle ein Spiel aus der Übersicht oder erstelle ein neues.</p>
             </div>
           )}
           </motion.div>
@@ -1033,19 +1043,19 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
       {/* Opponent Management Modal */}
       <AnimatePresence>
         {showOpponentModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl overflow-hidden"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1A1A1A] border border-[#2A2A2A] shadow-2xl rounded-xl w-full max-w-2xl overflow-hidden text-[#F5F5F5]"
             >
-              <div className="bg-black text-white p-4 flex justify-between items-center">
-                <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
-                  <Users size={20} /> Gegner-Verwaltung
+              <div className="bg-[#202020] text-[#F5F5F5] p-4 flex justify-between items-center border-b border-[#2A2A2A]">
+                <h3 className="font-black uppercase tracking-widest flex items-center gap-2 text-[#F5F5F5] text-sm">
+                  <Users size={18} className="text-[#FFD54F]" /> Gegner-Verwaltung
                 </h3>
-                <button onClick={() => setShowOpponentModal(false)} className="hover:text-[#C00000] transition-colors">
-                  <X size={24} />
+                <button onClick={() => setShowOpponentModal(false)} className="text-[#C7C7C7] hover:text-[#F5F5F5] transition-colors">
+                  <X size={20} />
                 </button>
               </div>
 
@@ -1053,7 +1063,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                 <div className="flex gap-2">
                   <input 
                     type="text"
-                    className="flex-1 border-2 border-black p-2 font-bold uppercase"
+                    className="flex-1 bg-[#202020] border border-[#2A2A2A] rounded-lg p-2.5 font-bold uppercase text-[#F5F5F5] text-xs focus:border-[#FFD54F] focus:outline-none"
                     placeholder="Gegner Name..."
                     value={newOpponentName}
                     onChange={(e) => setNewOpponentName(e.target.value)}
@@ -1061,7 +1071,7 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                   />
                   <button 
                     onClick={handleSaveOpponent}
-                    className="bg-black text-white px-6 py-2 font-black uppercase text-xs hover:bg-[#C00000] transition-colors border-2 border-black"
+                    className="bg-[#FFD54F] hover:bg-[#FFE082] text-[#0F0F0F] px-6 py-2.5 font-black uppercase text-xs rounded-lg transition-colors shadow-md border border-[#FFD54F]"
                   >
                     {editingOpponent ? 'Speichern' : 'Hinzufügen'}
                   </button>
@@ -1071,32 +1081,32 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                         setEditingOpponent(null);
                         setNewOpponentName('');
                       }}
-                      className="bg-gray-200 text-black px-4 py-2 font-black uppercase text-xs hover:bg-gray-300 transition-colors border-2 border-black"
+                      className="bg-[#202020] text-[#F5F5F5] px-4 py-2.5 font-black uppercase text-xs hover:bg-[#2A2A2A] transition-colors border border-[#2A2A2A] rounded-lg"
                     >
                       Abbrechen
                     </button>
                   )}
                 </div>
 
-                <div className="max-h-[400px] overflow-y-auto custom-scrollbar border-2 border-black">
+                <div className="max-h-[400px] overflow-y-auto border border-[#2A2A2A] rounded-xl overflow-hidden bg-[#1A1A1A]">
                   <table className="w-full border-collapse">
-                    <thead className="bg-gray-100 sticky top-0">
-                      <tr className="border-b-2 border-black">
+                    <thead className="bg-[#202020] sticky top-0 border-b border-[#2A2A2A] text-[#F5F5F5]">
+                      <tr>
                         <th className="p-3 text-left text-[10px] font-black uppercase tracking-widest">Gegner Name</th>
                         <th className="p-3 text-right text-[10px] font-black uppercase tracking-widest">Aktionen</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y-2 divide-black/5">
+                    <tbody className="divide-y divide-[#2A2A2A]">
                       {opponents.length === 0 ? (
                         <tr>
-                          <td colSpan={2} className="p-8 text-center text-xs font-bold opacity-40 italic">
+                          <td colSpan={2} className="p-8 text-center text-xs font-bold text-[#C7C7C7]/60 italic">
                             Keine Gegner hinterlegt.
                           </td>
                         </tr>
                       ) : (
                         opponents.map(opp => (
-                          <tr key={opp.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="p-3 font-bold uppercase text-sm">{opp.name}</td>
+                          <tr key={opp.id} className="hover:bg-[#202020] transition-colors">
+                            <td className="p-3 font-bold uppercase text-xs text-[#F5F5F5]">{opp.name}</td>
                             <td className="p-3 text-right">
                               <div className="flex justify-end gap-2">
                                 <button 
@@ -1104,14 +1114,14 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
                                     setEditingOpponent(opp);
                                     setNewOpponentName(opp.name);
                                   }}
-                                  className="p-1 text-blue-600 hover:bg-blue-50 transition-colors"
+                                  className="p-1 text-[#FFD54F] hover:underline transition-colors"
                                   title="Bearbeiten"
                                 >
                                   <Edit2 size={14} />
                                 </button>
                                 <button 
                                   onClick={() => setOpponentToDelete(opp)}
-                                  className="p-1 text-red-600 hover:bg-red-50 transition-colors"
+                                  className="p-1 text-rose-400 hover:underline transition-colors"
                                   title="Löschen"
                                 >
                                   <Trash2 size={14} />
@@ -1133,25 +1143,25 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
       {/* Delete Match Confirm Modal */}
       <AnimatePresence>
         {showDeleteMatchConfirm && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md p-6"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1A1A1A] border border-[#2A2A2A] shadow-2xl rounded-xl w-full max-w-md p-6 text-[#F5F5F5]"
             >
-              <h3 className="text-xl font-black uppercase mb-4">Spiel löschen?</h3>
-              <p className="font-bold text-sm mb-6">Möchtest du dieses Spiel wirklich unwiderruflich löschen?</p>
+              <h3 className="text-xl font-black uppercase mb-4 text-[#F5F5F5]">Spiel löschen?</h3>
+              <p className="font-bold text-xs text-[#C7C7C7] mb-6">Möchtest du dieses Spiel wirklich unwiderruflich löschen?</p>
               <div className="flex gap-4">
                 <button 
                   onClick={handleDeleteMatch}
-                  className="flex-1 bg-red-600 text-white py-3 font-black uppercase text-xs hover:bg-red-700 transition-colors border-2 border-black"
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 font-black uppercase text-xs rounded-lg transition-colors shadow-md"
                 >
                   Ja, löschen
                 </button>
                 <button 
                   onClick={() => setShowDeleteMatchConfirm(false)}
-                  className="flex-1 bg-gray-200 text-black py-3 font-black uppercase text-xs hover:bg-gray-300 transition-colors border-2 border-black"
+                  className="flex-1 bg-[#202020] hover:bg-[#2A2A2A] text-[#F5F5F5] py-3 font-black uppercase text-xs rounded-lg transition-colors border border-[#2A2A2A]"
                 >
                   Abbrechen
                 </button>
@@ -1164,28 +1174,28 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
       {/* Delete Opponent Confirm Modal */}
       <AnimatePresence>
         {opponentToDelete && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md p-6"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1A1A1A] border border-[#2A2A2A] shadow-2xl rounded-xl w-full max-w-md p-6 text-[#F5F5F5]"
             >
-              <h3 className="text-xl font-black uppercase mb-4">Gegner löschen?</h3>
-              <p className="font-bold text-sm mb-6">Möchtest du den Gegner "{opponentToDelete.name}" wirklich löschen?</p>
+              <h3 className="text-xl font-black uppercase mb-4 text-[#F5F5F5]">Gegner löschen?</h3>
+              <p className="font-bold text-xs text-[#C7C7C7] mb-6">Möchtest du den Gegner "{opponentToDelete.name}" wirklich löschen?</p>
               <div className="flex gap-4">
                 <button 
                   onClick={async () => {
                     await onDeleteOpponent(opponentToDelete.id);
                     setOpponentToDelete(null);
                   }}
-                  className="flex-1 bg-red-600 text-white py-3 font-black uppercase text-xs hover:bg-red-700 transition-colors border-2 border-black"
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 font-black uppercase text-xs rounded-lg transition-colors shadow-md"
                 >
                   Ja, löschen
                 </button>
                 <button 
                   onClick={() => setOpponentToDelete(null)}
-                  className="flex-1 bg-gray-200 text-black py-3 font-black uppercase text-xs hover:bg-gray-300 transition-colors border-2 border-black"
+                  className="flex-1 bg-[#202020] hover:bg-[#2A2A2A] text-[#F5F5F5] py-3 font-black uppercase text-xs rounded-lg transition-colors border border-[#2A2A2A]"
                 >
                   Abbrechen
                 </button>
@@ -1198,27 +1208,27 @@ export const MatchPlanningView: React.FC<MatchPlanningViewProps> = ({
       {/* Reset Player Minutes Confirm Modal */}
       <AnimatePresence>
         {playerToReset && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md p-6"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1A1A1A] border border-[#2A2A2A] shadow-2xl rounded-xl w-full max-w-md p-6 text-[#F5F5F5]"
             >
-              <h3 className="text-xl font-black uppercase mb-4">Zeiten zurücksetzen?</h3>
-              <p className="font-bold text-sm mb-6">
-                Möchtest du wirklich alle Einsatzzeiten für <span className="text-[#C00000]">{playerToReset.lastName}</span> über alle Spiele hinweg auf 0 setzen?
+              <h3 className="text-xl font-black uppercase mb-4 text-[#F5F5F5]">Zeiten zurücksetzen?</h3>
+              <p className="font-bold text-xs text-[#C7C7C7] mb-6">
+                Möchtest du wirklich alle Einsatzzeiten für <span className="text-[#FFD54F] font-black">{playerToReset.lastName}</span> über alle Spiele hinweg auf 0 setzen?
               </p>
               <div className="flex gap-4">
                 <button 
                   onClick={() => handleResetPlayerMinutes(playerToReset.id)}
-                  className="flex-1 bg-red-600 text-white py-3 font-black uppercase text-xs hover:bg-red-700 transition-colors border-2 border-black"
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 font-black uppercase text-xs rounded-lg transition-colors shadow-md"
                 >
                   Ja, zurücksetzen
                 </button>
                 <button 
                   onClick={() => setPlayerToReset(null)}
-                  className="flex-1 bg-gray-200 text-black py-3 font-black uppercase text-xs hover:bg-gray-300 transition-colors border-2 border-black"
+                  className="flex-1 bg-[#202020] hover:bg-[#2A2A2A] text-[#F5F5F5] py-3 font-black uppercase text-xs rounded-lg transition-colors border border-[#2A2A2A]"
                 >
                   Abbrechen
                 </button>

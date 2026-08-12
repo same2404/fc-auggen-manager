@@ -860,26 +860,26 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden watermark-bg">
+    <div className="flex h-full bg-[#1E293B] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden watermark-bg">
       {/* Left Sidebar: Players, Photos, Setups */}
       {isEditing && (
-        <div className="w-64 border-r-2 border-black flex flex-col bg-gray-50">
+        <div className="w-64 border-r-2 border-black flex flex-col bg-[#121824]">
           <div className="flex border-b-2 border-black">
             <button 
               onClick={() => setActiveSidebarTab('players')}
-              className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'players' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+              className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'players' ? 'bg-black text-white' : 'bg-[#1E293B] text-black hover:bg-[#1E293B]'}`}
             >
               Kader
             </button>
             <button 
               onClick={() => setActiveSidebarTab('setups')}
-              className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'setups' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+              className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'setups' ? 'bg-black text-white' : 'bg-[#1E293B] text-black hover:bg-[#1E293B]'}`}
             >
               Setups ({setups.length})
             </button>
             <button 
               onClick={() => setActiveSidebarTab('tactics')}
-              className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'tactics' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+              className={`flex-1 p-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeSidebarTab === 'tactics' ? 'bg-black text-white' : 'bg-[#1E293B] text-black hover:bg-[#1E293B]'}`}
             >
               Taktik
             </button>
@@ -887,10 +887,10 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
 
         {activeSidebarTab === 'players' && (
           <>
-            <div className="p-4 border-b-2 border-black bg-gray-100 flex flex-col gap-2">
+            <div className="p-4 border-b-2 border-black bg-[#1E293B] flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <h3 className="font-black uppercase text-[10px] tracking-widest">FC Auggen</h3>
-                <span className="text-[9px] font-bold text-gray-500">{allPlayers.length} Spieler</span>
+                <span className="text-[9px] font-bold text-[#94A3B8]">{allPlayers.length} Spieler</span>
               </div>
               <button 
                 onClick={handleAddAllPlayers}
@@ -910,7 +910,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                       <button
                         key={p.id}
                         onClick={() => handleAddPlayer(p)}
-                        className="w-full p-2 text-left border border-black/10 hover:border-black hover:bg-white transition-all group flex items-center justify-between"
+                        className="w-full p-2 text-left border border-black/10 hover:border-black hover:bg-[#1E293B] transition-all group flex items-center justify-between"
                       >
                         <div className="flex flex-col">
                           <span className="text-[9px] font-black uppercase">{p.lastName}</span>
@@ -932,7 +932,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                       <button
                         key={p.id}
                         onClick={() => handleAddPlayer(p)}
-                        className="w-full p-2 text-left border border-black/10 hover:border-black hover:bg-white transition-all group flex items-center justify-between"
+                        className="w-full p-2 text-left border border-black/10 hover:border-black hover:bg-[#1E293B] transition-all group flex items-center justify-between"
                       >
                         <div className="flex flex-col">
                           <span className="text-[9px] font-black uppercase">{p.lastName}</span>
@@ -957,13 +957,13 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                 <div className="flex border-2 border-black">
                   <button 
                     onClick={() => setSystemMode('offensive')}
-                    className={`flex-1 py-1 text-[7px] font-black uppercase tracking-widest transition-all ${systemMode === 'offensive' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+                    className={`flex-1 py-1 text-[7px] font-black uppercase tracking-widest transition-all ${systemMode === 'offensive' ? 'bg-black text-white' : 'bg-[#1E293B] text-black hover:bg-[#1E293B]'}`}
                   >
                     Mit Ball
                   </button>
                   <button 
                     onClick={() => setSystemMode('defensive')}
-                    className={`flex-1 py-1 text-[7px] font-black uppercase tracking-widest transition-all ${systemMode === 'defensive' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+                    className={`flex-1 py-1 text-[7px] font-black uppercase tracking-widest transition-all ${systemMode === 'defensive' ? 'bg-black text-white' : 'bg-[#1E293B] text-black hover:bg-[#1E293B]'}`}
                   >
                     Gegen Ball
                   </button>
@@ -975,7 +975,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   <button
                     key={name}
                     onClick={() => handleApplySystem(name)}
-                    className="w-full p-2 border-2 border-black bg-white text-[9px] font-black uppercase hover:bg-black hover:text-white transition-all flex items-center justify-between group"
+                    className="w-full p-2 border-2 border-black bg-[#1E293B] text-[9px] font-black uppercase hover:bg-black hover:text-white transition-all flex items-center justify-between group"
                   >
                     <span>{name}</span>
                     <Layout size={10} className="opacity-0 group-hover:opacity-100" />
@@ -984,7 +984,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-gray-100 border-2 border-black text-[9px] font-bold">
+            <div className="p-3 bg-[#1E293B] border-2 border-black text-[9px] font-bold">
               Wählen Sie ein System aus, um die Spieler automatisch auf dem Feld zu platzieren.
             </div>
           </div>
@@ -1004,7 +1004,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
               placeholder="Setups suchen..."
               value={setupFilter}
               onChange={(e) => setSetupFilter(e.target.value)}
-              className="w-full p-1.5 text-[9px] font-bold border-2 border-black bg-white outline-none shrink-0"
+              className="w-full p-1.5 text-[9px] font-bold border-2 border-black bg-[#1E293B] outline-none shrink-0"
             />
 
             <div className="flex-1 overflow-auto custom-scrollbar space-y-2">
@@ -1016,13 +1016,13 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   <div key={setup.id} className="group relative">
                     <button
                       onClick={() => handleLoadSetup(setup)}
-                      className={`w-full p-2.5 text-left border-2 border-black transition-all hover:bg-white ${isCurrent ? 'bg-amber-50 border-amber-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-100'}`}
+                      className={`w-full p-2.5 text-left border-2 border-black transition-all hover:bg-[#1E293B] ${isCurrent ? 'bg-amber-50 border-amber-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-[#1E293B]'}`}
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-[10px] font-black uppercase truncate pr-6">{setup.name}</p>
                         {isCurrent && <Check size={12} className="text-amber-600 shrink-0" />}
                       </div>
-                      <div className="flex items-center justify-between mt-1 text-[7px] font-bold text-gray-500">
+                      <div className="flex items-center justify-between mt-1 text-[7px] font-bold text-[#94A3B8]">
                         <span>{new Date(setup.createdAt).toLocaleDateString('de-DE')}</span>
                         <span className="bg-black/5 px-1 rounded">{playerCount} Spieler</span>
                       </div>
@@ -1054,7 +1054,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
         {/* Top Control Bar: Drawing Tools & Colors & Sizes */}
         {isEditing && (
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 max-w-[calc(100%-220px)]">
-            <div className="flex flex-wrap items-center gap-1.5 bg-white/95 backdrop-blur border-2 border-black p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex flex-wrap items-center gap-1.5 bg-[#1E293B]/95 backdrop-blur border-2 border-black p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               {/* Werkzeuge */}
               {[
                 { id: 'select', icon: MousePointer2, label: 'Auswählen & Verschieben' },
@@ -1104,7 +1104,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                   <button
                     key={w}
                     onClick={() => handleStrokeWidthChange(w)}
-                    className={`px-1.5 py-0.5 border text-[8px] font-bold ${strokeWidth === w ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-black'}`}
+                    className={`px-1.5 py-0.5 border text-[8px] font-bold ${strokeWidth === w ? 'bg-black text-white border-black' : 'bg-[#1E293B] border-[#334155] hover:border-black'}`}
                   >
                     {w}px
                   </button>
@@ -1114,7 +1114,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
               {/* Gestrichelte Linien Toggle */}
               <button
                 onClick={() => handleDashToggle(!isDashedLine)}
-                className={`px-1.5 py-0.5 border text-[8px] font-bold ${isDashedLine ? 'bg-black text-white border-black' : 'bg-white border-gray-300 hover:border-black'}`}
+                className={`px-1.5 py-0.5 border text-[8px] font-bold ${isDashedLine ? 'bg-black text-white border-black' : 'bg-[#1E293B] border-[#334155] hover:border-black'}`}
                 title="Linienstil: Gestrichelt / Durchgezogen"
               >
                 {isDashedLine ? 'Gestrichelt' : 'Durchgezogen'}
@@ -1169,7 +1169,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                         <button
                           key={r}
                           onClick={() => handlePlayerRadiusChange(selectedElement.id, r)}
-                          className={`px-1 py-0.5 text-[7px] font-bold border ${selectedElement.radius === r ? 'bg-amber-600 text-white border-amber-700' : 'bg-white border-amber-300 hover:border-amber-600'}`}
+                          className={`px-1 py-0.5 text-[7px] font-bold border ${selectedElement.radius === r ? 'bg-amber-600 text-white border-amber-700' : 'bg-[#1E293B] border-amber-300 hover:border-amber-600'}`}
                         >
                           {r}
                         </button>
@@ -1211,7 +1211,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
         {/* Top Right Save & Export Bar */}
         <div className="absolute top-3 right-3 z-20 flex gap-2">
           {isEditing && (
-            <div className="flex items-center gap-1 bg-white/95 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-1 bg-[#1E293B]/95 backdrop-blur border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               <input 
                 type="text" 
                 placeholder="Setup Name..." 
@@ -1229,7 +1229,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
               {selectedSetupId && (
                 <button
                   onClick={handleSaveAsNew}
-                  className="p-1.5 bg-gray-100 text-black hover:bg-gray-200 transition-all flex items-center gap-1 text-[9px] font-black uppercase px-2 border border-black/20"
+                  className="p-1.5 bg-[#1E293B] text-black hover:bg-gray-200 transition-all flex items-center gap-1 text-[9px] font-black uppercase px-2 border border-black/20"
                   title="Als neues Setup kopieren"
                 >
                   <Copy size={12} /> Kopie
@@ -1237,16 +1237,6 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
               )}
             </div>
           )}
-
-          {/* 3D Profi-Taktiktafel Button */}
-          <button
-            onClick={() => setShow3DProfiBoard(true)}
-            className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] border border-black cursor-pointer"
-            title="3D-Taktiktafel & Interaktive Laufwege im Profi-Modus öffnen"
-          >
-            <Layers size={14} className="text-amber-300 animate-pulse" />
-            <span>3D-Taktiktafel (Profi)</span>
-          </button>
 
           {/* Export Button & Dropdown Menu */}
           <div className="relative">
@@ -1258,16 +1248,16 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
             </button>
 
             {showExportMenu && (
-              <div className="absolute right-0 mt-1 w-52 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 flex flex-col p-1 text-[9px] font-black uppercase">
+              <div className="absolute right-0 mt-1 w-52 bg-[#1E293B] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 flex flex-col p-1 text-[9px] font-black uppercase">
                 <button
                   onClick={handleExportPNG}
-                  className="p-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                  className="p-2 text-left hover:bg-[#1E293B] flex items-center gap-2"
                 >
                   <FileImage size={13} className="text-emerald-700" /> Als PNG-Bild (HD)
                 </button>
                 <button
                   onClick={handleExportJPG}
-                  className="p-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                  className="p-2 text-left hover:bg-[#1E293B] flex items-center gap-2"
                 >
                   <FileImage size={13} className="text-blue-700" /> Als JPG-Bild (HD)
                 </button>
@@ -1569,7 +1559,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
 
       {/* Right Sidebar: Materials / Instructions */}
       {isEditing && (
-        <div className="w-72 border-l-2 border-black flex flex-col bg-gray-50">
+        <div className="w-72 border-l-2 border-black flex flex-col bg-[#121824]">
           <div className="p-4 border-b-2 border-black bg-black text-white flex items-center justify-between">
             <h3 className="font-black uppercase text-xs tracking-widest">Taktische Anweisungen</h3>
           </div>
@@ -1595,7 +1585,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
           <section className="space-y-2">
             <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Anweisungen & Vorgaben</p>
             <textarea 
-              className="w-full h-36 p-3 border-2 border-black text-xs font-bold focus:outline-none bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="w-full h-36 p-3 border-2 border-black text-xs font-bold focus:outline-none bg-[#1E293B] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               placeholder="Taktische Vorgaben und Anweisungen hier eingeben..."
               value={instructions}
               onChange={(e) => isEditing && onInstructionsChange(e.target.value)}
@@ -1615,7 +1605,7 @@ export const TacticBoard: React.FC<TacticBoardProps> = ({
                 <button 
                   key={item.name} 
                   onClick={() => handleAddMaterial(item.name)}
-                  className="w-full flex items-center gap-3 p-2 border border-black/10 bg-white hover:border-black transition-all group"
+                  className="w-full flex items-center gap-3 p-2 border border-black/10 bg-[#1E293B] hover:border-black transition-all group"
                 >
                   <span className="text-base">{item.icon}</span>
                   <span className="text-[10px] font-black uppercase">{item.name}</span>

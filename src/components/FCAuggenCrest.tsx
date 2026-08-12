@@ -241,7 +241,7 @@ export const FCAuggenCrest: React.FC<FCAuggenCrestProps> = ({
           </span>
           {showText && (
             <span className="font-bold uppercase tracking-widest text-[9px] text-slate-500 block -mt-0.5">
-              1925 e.V.
+              1921 e.V.
             </span>
           )}
         </div>

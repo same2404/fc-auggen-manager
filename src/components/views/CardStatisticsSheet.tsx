@@ -35,23 +35,23 @@ export const CardStatisticsSheet: React.FC<CardStatisticsSheetProps> = ({
   const sortedPlayers = sortPlayers(players);
 
   return (
-    <div className="flex flex-col h-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-      <div className="p-2 border-b-2 border-black bg-gray-50 flex justify-between items-center shrink-0">
+    <div className="flex flex-col h-full bg-gradient-to-br from-slate-950 via-slate-900 to-red-950 text-slate-100 p-2 sm:p-4 rounded-2xl border border-amber-500/20 overflow-hidden">
+      <div className="p-3 border-b border-amber-500/30 bg-slate-950/90 rounded-xl flex justify-between items-center shrink-0 mb-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <ShieldAlert size={14} className="text-[#C00000]" />
-            <h3 className="font-black uppercase text-xs tracking-widest">Karten-Statistik (Pflichtspiele)</h3>
+            <ShieldAlert size={16} className="text-amber-400" />
+            <h3 className="font-black uppercase text-xs tracking-wider text-amber-400">Karten-Statistik (Pflichtspiele)</h3>
           </div>
-          <div className="flex items-center gap-1 text-[8px] font-bold uppercase opacity-40">
+          <div className="flex items-center gap-1 text-[9px] font-bold uppercase text-slate-400">
             <Activity size={10} />
             <span>Saison 26/27</span>
           </div>
         </div>
         <button 
           onClick={() => setShowAddPlayerModal(true)}
-          className="bg-black text-white px-2 py-1 text-[8px] font-black uppercase tracking-widest border-2 border-black hover:bg-gray-800 transition-colors flex items-center gap-1"
+          className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl hover:brightness-110 transition-all flex items-center gap-1 shadow-md"
         >
-          <Plus size={10} /> Spieler hinzufügen
+          <Plus size={12} /> Spieler hinzufügen
         </button>
       </div>
 
@@ -95,11 +95,11 @@ export const CardStatisticsSheet: React.FC<CardStatisticsSheetProps> = ({
                     const totalRed = Object.values(record?.cards || {}).filter(c => c === 'R').length;
 
                     return (
-                      <tr key={player.id} className="hover:bg-gray-50 transition-colors border-b border-black/10">
+                      <tr key={player.id} className="hover:bg-[#121824] transition-colors border-b border-black/10">
                         <td className="p-3 border-r border-black/10 text-center opacity-40">{pIdx + 1}</td>
                         <td className="p-3 border-r border-black/10">
                           <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 flex items-center justify-center bg-gray-100 border border-black text-[8px] font-black shrink-0">
+                            <span className="w-6 h-6 flex items-center justify-center bg-[#1E293B] border border-black text-[8px] font-black shrink-0">
                               {player.category === 'player' ? `#${player.number}` : (player.category === 'coach' ? 'T' : (player.category === 'staff' ? 'F' : 'M'))}
                             </span>
                             <div className="flex gap-1 flex-1">

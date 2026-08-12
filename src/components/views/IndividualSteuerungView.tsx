@@ -114,19 +114,19 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-      <div className="p-2.5 border-b-2 border-black bg-slate-900 text-white flex flex-wrap justify-between items-center gap-2 shrink-0">
+    <div className="flex flex-col h-full bg-[#0A0E17] text-[#F8FAFC] p-2 sm:p-4 rounded-2xl border border-[#334155] shadow-2xl overflow-hidden min-h-screen">
+      <div className="p-3 border-b border-[#334155] bg-[#121824] text-[#F8FAFC] flex flex-wrap justify-between items-center gap-2 shrink-0 rounded-2xl shadow-xs mb-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Target size={14} className="text-amber-400" />
-            <h3 className="font-black uppercase text-xs tracking-wider">Individuelle Steuerung & Belastungs-Ampel</h3>
+            <Target size={16} className="text-[#10B981]" />
+            <h3 className="font-extrabold uppercase text-xs tracking-wider text-[#F8FAFC]">Performancetraining &amp; Individuelle Steuerung</h3>
           </div>
-          <div className="flex items-center gap-2 border-l border-white/20 pl-3">
-            <Search size={10} className="text-slate-400" />
+          <div className="flex items-center gap-2 border-l border-[#334155] pl-3">
+            <Search size={12} className="text-[#94A3B8]" />
             <input 
               type="text" 
               placeholder="SPIELER SUCHEN..." 
-              className="bg-slate-950 text-white text-[9px] font-black uppercase focus:outline-none px-2 py-1 rounded border border-white/10 w-32"
+              className="bg-[#1E293B] text-[#F8FAFC] text-[10px] font-bold uppercase focus:outline-none px-2.5 py-1 rounded-lg border border-[#334155] focus:border-[#10B981] w-40 placeholder:text-[#94A3B8]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -134,52 +134,52 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
         </div>
 
         {/* Belastungs-Ampel Schnell-Filter & Statistik */}
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase">
-          <span className="text-slate-400 mr-1">Belastbarkeit:</span>
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase">
+          <span className="text-[#94A3B8] mr-1">Belastbarkeit:</span>
           <button
             onClick={() => setAmpelFilter('ALLE')}
-            className={`px-2 py-1 rounded border transition-all ${ampelFilter === 'ALLE' ? 'bg-white text-black border-white' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
+            className={`px-2.5 py-1 rounded-md border transition-all ${ampelFilter === 'ALLE' ? 'bg-[#FFD54F] text-[#0F0F0F] font-black border-[#FFD54F] shadow-xs' : 'bg-[#202020] text-[#F5F5F5] border-[#2A2A2A] hover:bg-[#2A2A2A]'}`}
           >
             ALLE ({ampelCounts.total})
           </button>
           <button
             onClick={() => setAmpelFilter('Grün')}
-            className={`px-2 py-1 rounded border flex items-center gap-1 transition-all ${ampelFilter === 'Grün' ? 'bg-emerald-500 text-black border-emerald-400 font-extrabold shadow' : 'bg-emerald-950/60 text-emerald-300 border-emerald-800 hover:bg-emerald-900'}`}
+            className={`px-2.5 py-1 rounded-md border flex items-center gap-1.5 transition-all ${ampelFilter === 'Grün' ? 'bg-[#202020] text-[#F5F5F5] border-2 border-[#00D47A] font-black shadow-[0_0_8px_rgba(0,212,122,0.6)]' : 'bg-[#202020] text-[#C7C7C7] border-[#2A2A2A] hover:bg-[#2A2A2A]'}`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-[#00D47A]"></span>
             🟢 VOLL ({ampelCounts.green})
           </button>
           <button
             onClick={() => setAmpelFilter('Gelb')}
-            className={`px-2 py-1 rounded border flex items-center gap-1 transition-all ${ampelFilter === 'Gelb' ? 'bg-amber-400 text-black border-amber-300 font-extrabold shadow' : 'bg-amber-950/60 text-amber-300 border-amber-800 hover:bg-amber-900'}`}
+            className={`px-2.5 py-1 rounded-md border flex items-center gap-1.5 transition-all ${ampelFilter === 'Gelb' ? 'bg-[#202020] text-[#F5F5F5] border-2 border-[#FACC15] font-black' : 'bg-[#202020] text-[#C7C7C7] border-[#2A2A2A] hover:bg-[#2A2A2A]'}`}
           >
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-[#FACC15]"></span>
             🟡 TEIL ({ampelCounts.yellow})
           </button>
           <button
             onClick={() => setAmpelFilter('Rot')}
-            className={`px-2 py-1 rounded border flex items-center gap-1 transition-all ${ampelFilter === 'Rot' ? 'bg-red-500 text-white border-red-400 font-extrabold shadow' : 'bg-red-950/60 text-red-300 border-red-800 hover:bg-red-900'}`}
+            className={`px-2.5 py-1 rounded-md border flex items-center gap-1.5 transition-all ${ampelFilter === 'Rot' ? 'bg-[#202020] text-[#F5F5F5] border-2 border-[#FF4C4C] font-black' : 'bg-[#202020] text-[#C7C7C7] border-[#2A2A2A] hover:bg-[#2A2A2A]'}`}
           >
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-[#FF4C4C]"></span>
             🔴 AUSFALL ({ampelCounts.red})
           </button>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {isEditing && onAddPlayer && (
             <button 
               onClick={onAddPlayer}
-              className="flex items-center gap-1 px-2 py-1 bg-[#C00000] text-white rounded text-[8px] font-black uppercase tracking-widest hover:bg-red-700 transition-all mr-2 shadow"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[#FFD54F] hover:bg-[#ffe082] text-[#0F0F0F] rounded-md text-[10px] font-black uppercase tracking-wider transition-all shadow-xs border border-[#FFD54F]"
             >
-              <Plus size={10} />
+              <Plus size={12} />
               Spieler hinzufügen
             </button>
           )}
-          <div className="flex items-center gap-2 mr-2">
-            <Calendar size={10} className="text-slate-400" />
+          <div className="flex items-center gap-2">
+            <Calendar size={12} className="text-[#FFD54F]" />
             <input 
               type="date"
-              className="bg-slate-950 text-white text-[8px] font-black uppercase focus:outline-none px-1 py-0.5 rounded border border-white/20"
+              className="bg-[#202020] text-[#F5F5F5] text-[10px] font-bold uppercase focus:outline-none px-2 py-1 rounded-md border border-[#2A2A2A] focus:border-[#FFD54F]"
               value={selectedIndividualDate}
               onChange={(e) => setSelectedIndividualDate(e.target.value)}
             />
@@ -187,73 +187,73 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto custom-scrollbar">
+      <div className="flex-1 overflow-auto custom-scrollbar bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl shadow-xl">
         <table className="w-full border-collapse text-[10px] font-bold">
-          <thead className="sticky top-0 bg-black text-white z-20">
+          <thead className="sticky top-0 bg-[#202020] text-[#FFD54F] z-20 border-b border-[#2A2A2A]">
             <tr>
-              <th className="p-3 border border-white/20 text-left w-10">Nr</th>
-              <th className="p-3 border border-white/20 text-left w-56">Spieler</th>
-              <th className="p-3 border border-white/20 text-center w-14">Pos</th>
-              <th className="p-3 border border-white/20 text-center w-36">Belastungs-Ampel</th>
-              <th className="p-3 border border-white/20 text-left w-28">Datum</th>
-              <th className="p-3 border border-white/20 text-left">Individueller Schwerpunkt</th>
-              <th className="p-3 border border-white/20 text-left">Saisonziele</th>
-              <th className="p-3 border border-white/20 text-left">Status / Fortschritt</th>
-              <th className="p-3 border border-white/20 text-center w-24">Intensität</th>
-              <th className="p-3 border border-white/20 text-center w-8">EK</th>
-              <th className="p-3 border border-white/20 text-center w-8">O</th>
-              <th className="p-3 border border-white/20 text-center w-8">T</th>
-              <th className="p-3 border border-white/20 text-center w-8">P</th>
-              <th className="p-3 border border-white/20 text-center w-8">S</th>
-              <th className="p-3 border border-white/20 text-center w-8">A</th>
-              <th className="p-3 border border-white/20 text-center w-8">W</th>
-              {isEditing && <th className="p-3 border border-white/20 text-center w-10">Aktion</th>}
+              <th className="p-2.5 border-r border-[#2A2A2A] text-center w-10 text-[#C7C7C7]">Nr</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-left w-56 text-[#F5F5F5]">Spieler</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-center w-14 text-[#FFD54F]">Pos</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-center w-36 text-[#FFD54F]">Belastungs-Ampel</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-left w-28 text-[#C7C7C7]">Datum</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-left text-[#F5F5F5]">Individueller Schwerpunkt</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-left text-[#C7C7C7]">Saisonziele</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-left text-[#C7C7C7]">Status / Fortschritt</th>
+              <th className="p-2.5 border-r border-[#2A2A2A] text-center w-24 text-[#FFD54F]">Intensität</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">EK</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">O</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">T</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">P</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">S</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">A</th>
+              <th className="p-2 border-r border-[#2A2A2A] text-center w-8 text-[#C7C7C7]">W</th>
+              {isEditing && <th className="p-2.5 border-r border-[#2A2A2A] text-center w-10 text-rose-500">Aktion</th>}
             </tr>
           </thead>
           <tbody>
             {/* Quick Add Player Row */}
             {isEditing && (
-              <tr className="bg-blue-50/50 border-b border-black">
-                <td className="p-3 border-r border-black/10">
+              <tr className="bg-[#202020]/80 border-b border-[#2A2A2A]">
+                <td className="p-2 border-r border-[#2A2A2A]">
                   <input 
                     type="number"
-                    className="w-full bg-transparent font-black text-center focus:outline-none text-blue-700"
+                    className="w-full bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A] rounded p-1 font-bold text-center focus:outline-none focus:border-[#FFD54F]"
                     placeholder="NR"
                     value={newPlayer.number}
                     onChange={(e) => setNewPlayer({ ...newPlayer, number: e.target.value })}
                   />
                 </td>
-                <td className="p-3 border-r border-black/10">
+                <td className="p-2 border-r border-[#2A2A2A]">
                   <div className="flex gap-1">
                     <input 
                       type="text"
-                      className="bg-transparent font-black uppercase focus:outline-none w-1/2 text-blue-700"
+                      className="bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A] rounded p-1 font-bold uppercase focus:outline-none w-1/2 px-1 focus:border-[#FFD54F]"
                       placeholder="VORNAME"
                       value={newPlayer.firstName}
                       onChange={(e) => setNewPlayer({ ...newPlayer, firstName: e.target.value })}
                     />
                     <input 
                       type="text"
-                      className="bg-transparent font-black uppercase focus:outline-none w-1/2 text-blue-700"
+                      className="bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A] rounded p-1 font-bold uppercase focus:outline-none w-1/2 px-1 focus:border-[#FFD54F]"
                       placeholder="NACHNAME"
                       value={newPlayer.lastName}
                       onChange={(e) => setNewPlayer({ ...newPlayer, lastName: e.target.value })}
                     />
                   </div>
                 </td>
-                <td className="p-3 border-r border-black/10 text-center">
+                <td className="p-2 border-r border-[#2A2A2A] text-center">
                   <input 
                     type="text"
-                    className="w-full bg-transparent font-black text-center focus:outline-none text-blue-700 uppercase"
+                    className="w-full bg-[#1A1A1A] text-[#FFD54F] border border-[#2A2A2A] rounded p-1 font-bold text-center focus:outline-none focus:border-[#FFD54F] uppercase"
                     placeholder="POS"
                     value={newPlayer.position}
                     onChange={(e) => setNewPlayer({ ...newPlayer, position: e.target.value })}
                   />
                 </td>
-                <td colSpan={12} className="p-3 border-r border-black/10">
+                <td colSpan={12} className="p-2 border-r border-[#2A2A2A]">
                   <div className="flex items-center justify-between">
                     <select 
-                      className="bg-transparent font-black uppercase focus:outline-none text-blue-700 text-[8px]"
+                      className="bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A] rounded font-bold uppercase focus:outline-none text-[9px] px-2 py-1"
                       value={newPlayer.category}
                       onChange={(e) => setNewPlayer({ ...newPlayer, category: e.target.value as any })}
                     >
@@ -263,7 +263,7 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                     </select>
                     <button 
                       onClick={handleQuickAddPlayer}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-[8px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] border border-black"
+                      className="bg-[#FFD54F] text-[#0F0F0F] px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#ffe082] transition-all border border-[#FFD54F]"
                     >
                       Direkt Hinzufügen
                     </button>
@@ -277,9 +277,9 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
 
               return (
                 <React.Fragment key={category}>
-                  <tr className="bg-gray-200">
-                    <td colSpan={isEditing ? 16 : 15} className="p-2 font-black uppercase text-[10px] tracking-widest border border-black">
-                      {category === 'player' ? 'Spielerkader' : category === 'staff' ? 'Trainerteam' : 'Funktionäre'}
+                  <tr className="bg-[#202020] text-[#FFD54F]">
+                    <td colSpan={isEditing ? 17 : 16} className="p-2.5 font-black uppercase text-[10px] tracking-widest border-y border-[#2A2A2A] bg-[#202020] text-[#FFD54F] border-l-4 border-l-[#FFD54F]">
+                      {category === 'player' ? '⚽ Spielerkader' : category === 'staff' ? '📋 Trainerteam' : '🛡️ Funktionäre'}
                     </td>
                   </tr>
                   {categoryPlayers.map((player, pIdx) => {
@@ -307,17 +307,17 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                     };
 
                     return (
-                      <tr key={player.id} className="hover:bg-gray-50 transition-colors border-b border-black/10">
-                        <td className="p-3 border-r border-black/10 text-center opacity-40">{pIdx + 1}</td>
-                        <td className="p-3 border-r border-black/10">
+                      <tr key={player.id} className="hover:bg-[#202020] transition-colors border-b border-[#2A2A2A] bg-[#1A1A1A] text-[#F5F5F5]">
+                        <td className="p-2.5 border-r border-[#2A2A2A] text-center text-[#888888] font-mono font-bold">{pIdx + 1}</td>
+                        <td className="p-2.5 border-r border-[#2A2A2A]">
                           <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 flex items-center justify-center bg-gray-100 border border-black text-[8px] font-black shrink-0">
+                            <span className="w-6 h-6 flex items-center justify-center bg-[#202020] text-[#F5F5F5] border border-[#2A2A2A] text-[9px] font-bold shrink-0 rounded shadow-xs">
                               {player.category === 'player' ? `#${player.number}` : (player.category === 'staff' ? 'T' : 'F')}
                             </span>
                             <div className="flex gap-1 flex-1">
                               <input 
                                 type="text"
-                                className={`bg-transparent focus:outline-none w-full ${!isEditing ? 'cursor-not-allowed' : 'font-bold uppercase'}`}
+                                className={`bg-transparent focus:outline-none w-full text-[#F5F5F5] font-bold uppercase text-[11px] ${!isEditing ? 'cursor-not-allowed' : 'focus:bg-[#202020] focus:px-1 rounded border border-[#2A2A2A]'}`}
                                 value={player.lastName || ''}
                                 onChange={(e) => onUpdatePlayer(player.id, 'lastName', e.target.value)}
                                 disabled={!isEditing}
@@ -325,100 +325,101 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                             </div>
                           </div>
                         </td>
-                        <td className="p-3 border-r border-black/10 text-center text-[#C00000]">{player.position}</td>
+                        <td className="p-2.5 border-r border-[#2A2A2A] text-center text-[#FFD54F] font-black text-[10px]">{player.position}</td>
                         
                         {/* Belastungs-Ampel (Grün / Gelb / Rot) */}
-                        <td className="p-2 border-r border-black/10 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="p-2 border-r border-[#2A2A2A] text-center bg-[#181818]">
+                          <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => handleAmpelChange('Grün')}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${currentAmpel === 'Grün' ? 'bg-emerald-500 text-white border-emerald-700 shadow-[0_0_8px_rgba(16,185,129,0.8)] scale-110' : 'bg-emerald-100 text-emerald-700 border-emerald-300 opacity-40 hover:opacity-100'}`}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${currentAmpel === 'Grün' ? 'bg-[#202020] text-[#F5F5F5] border-2 border-[#00D47A] shadow-[0_0_8px_rgba(0,212,122,0.8)] scale-110' : 'bg-[#202020] text-[#888888] border-[#2A2A2A] opacity-50 hover:opacity-100'}`}
                               title="🟢 GRÜN: 100% Voll belastbar & einsatzbereit"
                             >
                               🟢
                             </button>
                             <button
                               onClick={() => handleAmpelChange('Gelb')}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${currentAmpel === 'Gelb' ? 'bg-amber-400 text-slate-950 border-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.8)] scale-110' : 'bg-amber-100 text-amber-700 border-amber-300 opacity-40 hover:opacity-100'}`}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${currentAmpel === 'Gelb' ? 'bg-[#202020] text-[#F5F5F5] border-2 border-[#FACC15] scale-110' : 'bg-[#202020] text-[#888888] border-[#2A2A2A] opacity-50 hover:opacity-100'}`}
                               title="🟡 GELB: Teilbelastung (z.B. max. 45 Min / Reduzierte Intensität)"
                             >
                               🟡
                             </button>
                             <button
                               onClick={() => handleAmpelChange('Rot')}
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${currentAmpel === 'Rot' ? 'bg-red-600 text-white border-red-800 shadow-[0_0_8px_rgba(239,68,68,0.8)] scale-110' : 'bg-red-100 text-red-700 border-red-300 opacity-40 hover:opacity-100'}`}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${currentAmpel === 'Rot' ? 'bg-[#202020] text-[#F5F5F5] border-2 border-[#FF4C4C] scale-110' : 'bg-[#202020] text-[#888888] border-[#2A2A2A] opacity-50 hover:opacity-100'}`}
                               title="🔴 ROT: Keine Belastung (Verletzt / Schonung / Reha)"
                             >
                               🔴
                             </button>
                           </div>
                           <div className="text-[8px] font-black uppercase mt-1">
-                            {currentAmpel === 'Grün' && <span className="text-emerald-700 font-extrabold">Voll (100%)</span>}
-                            {currentAmpel === 'Gelb' && <span className="text-amber-700 font-extrabold">Teil (Max 45m)</span>}
-                            {currentAmpel === 'Rot' && <span className="text-red-700 font-extrabold">Ausfall / Pause</span>}
+                            {currentAmpel === 'Grün' && <span className="text-[#00D47A]">Voll (100%)</span>}
+                            {currentAmpel === 'Gelb' && <span className="text-[#FACC15]">Teil (Max 45m)</span>}
+                            {currentAmpel === 'Rot' && <span className="text-[#FF4C4C]">Ausfall / Pause</span>}
                           </div>
                         </td>
 
-                        <td className="p-3 border-r border-black/10">
+                        <td className="p-2 border-r border-[#2A2A2A]">
                           <input 
                             type="date"
-                            className={`w-full bg-transparent font-bold focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full bg-[#202020] text-[#F5F5F5] border border-[#2A2A2A] px-1.5 py-0.5 rounded text-[10px] font-bold focus:outline-none focus:border-[#FFD54F] ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                             value={record.targetDate || ''}
                             onChange={(e) => handleUpdateIndividualTraining(player.id, 'targetDate', e.target.value)}
                             disabled={!isEditing}
                           />
                         </td>
-                        <td className="p-3 border-r border-black/10">
+                        <td className="p-2 border-r border-[#2A2A2A]">
                           <input 
                             type="text"
-                            className={`w-full bg-transparent font-black uppercase focus:outline-none placeholder:opacity-20 ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full bg-[#202020] text-[#F5F5F5] border border-[#2A2A2A] px-2 py-0.5 rounded text-[10px] font-bold uppercase focus:outline-none focus:border-[#FFD54F] placeholder:text-[#888888] ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                             placeholder={isEditing ? "Z.B. ABSCHLUSS..." : ""}
                             value={record.focus || ''}
                             onChange={(e) => handleUpdateIndividualTraining(player.id, 'focus', e.target.value)}
                             disabled={!isEditing}
                           />
                         </td>
-                        <td className="p-3 border-r border-black/10">
+                        <td className="p-2 border-r border-[#2A2A2A]">
                           <input 
                             type="text"
-                            className={`w-full bg-transparent italic opacity-60 focus:outline-none ${!isEditing ? 'cursor-not-allowed' : ''}`}
+                            className={`w-full bg-[#202020] text-[#C7C7C7] border border-[#2A2A2A] px-2 py-0.5 rounded text-[10px] italic font-semibold focus:outline-none focus:border-[#FFD54F] placeholder:text-[#888888] ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                             placeholder={isEditing ? "Ziele definieren..." : ""}
                             value={record.goals || ''}
                             onChange={(e) => handleUpdateIndividualTraining(player.id, 'goals', e.target.value)}
                             disabled={!isEditing}
                           />
                         </td>
-                        <td className="p-3 border-r border-black/10">
+                        <td className="p-2 border-r border-[#2A2A2A]">
                           <input 
                             type="text"
-                            className={`w-full bg-transparent font-bold focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full bg-[#202020] text-[#F5F5F5] border border-[#2A2A2A] px-2 py-0.5 rounded text-[10px] font-bold focus:outline-none focus:border-[#FFD54F] placeholder:text-[#888888] ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                             placeholder={isEditing ? "Fortschritt..." : ""}
                             value={record.status || ''}
                             onChange={(e) => handleUpdateIndividualTraining(player.id, 'status', e.target.value)}
                             disabled={!isEditing}
                           />
                         </td>
-                        <td className="p-3 text-center border-r border-black/10">
+                        <td className="p-2 text-center border-r border-[#2A2A2A]">
                           <select 
-                            className={`text-[8px] font-black uppercase p-1 border focus:outline-none
-                              ${record.load === 'Hoch' ? 'bg-red-50 text-red-700 border-red-200' : 
-                                record.load === 'Niedrig' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                'bg-gray-50 text-gray-700 border-gray-200'}`}
+                            className={`text-[8px] font-black uppercase p-1 border rounded focus:outline-none bg-[#202020] text-[#F5F5F5] border-[#2A2A2A]
+                              ${record.load === 'Hoch' ? 'text-[#FF4C4C] border-[#FF4C4C]/40' : 
+                                record.load === 'Niedrig' ? 'text-[#00D47A] border-[#00D47A]/40' : 
+                                record.load === 'Pause' ? 'text-[#FACC15] border-[#FACC15]/40' :
+                                'text-[#FFD54F] border-[#2A2A2A]'}`}
                             value={record.load || 'Normal'}
                             onChange={(e) => handleUpdateIndividualTraining(player.id, 'load', e.target.value)}
                             disabled={!isEditing}
                           >
-                            <option value="Niedrig">Niedrig</option>
-                            <option value="Normal">Normal</option>
-                            <option value="Hoch">Hoch</option>
-                            <option value="Pause">Pause</option>
+                            <option value="Niedrig" className="bg-[#202020] text-[#F5F5F5]">Niedrig</option>
+                            <option value="Normal" className="bg-[#202020] text-[#F5F5F5]">Normal</option>
+                            <option value="Hoch" className="bg-[#202020] text-[#F5F5F5]">Hoch</option>
+                            <option value="Pause" className="bg-[#202020] text-[#F5F5F5]">Pause</option>
                           </select>
                         </td>
                         {['ek', 'o', 't', 'p', 's', 'a', 'w'].map(field => (
-                          <td key={field} className="p-0 border-r border-black/10">
+                          <td key={field} className="p-1 border-r border-[#2A2A2A]">
                             <input 
                               type="text"
-                              className={`w-full h-full p-2 text-center bg-transparent font-black focus:bg-yellow-50 focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                              className={`w-full h-full p-1 text-center bg-[#202020] text-[#F5F5F5] border border-[#2A2A2A] rounded text-[10px] font-bold focus:border-[#FFD54F] focus:outline-none ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                               value={record[field] || ''}
                               onChange={(e) => handleUpdateIndividualTraining(player.id, field, e.target.value)}
                               placeholder={isEditing ? "-" : ""}
@@ -427,12 +428,12 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
                           </td>
                         ))}
                         {isEditing && (
-                          <td className="p-3 border-r border-black/10 text-center">
+                          <td className="p-2 border-r border-[#2A2A2A] text-center">
                             <button 
                               onClick={() => {
                                 onDeletePlayer(player.id);
                               }}
-                              className="text-red-600 hover:text-red-800 transition-colors"
+                              className="text-rose-400 hover:text-rose-300 p-1 hover:bg-rose-950/50 rounded transition-colors"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -448,14 +449,14 @@ export const IndividualSteuerungView: React.FC<IndividualSteuerungViewProps> = (
         </table>
       </div>
 
-      <div className="p-4 bg-black text-white border-t-2 border-black flex justify-between items-center shrink-0">
+      <div className="p-3 bg-[#1A1A1A] text-[#F5F5F5] border-t border-[#2A2A2A] flex justify-between items-center shrink-0 rounded-b-xl mt-3 shadow-xs">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <TrendingUp size={14} className="text-green-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Individuelle Förderung ist der Schlüssel zum Erfolg.</span>
+            <TrendingUp size={14} className="text-[#FFD54F]" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#C7C7C7]">Individuelle Förderung ist der Schlüssel zum Erfolg.</span>
           </div>
         </div>
-        <p className="text-[9px] font-bold uppercase opacity-60 italic">
+        <p className="text-[9px] font-bold uppercase text-[#FFD54F] italic">
           Steuerung der individuellen Belastung und Entwicklungsschwerpunkte.
         </p>
       </div>

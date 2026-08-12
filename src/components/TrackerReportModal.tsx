@@ -160,7 +160,7 @@ export const TrackerReportModal: React.FC<TrackerReportModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border-4 border-black w-full max-w-3xl p-5 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4 my-8">
+      <div className="bg-[#1E293B] border-4 border-black w-full max-w-3xl p-5 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4 my-8">
         {/* HEADER */}
         <div className="flex items-center justify-between border-b-4 border-black pb-3">
           <div className="flex items-center gap-2">
@@ -214,14 +214,14 @@ export const TrackerReportModal: React.FC<TrackerReportModalProps> = ({
           {/* PLAYER SELECTOR */}
           <div className="bg-slate-50 border-2 border-black p-3 space-y-2">
             <label className="block text-xs font-black uppercase text-slate-800 flex items-center gap-1.5">
-              <User size={14} className="text-red-600" /> 2. Spieler auswählen (oder KI-Erkennung nutzen)
+              <User size={14} className="text-red-600" /> 2. Spieler auswählen (oder automatische Erkennung nutzen)
             </label>
             <select
               value={selectedPlayerId}
               onChange={(e) => setSelectedPlayerId(e.target.value)}
-              className="w-full bg-white border-2 border-black p-2 text-xs font-bold"
+              className="w-full bg-[#1E293B] border-2 border-black p-2 text-xs font-bold"
             >
-              <option value="">-- Auto-Erkennung per KI / TeamAgent --</option>
+              <option value="">-- Automatische Erkennung --</option>
               {players.map(p => {
                 const pAny = p as any;
                 const displayName = p.lastName ? `${p.lastName}, ${p.firstName || ''}` : (pAny.name || `Spieler #${p.number || ''}`);
@@ -245,7 +245,7 @@ export const TrackerReportModal: React.FC<TrackerReportModalProps> = ({
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
             placeholder="z.B. Spieler: Lucas Höfler, Distanz: 9.8 km, Max Speed: 32.4 km/h, Avg Speed: 8.4 km/h, Sprints: 24, Puls Ø: 162 bpm, Puls max: 184 bpm..."
-            className="w-full bg-white border-2 border-black p-2 text-xs font-mono"
+            className="w-full bg-[#1E293B] border-2 border-black p-2 text-xs font-mono"
           />
         </div>
 
@@ -271,29 +271,29 @@ export const TrackerReportModal: React.FC<TrackerReportModalProps> = ({
           <div className="bg-amber-50 border-3 border-black p-4 space-y-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center justify-between border-b-2 border-black pb-2">
               <h4 className="text-xs font-black uppercase text-red-700 flex items-center gap-1.5">
-                <Activity size={16} /> ERZEUGTER TRAINER-BERICHT (FC AUGGEN TEAMAGENT)
+                <Activity size={16} /> ERZEUGTER TRAINER-BERICHT (FC AUGGEN SYSTEM)
               </h4>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopyReport}
-                  className="bg-white hover:bg-slate-100 text-slate-900 border border-black text-[11px] font-bold px-2 py-1 flex items-center gap-1"
+                  className="bg-[#1E293B] hover:bg-slate-100 text-slate-900 border border-black text-[11px] font-bold px-2 py-1 flex items-center gap-1"
                 >
                   <Copy size={12} /> {copied ? 'Kopiert! ✓' : 'Bericht kopieren'}
                 </button>
                 <button
                   onClick={handleApplyToPlayer}
-                  className="bg-black hover:bg-slate-800 text-white border border-black text-[11px] font-black px-2.5 py-1 flex items-center gap-1 cursor-pointer"
+                  className="bg-[#00C2FF] hover:bg-[#00B0E6] text-[#0A0A0A] border border-[#00C2FF] text-[11px] font-black px-2.5 py-1 flex items-center gap-1 cursor-pointer"
                 >
-                  <Check size={12} className="text-amber-400" /> Zuordnen & Speichern
+                  <Check size={12} className="text-[#0A0A0A]" /> Zuordnen & Speichern
                 </button>
               </div>
             </div>
 
             {/* LEVEL 3 POSITION-SPECIFIC BADGE */}
             {reportResult.positionSpecificAnalysis && (
-              <div className="bg-slate-900 border-2 border-black p-2.5 text-white text-[11px] space-y-1">
+              <div className="bg-[#E8E8E8] border border-[#DADADA] p-2.5 text-[#F8FAFC] text-[11px] space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-amber-400 font-black uppercase flex items-center gap-1">
+                  <span className="text-[#00C2FF] font-black uppercase flex items-center gap-1">
                     <Compass size={14} /> POSITIONS-SPEZIFISCHE LAUFWEGE (LEVEL 3)
                   </span>
                   <span className="bg-red-600 px-1.5 py-0.5 text-[10px] font-black uppercase rounded">
@@ -311,7 +311,7 @@ export const TrackerReportModal: React.FC<TrackerReportModalProps> = ({
             )}
 
             {/* PREVIEW OF FORMATTED REPORT TEXT */}
-            <div className="bg-white border-2 border-black p-3 font-mono text-xs text-slate-900 leading-relaxed whitespace-pre-wrap selection:bg-amber-300 selection:text-black">
+            <div className="bg-[#1E293B] border-2 border-black p-3 font-mono text-xs text-slate-900 leading-relaxed whitespace-pre-wrap selection:bg-amber-300 selection:text-black">
               {reportResult.formattedReportText}
             </div>
           </div>

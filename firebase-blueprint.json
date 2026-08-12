@@ -353,6 +353,24 @@
         "empfehlungen": { "type": "string" }
       },
       "required": ["wochenbericht", "top_spieler", "kritisch", "empfehlungen"]
+    },
+    "CustomFormation": {
+      "title": "CustomFormation",
+      "description": "Custom tactics formation created by coaches",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "positions": { "type": "array" },
+        "runs": { "type": "array" },
+        "zones": { "type": "array" },
+        "roles": { "type": "object" },
+        "highlightedPlayerIds": { "type": "array" },
+        "lockedPlayerIds": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "positions"]
     }
   },
   "firestore": {
@@ -393,6 +411,7 @@
     "player_session_logs": { "schema": "PlayerSessionLog", "description": "Performance and load session logs submitted by players." },
     "academy_evaluations": { "schema": "AcademySessionEvaluation", "description": "Evaluations of football academy sessions." },
     "academy_weekly_reports": { "schema": "AcademyWeeklyReport", "description": "Weekly reports of football academy." },
-    "video_analyses": { "schema": "object", "description": "AI video analysis tracking records and timelines." }
+    "video_analyses": { "schema": "object", "description": "AI video analysis tracking records and timelines." },
+    "custom_formations": { "schema": "CustomFormation", "description": "Custom tactical formations created by trainers." }
   }
 }

@@ -105,7 +105,7 @@ const ImageLightbox: React.FC<{
           <>
             <button 
               onClick={handleRotate}
-              className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex items-center gap-2 font-black uppercase text-[10px]"
+              className="p-3 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white rounded-full transition-colors flex items-center gap-2 font-black uppercase text-[10px]"
             >
               <RotateCw size={20} /> Rotieren
             </button>
@@ -126,7 +126,7 @@ const ImageLightbox: React.FC<{
         )}
         <button 
           onClick={onClose}
-          className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+          className="p-3 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white rounded-full transition-colors"
         >
           <X size={24} />
         </button>
@@ -310,20 +310,20 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
   const getCategoryColor = (category?: string) => {
     const cat = normalizeCategory(category);
     switch (cat) {
-      case 'coach': return 'bg-blue-600';
-      case 'staff': return 'bg-amber-600';
-      case 'medical': return 'bg-emerald-600';
-      default: return 'bg-[#C00000]';
+      case 'coach': return 'bg-[#06B6D4]';
+      case 'staff': return 'bg-[#A855F7]';
+      case 'medical': return 'bg-[#FB7185]';
+      default: return 'bg-[#10B981]';
     }
   };
 
   const getCategoryBorderColor = (category?: string) => {
     const cat = normalizeCategory(category);
     switch (cat) {
-      case 'coach': return 'border-blue-600';
-      case 'staff': return 'border-amber-600';
-      case 'medical': return 'border-emerald-600';
-      default: return 'border-[#C00000]';
+      case 'coach': return 'border-[#06B6D4]';
+      case 'staff': return 'border-[#A855F7]';
+      case 'medical': return 'border-[#FB7185]';
+      default: return 'border-[#10B981]';
     }
   };
 
@@ -331,12 +331,12 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
     const cat = normalizeCategory(category);
     switch (cat) {
       case 'coach':
-        return <Briefcase size={14} className="text-blue-500" />;
+        return <Briefcase size={14} className="text-[#06B6D4]" />;
       case 'staff':
-        return <Shield size={14} className="text-amber-500" />;
+        return <Shield size={14} className="text-[#A855F7]" />;
       case 'medical':
-        return <Activity size={14} className="text-emerald-500" />;
-      default: return <User size={14} className="text-red-600" />;
+        return <Activity size={14} className="text-[#FB7185]" />;
+      default: return <User size={14} className="text-[#10B981]" />;
     }
   };
 
@@ -354,34 +354,34 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
   };
 
   return (
-    <div className="flex h-full gap-4 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-full gap-4 overflow-hidden bg-[#0A0E17] text-[#F8FAFC] p-2 sm:p-4 rounded-2xl border border-[#334155] shadow-2xl">
       {/* Left Column: List */}
-      <div className="w-1/3 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden watermark-bg">
-        <div className="bg-black text-white p-3 shrink-0 flex justify-between items-center gap-2">
-          <h3 className="font-black uppercase tracking-widest text-xs">Kader & Personal</h3>
-          <div className="flex items-center gap-1">
+      <div className="w-full md:w-1/3 bg-[#1E293B] border border-[#334155] rounded-xl shadow-xl flex flex-col overflow-hidden">
+        <div className="bg-[#121824] border-b border-[#334155] text-[#F8FAFC] p-3 shrink-0 flex justify-between items-center gap-2">
+          <h3 className="font-black uppercase tracking-widest text-xs text-[#F59E0B]">Kader & Personal</h3>
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setShowTrackerModal(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black px-2 py-1 border border-white font-black text-[10px] uppercase flex items-center gap-1 transition-colors"
+              className="bg-[#F59E0B] hover:bg-[#FBBF24] text-[#0A0E17] px-2.5 py-1 rounded-lg font-black text-[10px] uppercase flex items-center gap-1 transition-all shadow-sm border border-[#F59E0B]"
               title="Tracker-Daten (ZIP, CSV, GPX, FIT, TCX) analysieren"
             >
               <Activity size={12} /> Tracker-Bericht
             </button>
             <button 
               onClick={onAddPlayer}
-              className="bg-[#C00000] text-white p-1 border border-white hover:bg-red-700 transition-colors"
+              className="bg-[#10B981] text-[#0A0E17] p-1.5 rounded-lg hover:bg-[#059669] transition-colors border border-[#10B981]"
               title="Person hinzufügen"
             >
               <Plus size={14} />
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0A0E17]">
           {sortedPersonnel.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center h-full">
-              <User size={48} className="text-gray-200 mb-4" />
-              <p className="font-black uppercase opacity-20 italic mb-2">Kein Personal gefunden</p>
-              <p className="text-[10px] font-bold uppercase opacity-40">Nutze "Person hinzufügen" oder "Cloud Sync" zum Laden.</p>
+              <User size={48} className="text-[#94A3B8] mb-4" />
+              <p className="font-black uppercase text-[#94A3B8] italic mb-2">Kein Personal gefunden</p>
+              <p className="text-[10px] font-bold uppercase text-[#94A3B8]">Nutze "Person hinzufügen" oder "Cloud Sync" zum Laden.</p>
             </div>
           ) : (
             sortedPersonnel.map((person, index) => {
@@ -392,17 +392,17 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
             return (
               <React.Fragment key={person.id}>
                 {isFirstOfCategory && (
-                  <div className={`text-white px-3 py-2 flex items-center justify-between border-y-2 border-black ${getCategoryColor(person.category)}`}>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                  <div className={`text-[#F8FAFC] px-3 py-1.5 flex items-center justify-between border-y border-[#334155] ${getCategoryColor(person.category)}`}>
+                    <span className="text-[10px] font-black uppercase tracking-[0.15em]">
                       {getCategoryLabel(person.category)}
                     </span>
-                    <div className="w-2 h-2 bg-white rotate-45" />
+                    <div className="w-1.5 h-1.5 bg-[#1E293B] rotate-45" />
                   </div>
                 )}
                 <div
                   onClick={() => setSelectedId(person.id)}
-                  className={`w-full flex items-center justify-between p-3 border-b border-black last:border-b-0 transition-all group cursor-pointer relative overflow-hidden
-                    ${selectedId === person.id ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
+                  className={`w-full flex items-center justify-between p-3 border-b border-[#334155]/80 last:border-b-0 transition-all group cursor-pointer relative overflow-hidden
+                    ${selectedId === person.id ? 'bg-[#121824] border-l-4 border-l-[#10B981] text-[#F8FAFC]' : 'hover:bg-[#121824]/60 text-[#94A3B8]'}`}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -416,23 +416,23 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(person.category)}`} />
                   
                   <div className="flex items-center gap-3">
-                      <span className={`w-8 h-8 flex items-center justify-center text-xs font-black border border-black shrink-0 transition-transform group-hover:scale-110
-                        ${selectedId === person.id ? 'bg-white text-black border-white rotate-3' : `bg-white ${getCategoryBorderColor(person.category)} border-2`}`}>
+                      <span className={`w-8 h-8 flex items-center justify-center text-xs font-black rounded-lg border shrink-0 transition-transform group-hover:scale-105
+                        ${selectedId === person.id ? 'bg-[#10B981] text-[#0A0E17] border-[#10B981] font-black' : `bg-[#121824] text-[#F8FAFC] border-[#334155]`}`}>
                         {(normalizeCategory(person.category) === 'player') ? `#${person.number}` : getCategoryIcon(person.category || 'player')}
                       </span>
                       <div className="text-left">
-                        <p className={`font-black uppercase text-[11px] leading-tight flex items-center gap-1.5 ${selectedId === person.id ? 'text-white' : 'text-slate-900'}`}>
+                        <p className={`font-black uppercase text-[11px] leading-tight flex items-center gap-1.5 ${selectedId === person.id ? 'text-[#F8FAFC]' : 'text-[#F8FAFC]'}`}>
                           {person.lastName}
                           {person.professionalStatus && (
-                            <span className={`text-[7px] px-1 py-0.5 rounded leading-none shrink-0 font-bold ${selectedId === person.id ? 'bg-white text-black' : 'bg-black text-white'}`}>
+                            <span className={`text-[7px] px-1 py-0.5 rounded leading-none shrink-0 font-bold ${selectedId === person.id ? 'bg-[#10B981] text-[#0A0E17]' : 'bg-[#1E293B] text-[#94A3B8] border border-[#334155]'}`}>
                               {person.professionalStatus}
                             </span>
                           )}
                         </p>
-                        <p className={`text-[9px] font-black uppercase mt-0.5 flex items-center gap-1.5 ${selectedId === person.id ? 'text-white/80' : 'text-slate-800'}`}>
+                        <p className={`text-[9px] font-bold uppercase mt-0.5 flex items-center gap-1.5 ${selectedId === person.id ? 'text-[#10B981]' : 'text-[#94A3B8]'}`}>
                           {person.position}
                           {person.education && (
-                            <span className={`text-[7px] italic font-medium leading-none truncate max-w-[100px] ${selectedId === person.id ? 'text-white/60' : 'text-slate-700'}`}>
+                            <span className={`text-[7px] italic font-medium leading-none truncate max-w-[100px] ${selectedId === person.id ? 'text-[#10B981]/80' : 'text-[#94A3B8]'}`}>
                               ({person.education})
                             </span>
                           )}
@@ -447,7 +447,7 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                             e.stopPropagation();
                             onEditPlayer(person);
                           }}
-                          className={`p-1 transition-colors ${selectedId === person.id ? 'text-white/60 hover:text-white' : 'text-blue-600 hover:text-blue-800'}`}
+                          className={`p-1 transition-colors ${selectedId === person.id ? 'text-[#10B981] hover:text-white' : 'text-[#94A3B8] hover:text-[#F59E0B]'}`}
                           title="Bearbeiten"
                         >
                           <Pencil size={12} />
@@ -457,14 +457,14 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                             e.stopPropagation();
                             onDeletePlayer(person.id);
                           }}
-                          className={`p-1 transition-colors ${selectedId === person.id ? 'text-white/60 hover:text-white' : 'text-red-600 hover:text-red-800'}`}
+                          className={`p-1 transition-colors ${selectedId === person.id ? 'text-[#10B981] hover:text-white' : 'text-[#94A3B8] hover:text-red-400'}`}
                           title="Löschen"
                         >
                           <Trash2 size={12} />
                         </button>
                       </div>
                     )}
-                    <ChevronRight size={16} className={`${selectedId === person.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}`} />
+                    <ChevronRight size={16} className={`${selectedId === person.id ? 'text-[#10B981] opacity-100' : 'opacity-0 group-hover:opacity-40 text-[#94A3B8]'}`} />
                   </div>
                 </div>
               </React.Fragment>
@@ -483,12 +483,12 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden watermark-bg"
+              className="bg-[#1E293B] border border-[#334155] rounded-xl shadow-2xl overflow-hidden"
             >
               {/* Card Header */}
-              <div className="bg-black text-white p-6 flex justify-between items-start">
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 bg-gray-800 border-4 border-white flex items-center justify-center relative overflow-hidden group">
+              <div className="bg-[#121824] text-[#F8FAFC] p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start border-b border-[#334155] gap-4">
+                <div className="flex items-center gap-5">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#0A0E17] border-2 border-[#334155] rounded-xl flex items-center justify-center relative overflow-hidden group shrink-0">
                     {selectedPerson.image ? (
                       <PlayerImageWithLightbox 
                         image={selectedPerson.image} 
@@ -499,7 +499,7 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                       />
                     ) : (
                       <>
-                        <User size={48} className="text-white/20" />
+                        <User size={40} className="text-[#94A3B8]" />
                         {isEditing && (
                           <ImageUpload 
                             onUpload={(base64) => onUpdatePlayer(selectedPerson.id, 'image', base64)}
@@ -511,24 +511,24 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                     )}
                   </div>
                   <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className={`${getCategoryColor(selectedPerson.category)} text-white px-3 py-1 text-[10px] font-black border border-white tracking-widest flex items-center gap-2`}>
-                        <span className="opacity-70">{getCategoryLabel(selectedPerson.category)}</span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`${getCategoryColor(selectedPerson.category)} text-[#0A0E17] px-2.5 py-0.5 rounded text-[10px] font-black border border-white/20 tracking-wider flex items-center gap-2`}>
+                        <span className="opacity-90">{getCategoryLabel(selectedPerson.category)}</span>
                          {normalizeCategory(selectedPerson.category) === 'player' && (
-                           <span className="pl-2 border-l border-white/30 tracking-normal">#{selectedPerson.number}</span>
+                           <span className="pl-2 border-l border-black/30 tracking-normal font-mono">#{selectedPerson.number}</span>
                          )}
                       </span>
-                      <span className="text-white/40 font-black uppercase text-[10px] tracking-widest">{selectedPerson.status}</span>
+                      <span className="text-[#94A3B8] font-bold uppercase text-[10px] tracking-wider">{selectedPerson.status}</span>
                     </div>
-                    <h2 className="text-4xl font-black uppercase leading-none mb-1">{selectedPerson.lastName}</h2>
-                    <p className={`font-black uppercase tracking-widest text-sm mt-2 ${selectedPerson.category === 'player' ? 'text-[#C00000]' : 'text-white'}`}>{selectedPerson.position}</p>
+                    <h2 className="text-2xl sm:text-4xl font-black uppercase leading-none mb-1 text-[#F8FAFC]">{selectedPerson.lastName}</h2>
+                    <p className={`font-black uppercase tracking-wider text-xs sm:text-sm mt-1.5 ${selectedPerson.category === 'player' ? 'text-[#10B981]' : 'text-[#F59E0B]'}`}>{selectedPerson.position}</p>
                   </div>
                 </div>
                 {isEditing && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <button 
                       onClick={() => onEditPlayer(selectedPerson)}
-                      className="p-2 bg-white text-black hover:bg-[#C00000] hover:text-white transition-all border-2 border-white"
+                      className="p-2 bg-[#1E293B] text-[#F8FAFC] hover:bg-[#F59E0B] hover:text-[#0A0E17] transition-all border border-[#334155] rounded-lg"
                     >
                       <Edit2 size={16} />
                     </button>
@@ -536,7 +536,7 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                       onClick={() => {
                         onDeletePlayer(selectedPerson.id);
                       }}
-                      className="p-2 bg-white text-[#C00000] hover:bg-[#C00000] hover:text-white transition-all border-2 border-white"
+                      className="p-2 bg-[#1E293B] text-red-400 hover:bg-red-600 hover:text-white transition-all border border-[#334155] rounded-lg"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -545,50 +545,50 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
               </div>
 
               {/* Card Body */}
-              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 bg-[#1E293B]">
                 {/* Left Column: Details */}
                 <div className={`space-y-6 ${selectedPerson.category !== 'player' ? 'md:col-span-2' : ''}`}>
                   <section>
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#C00000]" /> Basisdaten
+                    <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                      <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Basisdaten
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[9px] font-black uppercase text-slate-600">Geburtsdatum</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.geburtsdatum || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Geburtsdatum</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.geburtsdatum || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase text-slate-600">Wochentag</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.wochentag || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Wochentag</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC]">{selectedPerson.wochentag || '-'}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[9px] font-black uppercase text-slate-600">Adresse</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.adresse || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Adresse</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC]">{selectedPerson.adresse || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase text-slate-600">Telefon</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.telefon || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Telefon</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.telefon || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase text-slate-600">Email</p>
-                        <p className="font-black uppercase text-sm lowercase text-slate-900">{selectedPerson.email || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Email</p>
+                        <p className="font-black uppercase text-sm lowercase text-[#F8FAFC]">{selectedPerson.email || '-'}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[9px] font-black uppercase text-slate-600">Beruflicher Status / Ausbildung / Arbeitgeber</p>
-                        <p className="font-black uppercase text-sm text-slate-900">
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Beruflicher Status / Ausbildung / Arbeitgeber</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC]">
                           {selectedPerson.professionalStatus || '-'} 
                           {selectedPerson.education ? ` / ${selectedPerson.education}` : ''}
                           {selectedPerson.employer ? ` / ${selectedPerson.employer}` : ''}
                         </p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[9px] font-black uppercase text-slate-600">Verletzungshistorie</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.injuryHistory || '-'}</p>
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Verletzungshistorie</p>
+                        <p className="font-black uppercase text-sm text-[#F59E0B]">{selectedPerson.injuryHistory || '-'}</p>
                       </div>
                       {selectedPerson.category === 'player' && (
                         <div>
-                          <p className="text-[9px] font-black uppercase text-slate-600">Gesamteinsatzzeit (Pflichtspiele)</p>
-                          <p className="font-black uppercase text-sm text-[#C00000]">{selectedPerson.einsatzzeitenGesamt || 0} MIN</p>
+                          <p className="text-[9px] font-black uppercase text-[#94A3B8]">Gesamteinsatzzeit (Pflichtspiele)</p>
+                          <p className="font-black uppercase text-sm text-[#10B981] font-mono">{selectedPerson.einsatzzeitenGesamt || 0} MIN</p>
                         </div>
                       )}
                     </div>
@@ -597,41 +597,41 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                   {selectedPerson.category === 'player' && (
                     <>
                       <section>
-                        <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-[#C00000]" /> Ausrüstung
+                        <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                          <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Ausrüstung
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black uppercase text-slate-600">Oberteil / Schuhe</p>
-                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.oberteil || '-'} / {selectedPerson.schuhe || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-[#94A3B8]">Oberteil / Schuhe</p>
+                            <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.oberteil || '-'} / {selectedPerson.schuhe || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase text-slate-600">Hosen (K/L)</p>
-                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.kurze_hose || '-'} / {selectedPerson.lange_hose || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-[#94A3B8]">Hosen (K/L)</p>
+                            <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.kurze_hose || '-'} / {selectedPerson.lange_hose || '-'}</p>
                           </div>
                         </div>
                       </section>
 
                       <section>
-                        <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-[#C00000]" /> Physis
+                        <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                          <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Physis & Diagnostik
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black uppercase text-slate-600">Größe / Gewicht</p>
-                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.physical?.height}cm / {selectedPerson.physical?.weight}kg</p>
+                            <p className="text-[9px] font-black uppercase text-[#94A3B8]">Größe / Gewicht</p>
+                            <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.physical?.height}cm / {selectedPerson.physical?.weight}kg</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase text-slate-600">Starker Fuß</p>
-                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.physical?.strongFoot || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-[#94A3B8]">Starker Fuß</p>
+                            <p className="font-black uppercase text-sm text-[#F8FAFC]">{selectedPerson.physical?.strongFoot || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase text-slate-600">Sprintwert</p>
-                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.diagnostics?.sprintwert || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-[#94A3B8]">Sprintwert</p>
+                            <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.diagnostics?.sprintwert || '-'}</p>
                           </div>
                           <div>
-                            <p className="text-[9px] font-black uppercase text-slate-600">Yoyo-Test</p>
-                            <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.diagnostics?.yoyotest || '-'}</p>
+                            <p className="text-[9px] font-black uppercase text-[#94A3B8]">Yoyo-Test</p>
+                            <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.diagnostics?.yoyotest || '-'}</p>
                           </div>
                         </div>
                       </section>
@@ -640,53 +640,53 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
 
                   {selectedPerson.category === 'player' && (
                     <section>
-                      <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-[#C00000]" /> Notizen
+                      <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                        <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Notizen
                       </h4>
-                      <p className="text-xs font-bold leading-relaxed opacity-60 italic">
+                      <p className="text-xs font-bold leading-relaxed text-[#94A3B8] italic bg-[#121824] p-3 rounded-lg border border-[#334155]">
                         {selectedPerson.notizen || 'Keine Notizen hinterlegt.'}
                       </p>
                     </section>
                   )}
 
                   {selectedPerson.category === 'player' && (
-                    <section className="bg-gray-50 p-4 border-2 border-black col-span-1 md:col-span-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                      <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-[#0D4433]" /> Leistungs- & Belastungsmonitoring (Post-Session)
+                    <section className="bg-[#121824] p-4 border border-[#334155] rounded-xl col-span-1 md:col-span-2 shadow-inner">
+                      <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#F59E0B]">
+                        <div className="w-2 h-2 rounded-full bg-[#F59E0B]" /> Leistungs- & Belastungsmonitoring (Post-Session)
                       </h4>
                       {workloadStats ? (
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                            <div className="bg-white p-2.5 border-2 border-black">
-                              <p className="text-[8px] font-black uppercase text-gray-500">Einheiten</p>
-                              <p className="text-lg font-black text-gray-900">{workloadStats.count}</p>
+                            <div className="bg-[#1E293B] p-2.5 border border-[#334155] rounded-lg">
+                              <p className="text-[8px] font-black uppercase text-[#94A3B8]">Einheiten</p>
+                              <p className="text-lg font-black text-[#F8FAFC] font-mono">{workloadStats.count}</p>
                             </div>
-                            <div className="bg-white p-2.5 border-2 border-black">
-                              <p className="text-[8px] font-black uppercase text-gray-500">Ø RPE (Gefühl)</p>
-                              <p className="text-lg font-black text-amber-600">{(workloadStats.rpeSum / workloadStats.count).toFixed(1)}/10</p>
+                            <div className="bg-[#1E293B] p-2.5 border border-[#334155] rounded-lg">
+                              <p className="text-[8px] font-black uppercase text-[#94A3B8]">Ø RPE (Gefühl)</p>
+                              <p className="text-lg font-black text-[#F59E0B] font-mono">{(workloadStats.rpeSum / workloadStats.count).toFixed(1)}/10</p>
                             </div>
-                            <div className="bg-white p-2.5 border-2 border-black">
-                              <p className="text-[8px] font-black uppercase text-gray-500">Ø Load Units</p>
-                              <p className="text-lg font-black text-emerald-700">{Math.round(workloadStats.loadSum / workloadStats.count)}</p>
+                            <div className="bg-[#1E293B] p-2.5 border border-[#334155] rounded-lg">
+                              <p className="text-[8px] font-black uppercase text-[#94A3B8]">Ø Load Units</p>
+                              <p className="text-lg font-black text-[#10B981] font-mono">{Math.round(workloadStats.loadSum / workloadStats.count)}</p>
                             </div>
-                            <div className="bg-white p-2.5 border-2 border-black">
-                              <p className="text-[8px] font-black uppercase text-gray-500">Gesamt-Minuten</p>
-                              <p className="text-lg font-black text-gray-900">{workloadStats.durationSum}m</p>
+                            <div className="bg-[#1E293B] p-2.5 border border-[#334155] rounded-lg">
+                              <p className="text-[8px] font-black uppercase text-[#94A3B8]">Gesamt-Minuten</p>
+                              <p className="text-lg font-black text-[#F8FAFC] font-mono">{workloadStats.durationSum}m</p>
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <p className="text-[9px] font-black uppercase tracking-wider text-gray-400">Letzte eingetragene Einheiten:</p>
+                            <p className="text-[9px] font-black uppercase tracking-wider text-[#94A3B8]">Letzte eingetragene Einheiten:</p>
                             <div className="space-y-2">
                               {activePersonLogs.slice(0, 3).map((log: any) => (
-                                <div key={log.id} className="bg-white p-2 border border-black/10 flex justify-between items-center text-[10px]">
+                                <div key={log.id} className="bg-[#1E293B] p-2 border border-[#334155] rounded-lg flex justify-between items-center text-[10px]">
                                   <div>
-                                    <span className={`text-[8px] font-black px-1 mr-1.5 uppercase ${log.type === 'Match' ? 'bg-[#C00000] text-white' : 'bg-[#0D4433] text-white'}`}>
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded mr-1.5 uppercase ${log.type === 'Match' ? 'bg-red-900/80 text-red-200 border border-red-700' : 'bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40'}`}>
                                       {log.type}
                                     </span>
-                                    <span className="font-bold text-gray-900 uppercase">{log.focus}</span>
+                                    <span className="font-bold text-[#F8FAFC] uppercase">{log.focus}</span>
                                   </div>
-                                  <div className="font-mono font-bold text-gray-500">
+                                  <div className="font-mono font-bold text-[#94A3B8]">
                                     {log.date} • {log.duration} Min • RPE {log.rpe} (Load: {log.calculatedLoad})
                                   </div>
                                 </div>
@@ -695,7 +695,7 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs font-bold leading-relaxed opacity-60 italic">
+                        <p className="text-xs font-bold leading-relaxed text-[#94A3B8] italic">
                           Noch keine Post-Session Logs für diesen Spieler eingetragen. Spieler können diese Daten im Reiter "Spieler-Bereich 📝" einpflegen.
                         </p>
                       )}
@@ -704,12 +704,12 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
 
                   {/* Additional Images Section */}
                   <section className="col-span-1 md:col-span-2">
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#C00000]" /> Weitere Impressionen
+                    <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                      <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Weitere Impressionen
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {(selectedPerson.additionalImages || []).map((img, idx) => (
-                        <div key={idx} className="aspect-square border-2 border-black overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] transition-transform hover:scale-[1.02]">
+                        <div key={idx} className="aspect-square border border-[#334155] rounded-lg overflow-hidden shadow-lg bg-[#121824] transition-transform hover:scale-[1.02]">
                           <PlayerImageWithLightbox 
                             image={img}
                             isEditing={isEditing}
@@ -733,7 +733,7 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                             const newImgs = [...(selectedPerson.additionalImages || []), base64];
                             onUpdatePlayer(selectedPerson.id, 'additionalImages', newImgs);
                           }}
-                          className="aspect-square border-2 border-black bg-gray-50/50"
+                          className="aspect-square border border-dashed border-[#334155] bg-[#121824] rounded-lg"
                           label="BILD HINZUFÜGEN"
                         />
                       )}
@@ -745,52 +745,52 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
                 <div className={`space-y-6 ${selectedPerson.category !== 'player' ? 'md:col-span-2' : ''}`}>
                   {selectedPerson.category === 'player' && (
                     <section>
-                      <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-[#C00000]" /> Analyse
+                      <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                        <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Analyse & Stärken
                       </h4>
                       <div className="space-y-3">
-                        <div>
-                          <p className="text-[9px] font-black uppercase text-slate-600">Stärken</p>
-                          <p className="text-xs font-bold text-slate-900">{selectedPerson.analysis?.strengths || '-'}</p>
+                        <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                          <p className="text-[9px] font-black uppercase text-[#10B981]">Stärken</p>
+                          <p className="text-xs font-bold text-[#F8FAFC] mt-0.5">{selectedPerson.analysis?.strengths || '-'}</p>
                         </div>
-                        <div>
-                          <p className="text-[9px] font-black uppercase text-slate-600">Schwächen</p>
-                          <p className="text-xs font-bold text-slate-900">{selectedPerson.analysis?.weaknesses || '-'}</p>
+                        <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                          <p className="text-[9px] font-black uppercase text-[#F59E0B]">Schwächen</p>
+                          <p className="text-xs font-bold text-[#F8FAFC] mt-0.5">{selectedPerson.analysis?.weaknesses || '-'}</p>
                         </div>
-                        <div>
-                          <p className="text-[9px] font-black uppercase text-slate-600">Entwicklungspotenzial</p>
-                          <p className="text-xs font-bold text-slate-900">{selectedPerson.analysis?.development || '-'}</p>
+                        <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                          <p className="text-[9px] font-black uppercase text-[#06B6D4]">Entwicklungspotenzial</p>
+                          <p className="text-xs font-bold text-[#F8FAFC] mt-0.5">{selectedPerson.analysis?.development || '-'}</p>
                         </div>
                       </div>
                     </section>
                   )}
 
                   <section>
-                    <h4 className="font-black uppercase text-xs border-b-2 border-black pb-1 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#C00000]" /> Finanzen
+                    <h4 className="font-black uppercase text-xs border-b border-[#334155] pb-2 mb-3 flex items-center gap-2 text-[#10B981]">
+                      <div className="w-2 h-2 rounded-full bg-[#10B981]" /> Finanzen & Vertrag
                     </h4>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="text-[9px] font-black uppercase text-slate-600">Grundgehalt</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.finance?.baseSalary} €</p>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Grundgehalt</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.finance?.baseSalary} €</p>
                       </div>
-                      <div>
-                        <p className="text-[9px] font-black uppercase text-slate-600">Prämie/Spiel</p>
-                        <p className="font-black uppercase text-sm text-slate-900">{selectedPerson.finance?.bonusPerMatch} €</p>
+                      <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                        <p className="text-[9px] font-black uppercase text-[#94A3B8]">Prämie/Spiel</p>
+                        <p className="font-black uppercase text-sm text-[#F8FAFC] font-mono">{selectedPerson.finance?.bonusPerMatch} €</p>
                       </div>
-                      <div>
-                        <p className="text-[9px] font-black uppercase text-blue-600">Monate Aktiv</p>
-                        <p className="font-black uppercase text-sm text-blue-700">{selectedPerson.finance?.months || 12}</p>
+                      <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                        <p className="text-[9px] font-black uppercase text-[#06B6D4]">Monate Aktiv</p>
+                        <p className="font-black uppercase text-sm text-[#06B6D4] font-mono">{selectedPerson.finance?.months || 12}</p>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-[9px] font-black uppercase text-slate-600">Nebenvereinbarungen</p>
-                      <p className="text-xs font-bold text-slate-900">{selectedPerson.finance?.sideAgreements || 'Keine'}</p>
+                    <div className="bg-[#121824] p-2.5 rounded-lg border border-[#334155]">
+                      <p className="text-[9px] font-black uppercase text-[#94A3B8]">Nebenvereinbarungen</p>
+                      <p className="text-xs font-bold text-[#F8FAFC] mt-0.5">{selectedPerson.finance?.sideAgreements || 'Keine'}</p>
                     </div>
                   </section>
 
                   {/* Video Section for Person */}
-                  <section className="pt-4 border-t-2 border-black">
+                  <section className="pt-4 border-t border-[#334155]">
                     <VideoSection 
                       title={`Video-Highlights (${selectedPerson.lastName})`}
                       subtitle="Szenen, Torchancen, Zweikämpfe und Taktik-Analysen"
@@ -806,9 +806,9 @@ const PersonnelView: React.FC<PersonnelViewProps> = ({ players, onEditPlayer, on
               </div>
             </motion.div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-4 border-4 border-dashed border-gray-300">
-              <User size={48} />
-              <p className="font-black uppercase tracking-widest text-sm">Bitte wählen Sie eine Person aus</p>
+            <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-[#94A3B8] gap-4 border-2 border-dashed border-[#334155] rounded-xl bg-[#121824]/50 p-8">
+              <User size={48} className="text-[#94A3B8]" />
+              <p className="font-black uppercase tracking-widest text-sm text-[#94A3B8]">Bitte wählen Sie eine Person aus</p>
             </div>
           )}
         </AnimatePresence>

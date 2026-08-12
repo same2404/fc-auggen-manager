@@ -144,33 +144,33 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
   );
 
   return (
-    <div className="flex flex-col h-full space-y-2 overflow-hidden bg-white">
+    <div className="flex flex-col h-full space-y-2 overflow-hidden bg-[#0F0F0F] text-[#F5F5F5] p-2 sm:p-4 rounded-2xl border border-[#2A2A2A] shadow-2xl">
       {/* Header - Minimalist */}
-      <div className="flex justify-between items-center shrink-0 border-b border-gray-200 pb-2">
+      <div className="flex justify-between items-center shrink-0 border-b border-[#2A2A2A] pb-2">
         <div className="flex items-center gap-2">
-          <Target size={16} className="text-[#C00000]" />
-          <h3 className="font-bold text-sm uppercase tracking-tight text-gray-800">Scouting & Kaderplanung</h3>
+          <Target size={16} className="text-[#FFD54F]" />
+          <h3 className="font-bold text-sm uppercase tracking-tight text-[#FFD54F]">Scouting & Kaderplanung</h3>
         </div>
         <div className="flex items-center gap-2">
           {isEditing && (
             <button 
               onClick={resetPositions}
-              className="text-xs font-medium text-gray-500 hover:text-black transition-colors px-2"
+              className="text-xs font-medium text-[#C7C7C7] hover:text-[#FFD54F] transition-colors px-2"
             >
               Reset
             </button>
           )}
-          <div className="flex bg-gray-100 rounded-md p-0.5">
+          <div className="flex bg-[#202020] rounded-xl border border-[#2A2A2A] p-0.5">
             <button 
               onClick={() => isEditing && setWithBall(false)}
-              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-all ${!withBall ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'} ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${!withBall ? 'bg-[#FFD54F] text-[#0F0F0F] shadow-sm font-black' : 'text-[#888888] hover:text-[#F5F5F5]'} ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
               disabled={!isEditing}
             >
               4-2-3-1
             </button>
             <button 
               onClick={() => isEditing && setWithBall(true)}
-              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-all ${withBall ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'} ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${withBall ? 'bg-[#FFD54F] text-[#0F0F0F] shadow-sm font-black' : 'text-[#888888] hover:text-[#F5F5F5]'} ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
               disabled={!isEditing}
             >
               4-3-3
@@ -183,14 +183,14 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
         {/* Pitch Area */}
         <div 
           ref={containerRef}
-          className="flex-1 relative bg-[#2d5a27] rounded-xl overflow-hidden shadow-inner"
+          className="flex-1 relative bg-[#1c3818] rounded-xl overflow-hidden shadow-inner border border-[#2A2A2A]"
         >
           {/* Pitch Markings */}
-          <div className="absolute inset-4 border border-white/30 pointer-events-none rounded-sm">
-            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/30 -translate-y-1/2" />
-            <div className="absolute top-1/2 left-1/2 w-32 h-32 border border-white/30 rounded-full -translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 border border-white/30 border-t-0" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-32 border border-white/30 border-b-0" />
+          <div className="absolute inset-4 border border-white/20 pointer-events-none rounded-sm">
+            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-[#1E293B]/20 -translate-y-1/2" />
+            <div className="absolute top-1/2 left-1/2 w-32 h-32 border border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 border border-white/20 border-t-0" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-32 border border-white/20 border-b-0" />
           </div>
 
           {/* Draggable Position Groups */}
@@ -213,47 +213,47 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
                   onDragOver={(e) => {
                     if (!isEditing) return;
                     e.preventDefault();
-                    e.currentTarget.classList.add('ring-2', 'ring-white', 'scale-105');
+                    e.currentTarget.classList.add('ring-2', 'ring-[#FFD54F]', 'scale-105');
                   }}
                   onDragLeave={(e) => {
-                    e.currentTarget.classList.remove('ring-2', 'ring-white', 'scale-105');
+                    e.currentTarget.classList.remove('ring-2', 'ring-[#FFD54F]', 'scale-105');
                   }}
                   onDrop={(e) => {
                     if (!isEditing) return;
                     e.preventDefault();
-                    e.currentTarget.classList.remove('ring-2', 'ring-white', 'scale-105');
+                    e.currentTarget.classList.remove('ring-2', 'ring-[#FFD54F]', 'scale-105');
                     const id = e.dataTransfer.getData('text/plain');
                     if (id) handleAssign(pos.id, id);
                   }}
-                  className={`bg-white/95 backdrop-blur-sm rounded-lg shadow-lg w-40 flex flex-col group transition-all overflow-hidden border border-gray-200 ${isEditing ? 'cursor-move' : 'cursor-default'}`}
+                  className={`bg-[#1A1A1A]/95 backdrop-blur-sm rounded-lg shadow-xl w-40 flex flex-col group transition-all overflow-hidden border border-[#2A2A2A] ${isEditing ? 'cursor-move' : 'cursor-default'}`}
                 >
-                  <div className="bg-gray-900 text-white px-2 py-1 text-[9px] font-bold uppercase tracking-widest flex justify-between items-center">
+                  <div className="bg-[#202020] text-[#FFD54F] px-2 py-1 text-[9px] font-bold uppercase tracking-widest flex justify-between items-center border-b border-[#2A2A2A]">
                     <div className="flex items-center gap-1">
                       <GripVertical size={10} className="opacity-40" />
                       <span>{pos.label}</span>
                     </div>
-                    <span className="text-[8px] opacity-60">{assignedPersons.length} Spieler</span>
+                    <span className="text-[8px] text-[#888888]">{assignedPersons.length} Spieler</span>
                   </div>
                   <div className="p-1.5 min-h-[60px] flex flex-col gap-1 justify-center">
                     {assignedPersons.length > 0 ? (
                       <>
                         {assignedPersons.map((person, idx) => (
-                          <div key={idx} className="w-full bg-gray-50 border border-gray-100 rounded p-1.5 relative group/item">
+                          <div key={idx} className="w-full bg-[#202020] border border-[#2A2A2A] rounded p-1.5 relative group/item">
                             <div className="flex justify-between items-start">
-                              <p className="text-[9px] font-bold uppercase leading-tight truncate pr-4">{person?.name}</p>
+                              <p className="text-[9px] font-bold uppercase leading-tight truncate pr-4 text-[#F5F5F5]">{person?.name}</p>
                               {person?.type === 'scouting' && (
                                 <span className={`shrink-0 text-[6px] font-black px-1 py-0.5 rounded-sm ${
-                                  (person.data as ScoutingEntry).recommendation === 'Verpflichten' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+                                  (person.data as ScoutingEntry).recommendation === 'Verpflichten' ? 'bg-[#00D47A] text-[#0F0F0F]' : 'bg-[#FFD54F] text-[#0F0F0F]'
                                 }`}>
                                   {(person.data as ScoutingEntry).recommendation === 'Verpflichten' ? 'TOP' : 'BEOB.'}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[7px] font-medium text-gray-500 truncate mt-0.5">{person?.club} • {person?.position}</p>
+                            <p className="text-[7px] font-medium text-[#C7C7C7] truncate mt-0.5">{person?.club} • {person?.position}</p>
                             {isEditing && (
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleRemoveAssign(pos.id, person!.id); }} 
-                                className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 hover:text-red-500 transition-opacity bg-white rounded-full p-0.5 shadow-sm"
+                                className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 hover:text-[#FF4C4C] transition-opacity bg-[#1A1A1A] text-[#C7C7C7] rounded-full p-0.5 shadow-sm border border-[#2A2A2A]"
                               >
                                 <X size={8} />
                               </button>
@@ -261,16 +261,16 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
                           </div>
                         ))}
                         {Array.from({ length: 3 - assignedPersons.length }).map((_, i) => (
-                          <div key={`slot-${i}`} className="w-full border border-dashed border-gray-200 rounded p-1.5 opacity-30">
-                            <p className="text-[8px] font-bold uppercase text-center">Slot {assignedPersons.length + i + 1}</p>
+                          <div key={`slot-${i}`} className="w-full border border-dashed border-[#2A2A2A] rounded p-1.5 opacity-40">
+                            <p className="text-[8px] font-bold uppercase text-center text-[#888888]">Slot {assignedPersons.length + i + 1}</p>
                           </div>
                         ))}
                       </>
                     ) : (
-                      <div className="flex flex-col gap-1 w-full opacity-20">
-                        <div className="border border-dashed border-gray-300 rounded p-1 text-[8px] font-bold uppercase text-center">Slot 1</div>
-                        <div className="border border-dashed border-gray-300 rounded p-1 text-[8px] font-bold uppercase text-center">Slot 2</div>
-                        <div className="border border-dashed border-gray-300 rounded p-1 text-[8px] font-bold uppercase text-center">Slot 3</div>
+                      <div className="flex flex-col gap-1 w-full opacity-30">
+                        <div className="border border-dashed border-[#2A2A2A] rounded p-1 text-[8px] font-bold uppercase text-center text-[#888888]">Slot 1</div>
+                        <div className="border border-dashed border-[#2A2A2A] rounded p-1 text-[8px] font-bold uppercase text-center text-[#888888]">Slot 2</div>
+                        <div className="border border-dashed border-[#2A2A2A] rounded p-1 text-[8px] font-bold uppercase text-center text-[#888888]">Slot 3</div>
                       </div>
                     )}
                   </div>
@@ -281,31 +281,39 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
         </div>
 
         {/* Sidebar Lists */}
-        <div className="w-72 bg-gray-50 rounded-xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="w-72 bg-[#1A1A1A] rounded-2xl border border-[#2A2A2A] flex flex-col overflow-hidden shadow-xl">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 bg-white">
+          <div className="flex bg-[#202020] border-b border-[#2A2A2A] p-1 gap-1">
             <button
               onClick={() => setActiveTab('kader')}
-              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'kader' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                activeTab === 'kader' 
+                  ? 'bg-[#FFD54F] text-[#0F0F0F] font-black shadow-xs border border-[#FFD54F]' 
+                  : 'text-[#888888] hover:text-[#F5F5F5] hover:bg-[#202020]'
+              }`}
             >
               Kader
             </button>
             <button
               onClick={() => setActiveTab('scouting')}
-              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'scouting' ? 'text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                activeTab === 'scouting' 
+                  ? 'bg-[#FFD54F] text-[#0F0F0F] font-black shadow-xs border border-[#FFD54F]' 
+                  : 'text-[#888888] hover:text-[#F5F5F5] hover:bg-[#202020]'
+              }`}
             >
               Scouting
             </button>
           </div>
 
           {/* Search & Actions */}
-          <div className="p-3 bg-white border-b border-gray-200 space-y-2">
+          <div className="p-3 bg-[#1A1A1A] border-b border-[#2A2A2A] space-y-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#888888]" size={12} />
               <input 
                 type="text" 
                 placeholder="SUCHEN..." 
-                className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-[10px] font-medium focus:outline-none focus:ring-1 focus:ring-black transition-shadow"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#202020] border border-[#2A2A2A] rounded-xl text-[10px] font-medium text-[#F5F5F5] focus:outline-none focus:border-[#FFD54F] transition-all placeholder:text-[#888888]"
                 value={searchTerm || ''}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
@@ -327,12 +335,12 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
                       onAddClick();
                     }
                   }} 
-                  className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-black text-white rounded-md text-[9px] font-bold uppercase hover:bg-gray-800 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#FFD54F] text-[#0F0F0F] rounded-xl text-[9px] font-black uppercase hover:bg-[#ffe082] transition-colors shadow-xs border border-[#FFD54F]"
                 >
                   <Plus size={10} /> {searchTerm.trim() ? 'Schnell hinzufügen' : 'Neu'}
                 </button>
                 {isEditing && (
-                  <button onClick={onRemoveClick} className="px-2 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors">
+                  <button onClick={onRemoveClick} className="px-2 py-1.5 bg-[#202020] text-[#FF4C4C] border border-[#2A2A2A] rounded-xl hover:bg-[#FF4C4C]/10 transition-colors">
                     <Trash2 size={12} />
                   </button>
                 )}
@@ -352,24 +360,24 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
                     if (!isEditing) return;
                     e.dataTransfer.setData('text/plain', o.id);
                   }}
-                  className={`bg-white p-2.5 rounded-lg border transition-all hover:shadow-sm ${
+                  className={`bg-[#202020] p-2.5 rounded-xl border transition-all ${
                     isEditing ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
                   } ${
-                    isAssigned ? 'border-green-200 bg-green-50/50' : 'border-gray-200 hover:border-gray-300'
+                    isAssigned ? 'border-[#00D47A]/50 bg-[#00D47A]/10 text-[#F5F5F5]' : 'border-[#2A2A2A] hover:border-[#FFD54F]/40 text-[#F5F5F5]'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-gray-900 truncate pr-2">{o.name}</span>
-                    {isAssigned && <UserCheck size={12} className="text-green-500 shrink-0" />}
+                    <span className="text-xs font-bold text-[#F5F5F5] truncate pr-2">{o.name}</span>
+                    {isAssigned && <UserCheck size={12} className="text-[#00D47A] shrink-0" />}
                   </div>
-                  <div className="flex justify-between items-center text-[9px] font-medium text-gray-500">
+                  <div className="flex justify-between items-center text-[9px] font-medium text-[#C7C7C7]">
                     <span>{o.position}</span>
                     <span className="truncate pl-2">{o.club}</span>
                   </div>
                   {o.type === 'scouting' && (o.data as ScoutingEntry).recommendation && (
                     <div className="mt-2 flex items-center gap-2">
                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-sm ${
-                          (o.data as ScoutingEntry).recommendation === 'Verpflichten' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                          (o.data as ScoutingEntry).recommendation === 'Verpflichten' ? 'bg-[#00D47A] text-[#0F0F0F]' : 'bg-[#FFD54F] text-[#0F0F0F]'
                         }`}>
                           {(o.data as ScoutingEntry).recommendation}
                         </span>
@@ -379,7 +387,7 @@ export const ScoutingFormationView: React.FC<ScoutingFormationViewProps> = ({ ca
               );
             })}
             {filteredOptions.length === 0 && (
-              <div className="text-center py-8 text-gray-400 text-xs font-medium">
+              <div className="text-center py-8 text-[#888888] text-xs font-medium">
                 Keine Spieler gefunden
               </div>
             )}

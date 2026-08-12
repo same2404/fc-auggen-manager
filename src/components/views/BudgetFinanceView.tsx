@@ -132,11 +132,11 @@ export const BudgetFinanceView: React.FC<BudgetFinanceViewProps> = ({
 
     return (
       <>
-        <tr className="bg-gray-100">
-          <td colSpan={12} className="px-2 py-2 border-y-2 border-black">
+        <tr className="bg-slate-950 text-amber-400">
+          <td colSpan={13} className="px-3 py-2 border-y border-slate-800 bg-slate-950">
             <div className="flex items-center gap-2">
               {icon}
-              <span className="font-black uppercase tracking-widest text-[10px]">{title}</span>
+              <span className="font-black uppercase tracking-widest text-[10px] text-amber-400">{title}</span>
             </div>
           </td>
         </tr>
@@ -150,85 +150,85 @@ export const BudgetFinanceView: React.FC<BudgetFinanceViewProps> = ({
           const kosten_jahr = (kosten_monat * months) + sideAgreementAmount;
 
           return (
-            <tr key={p.id} className="hover:bg-gray-50 transition-colors border-b border-black/5">
-              <td className="px-2 py-1 border-r border-black/5 text-center opacity-40">{(p as any).number || (p as any).nummer || (p as any).nr}</td>
-              <td className="px-2 py-1 border-r border-black/5 font-black uppercase">{p.lastName || p.name}</td>
-              <td className="px-2 py-1 border-r border-black/5 text-center text-[#C00000] font-black">{(p as any).position || (p as any).pos}</td>
-              <td className="px-2 py-1 border-r border-black/5 text-right bg-red-50/20">
+            <tr key={p.id} className="hover:bg-slate-800/90 transition-colors border-b border-slate-800 bg-slate-900">
+              <td className="px-2 py-1.5 border-r border-slate-800 text-center font-bold text-slate-400">{(p as any).number || (p as any).nummer || (p as any).nr || '-'}</td>
+              <td className="px-2.5 py-1.5 border-r border-slate-800 font-black uppercase text-white text-[11px]">{p.lastName || p.name}</td>
+              <td className="px-2 py-1.5 border-r border-slate-800 text-center text-red-400 font-black text-[10px]">{(p as any).position || (p as any).pos || '-'}</td>
+              <td className="px-2 py-1 border-r border-slate-800 text-right bg-slate-950/60">
                 <input 
                   type="number"
-                  className={`w-full bg-transparent text-right font-black text-red-700 text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-red-900/60 px-1.5 py-0.5 rounded text-right font-black text-red-400 text-[10px] focus:outline-none focus:border-red-500 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={p.finance?.transferFeeIn || 0}
                   onChange={(e) => handleUpdateFinance(p.id, 'transferFeeIn', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right bg-green-50/20">
+              <td className="px-2 py-1 border-r border-slate-800 text-right bg-slate-950/60">
                 <input 
                   type="number"
-                  className={`w-full bg-transparent text-right font-black text-green-700 text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-emerald-900/60 px-1.5 py-0.5 rounded text-right font-black text-emerald-400 text-[10px] focus:outline-none focus:border-emerald-500 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={p.finance?.transferFeeOut || 0}
                   onChange={(e) => handleUpdateFinance(p.id, 'transferFeeOut', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right">
+              <td className="px-2 py-1 border-r border-slate-800 text-right">
                 <input 
                   type="number"
-                  className={`w-full bg-transparent text-right font-black text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-slate-700 px-1.5 py-0.5 rounded text-right font-black text-white text-[10px] focus:outline-none focus:border-amber-400 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={grundgehalt}
                   onChange={(e) => handleUpdateFinance(p.id, 'baseSalary', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right">
+              <td className="px-2 py-1 border-r border-slate-800 text-right">
                 <input 
                   type="number"
-                  className={`w-full bg-transparent text-right font-black text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-slate-700 px-1.5 py-0.5 rounded text-right font-black text-white text-[10px] focus:outline-none focus:border-amber-400 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={bonusPerMatch}
                   onChange={(e) => handleUpdateFinance(p.id, 'bonusPerMatch', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-center bg-blue-50/20">
+              <td className="px-2 py-1 border-r border-slate-800 text-center bg-slate-950/60">
                 <input 
                   type="number"
                   min="0"
                   max="12"
-                  className={`w-full bg-transparent text-center font-black text-blue-700 text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-slate-700 px-1 py-0.5 rounded text-center font-black text-amber-300 text-[10px] focus:outline-none focus:border-amber-400 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={months}
                   onChange={(e) => handleUpdateFinance(p.id, 'months', Math.min(12, Math.max(0, parseInt(e.target.value) || 0)))}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right">
+              <td className="px-2 py-1 border-r border-slate-800 text-right">
                 <input 
                   type="number"
-                  className={`w-full bg-transparent text-right font-black text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-slate-700 px-1.5 py-0.5 rounded text-right font-black text-white text-[10px] focus:outline-none focus:border-amber-400 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={sideAgreementAmount}
                   onChange={(e) => handleUpdateFinance(p.id, 'sideAgreementAmount', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right bg-green-50/30">
+              <td className="px-2 py-1 border-r border-slate-800 text-right bg-slate-950/60">
                 <input 
                   type="number"
-                  className={`w-full bg-transparent text-right font-black text-green-700 text-[10px] focus:outline-none ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-blue-900/60 px-1.5 py-0.5 rounded text-right font-black text-blue-400 text-[10px] focus:outline-none focus:border-blue-400 ${!isEditing ? 'opacity-80 cursor-not-allowed' : ''}`}
                   value={ist}
                   onChange={(e) => handleUpdateFinance(p.id, 'ist', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                 />
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right bg-gray-50 text-blue-800 text-[10px]">
+              <td className="px-2 py-1.5 border-r border-slate-800 text-right bg-slate-950 text-amber-300 font-extrabold text-[10px]">
                 {formatCurrency(kosten_monat)}
               </td>
-              <td className="px-2 py-1 border-r border-black/5 text-right bg-gray-50 text-blue-800 text-[10px]">
+              <td className="px-2 py-1.5 border-r border-slate-800 text-right bg-slate-950 text-amber-300 font-extrabold text-[10px]">
                 {formatCurrency(kosten_jahr)}
               </td>
-              <td className="px-2 py-1 border-r border-black/5">
+              <td className="px-2 py-1 border-r border-slate-800">
                 <input 
                   type="text"
-                  className={`w-full bg-transparent italic opacity-60 focus:outline-none text-[8px] ${!isEditing ? 'cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 text-slate-200 border border-slate-700 px-1.5 py-0.5 rounded italic text-[9px] focus:outline-none focus:border-amber-400 placeholder:text-slate-500 ${!isEditing ? 'cursor-not-allowed opacity-80' : ''}`}
                   value={p.finance?.sideAgreements || ''}
                   onChange={(e) => handleUpdateFinance(p.id, 'sideAgreements', e.target.value)}
                   placeholder={isEditing ? "Notizen..." : ""}
@@ -244,29 +244,29 @@ export const BudgetFinanceView: React.FC<BudgetFinanceViewProps> = ({
 
   if (!isUnlocked) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-100 p-4">
-        <div className="bg-white border border-black p-8 w-full max-w-md text-center watermark-bg">
-          <div className="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="flex-1 flex items-center justify-center bg-slate-950 p-4 h-full">
+        <div className="bg-slate-900 border border-slate-800 p-8 w-full max-w-md text-center rounded-2xl shadow-2xl watermark-bg">
+          <div className="w-16 h-16 bg-amber-500 text-slate-950 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Euro size={32} />
           </div>
-          <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">Budget & Finanzen</h2>
-          <p className="text-xs font-bold uppercase opacity-40 mb-8 tracking-widest">Dieser Bereich ist passwortgeschützt</p>
+          <h2 className="text-2xl font-black uppercase tracking-tighter mb-2 text-white">Budget & Finanzen</h2>
+          <p className="text-xs font-bold uppercase text-slate-400 mb-8 tracking-widest">Dieser Bereich ist passwortgeschützt</p>
           
           <form onSubmit={handleUnlock} className="space-y-4">
             <div className="relative">
               <input 
                 type="password"
                 placeholder="PASSWORT EINGEBEN..."
-                className={`w-full p-4 bg-gray-50 border-2 border-black font-black text-center focus:outline-none transition-all ${error ? 'border-red-500 animate-shake' : 'focus:bg-white'}`}
+                className={`w-full p-4 bg-slate-950 border-2 border-slate-700 font-black text-center text-amber-400 focus:outline-none focus:border-amber-400 rounded-xl transition-all ${error ? 'border-red-500 animate-shake' : ''}`}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoFocus
               />
-              {error && <p className="text-[10px] font-black text-red-600 uppercase mt-2 tracking-widest">Falsches Passwort!</p>}
+              {error && <p className="text-[10px] font-black text-red-500 uppercase mt-2 tracking-widest">Falsches Passwort!</p>}
             </div>
             <button 
               type="submit"
-              className="w-full bg-black text-white p-4 font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all active:scale-95"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 p-4 font-black uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 shadow-lg"
             >
               Bereich freischalten
             </button>
@@ -277,136 +277,136 @@ export const BudgetFinanceView: React.FC<BudgetFinanceViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden watermark-bg">
+    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden watermark-bg">
       {/* 1. Kompakte Finanzübersicht */}
-      <div className="p-2 grid grid-cols-9 gap-2 shrink-0 border-b border-black/5 bg-gray-50/30">
-        <div className="bg-white border border-black/10 p-2 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Users size={10} className="text-blue-600" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">Grundgehalt (Mtl.)</label>
+      <div className="p-2.5 grid grid-cols-9 gap-2 shrink-0 border-b border-black/10 bg-slate-950">
+        <div className="bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Users size={12} className="text-blue-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">Grundgehalt (Mtl.)</label>
           </div>
-          <span className="text-sm font-black">{formatCurrency(Gesamt_Grundgehalt_monat)}</span>
+          <span className="text-sm font-black text-white">{formatCurrency(Gesamt_Grundgehalt_monat)}</span>
         </div>
         
-        <div className="bg-white border border-black/10 p-2 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Briefcase size={10} className="text-orange-600" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">Boni / Extras (Mtl.)</label>
+        <div className="bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Briefcase size={12} className="text-orange-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">Boni (Mtl.)</label>
           </div>
-          <span className="text-sm font-black">{formatCurrency(Gesamt_Boni_monat)}</span>
+          <span className="text-sm font-black text-white">{formatCurrency(Gesamt_Boni_monat)}</span>
         </div>
 
-        <div className="bg-white border border-black/10 p-2 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Euro size={10} className="text-green-600" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">Nebenvereinb. (Jahr)</label>
+        <div className="bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Euro size={12} className="text-emerald-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">Nebenvereinb. (Jahr)</label>
           </div>
-          <span className="text-sm font-black">{formatCurrency(Gesamt_Nebenvereinbarung_jahr)}</span>
+          <span className="text-sm font-black text-white">{formatCurrency(Gesamt_Nebenvereinbarung_jahr)}</span>
         </div>
         
-        <div className="bg-white border border-black/10 p-2 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Target size={10} className="text-purple-600" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">IST Aktuell</label>
+        <div className="bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Target size={12} className="text-purple-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">IST Aktuell</label>
           </div>
-          <span className="text-sm font-black">{formatCurrency(Gesamt_IST)}</span>
+          <span className="text-sm font-black text-emerald-400">{formatCurrency(Gesamt_IST)}</span>
         </div>
 
-        <div className="bg-white border border-black/10 p-2 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <TrendingDown size={10} className="text-red-600" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">Ablöse Zugänge</label>
+        <div className="bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <TrendingDown size={12} className="text-red-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">Ablöse Zugänge</label>
           </div>
-          <span className="text-sm font-black text-red-600">{formatCurrency(Gesamt_Abloese_Zugang)}</span>
+          <span className="text-sm font-black text-red-400">{formatCurrency(Gesamt_Abloese_Zugang)}</span>
         </div>
 
-        <div className="bg-white border border-black/10 p-2 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <TrendingUp size={10} className="text-green-600" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">Ablöse Abgänge</label>
+        <div className="bg-slate-900 border border-slate-800 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <TrendingUp size={12} className="text-emerald-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">Ablöse Abgänge</label>
           </div>
-          <span className="text-sm font-black text-green-600">{formatCurrency(Gesamt_Abloese_Abgang)}</span>
+          <span className="text-sm font-black text-emerald-400">{formatCurrency(Gesamt_Abloese_Abgang)}</span>
         </div>
 
-        <div className={`bg-white border-2 p-2 flex flex-col justify-center ${Abloese_Saldo >= 0 ? 'border-green-500' : 'border-red-500'}`}>
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Euro size={10} className={Abloese_Saldo >= 0 ? 'text-green-600' : 'text-red-600'} />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-50">Ablöse Saldo</label>
+        <div className={`bg-slate-900 border-2 p-2 flex flex-col justify-between rounded-[2px] ${Abloese_Saldo >= 0 ? 'border-emerald-500' : 'border-red-500'}`}>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Euro size={12} className={Abloese_Saldo >= 0 ? 'text-emerald-400' : 'text-red-400'} />
+            <label className="text-[8px] font-black uppercase tracking-wider text-slate-300">Ablöse Saldo</label>
           </div>
-          <span className={`text-sm font-black ${Abloese_Saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(Abloese_Saldo)}</span>
+          <span className={`text-sm font-black ${Abloese_Saldo >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(Abloese_Saldo)}</span>
         </div>
 
-        <div className="bg-black text-white border border-black p-2 flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Calculator size={12} className="text-green-400" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-70">Budget (Monat)</label>
+        <div className="bg-slate-900 text-white border-2 border-emerald-500 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Calculator size={12} className="text-emerald-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-emerald-300">Budget (Monat)</label>
           </div>
-          <span className="text-lg font-black text-green-400 leading-none">{formatCurrency(Gesamtbudget_aktuell_monat)}</span>
+          <span className="text-base font-black text-emerald-400 leading-none">{formatCurrency(Gesamtbudget_aktuell_monat)}</span>
         </div>
 
-        <div className="bg-black text-white border border-black p-2 flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Euro size={12} className="text-yellow-400" />
-            <label className="text-[7px] font-black uppercase tracking-widest opacity-70">Budget (Jahr)</label>
+        <div className="bg-slate-900 text-white border-2 border-amber-500 p-2 flex flex-col justify-between rounded-[2px] shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Euro size={12} className="text-amber-400" />
+            <label className="text-[8px] font-black uppercase tracking-wider text-amber-300">Budget (Jahr)</label>
           </div>
-          <span className="text-lg font-black text-yellow-400 leading-none">{formatCurrency(Gesamtbudget_aktuell_jahr)}</span>
+          <span className="text-base font-black text-amber-400 leading-none">{formatCurrency(Gesamtbudget_aktuell_jahr)}</span>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-2 p-2 pt-0 overflow-hidden">
+      <div className="flex-1 flex gap-2 p-2 pt-0 overflow-hidden bg-slate-950">
         {/* Left: Detailed List */}
-        <div className="flex-1 bg-white border border-black/10 flex flex-col overflow-hidden relative">
-          <div className="p-2 border-b border-black/10 bg-gray-50 flex justify-between items-center">
+        <div className="flex-1 bg-slate-950 border border-slate-800 flex flex-col overflow-hidden relative">
+          <div className="p-2 border-b border-slate-800 bg-slate-900 flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <h3 className="font-black uppercase text-[10px] tracking-widest">Kader Finanzen</h3>
-              <div className="flex items-center bg-white border border-black/20 p-0.5">
-                <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-black hover:text-white transition-colors"><ChevronLeft size={12} /></button>
-                <span className="px-3 text-[9px] font-black uppercase tracking-widest">
+              <h3 className="font-black uppercase text-[10px] tracking-widest text-amber-400">Kader Finanzen</h3>
+              <div className="flex items-center bg-slate-950 border border-slate-700 p-0.5 rounded">
+                <button onClick={() => changeMonth(-1)} className="p-1 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"><ChevronLeft size={12} /></button>
+                <span className="px-3 text-[9px] font-black uppercase tracking-widest text-white">
                   {currentMonth.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
                 </span>
-                <button onClick={() => changeMonth(1)} className="p-1 hover:bg-black hover:text-white transition-colors"><ChevronRight size={14} /></button>
+                <button onClick={() => changeMonth(1)} className="p-1 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"><ChevronRight size={14} /></button>
               </div>
             </div>
           </div>
           
-          <div className="flex-1 overflow-auto custom-scrollbar">
+          <div className="flex-1 overflow-auto custom-scrollbar bg-slate-950">
             <table className="w-full border-collapse text-[9px] font-bold">
-              <thead className="sticky top-0 bg-black text-white z-20">
+              <thead className="sticky top-0 bg-slate-950 text-amber-400 z-20 border-b-2 border-slate-800">
                 <tr>
-                  <th className="px-2 py-1.5 border border-white/10 text-left w-8">Nr</th>
-                  <th className="px-2 py-1.5 border border-white/10 text-left w-64">Name</th>
-                  <th className="px-2 py-1.5 border border-white/10 text-center w-10">Pos</th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24">Ablöse (Z)<br/><span className="text-[7px] opacity-60">Zugang</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24">Ablöse (A)<br/><span className="text-[7px] opacity-60">Abgang</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24">Grundgehalt<br/><span className="text-[7px] opacity-60">Monat</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24">Boni / Extras<br/><span className="text-[7px] opacity-60">Monat</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-center w-12 text-blue-400">Monate<br/><span className="text-[7px] opacity-60">Aktiv</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24">Nebenvereinb.<br/><span className="text-[7px] opacity-60">Jahr</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24 text-green-400">IST<br/><span className="text-[7px] opacity-60">Aktuell</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-24 bg-gray-800">Kosten<br/><span className="text-[7px] opacity-60">Monat</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-right w-28 bg-gray-800">Kosten<br/><span className="text-[7px] opacity-60">Jahr</span></th>
-                  <th className="px-2 py-1.5 border border-white/10 text-left">Notizen</th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-left w-8 text-slate-400">Nr</th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-left w-64 text-amber-400">Name</th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-center w-10 text-amber-400">Pos</th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-red-400">Ablöse (Z)<br/><span className="text-[7px] opacity-70 text-slate-400">Zugang</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-emerald-400">Ablöse (A)<br/><span className="text-[7px] opacity-70 text-slate-400">Abgang</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-white">Grundgehalt<br/><span className="text-[7px] opacity-70 text-slate-400">Monat</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-white">Boni / Extras<br/><span className="text-[7px] opacity-70 text-slate-400">Monat</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-center w-12 text-amber-300">Monate<br/><span className="text-[7px] opacity-70 text-slate-400">Aktiv</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-white">Nebenvereinb.<br/><span className="text-[7px] opacity-70 text-slate-400">Jahr</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-blue-400">IST<br/><span className="text-[7px] opacity-70 text-slate-400">Aktuell</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-24 text-amber-300 bg-slate-900">Kosten<br/><span className="text-[7px] opacity-70 text-slate-400">Monat</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-right w-28 text-amber-300 bg-slate-900">Kosten<br/><span className="text-[7px] opacity-70 text-slate-400">Jahr</span></th>
+                  <th className="px-2 py-1.5 border border-slate-800 text-left text-slate-300">Notizen</th>
                 </tr>
               </thead>
               <tbody>
-                {renderPersonnelTable('Spielerkader', categorizedPersonnel.player, <Users size={12} className="text-blue-600" />)}
-                {renderPersonnelTable('Trainerteam', categorizedPersonnel.coach, <Shield size={12} className="text-orange-600" />)}
-                {renderPersonnelTable('Funktionsteam', categorizedPersonnel.staff, <User size={12} className="text-purple-600" />)}
-                {renderPersonnelTable('Ärztliche Abteilung', categorizedPersonnel.medical, <Activity size={12} className="text-red-600" />)}
+                {renderPersonnelTable('Spielerkader', categorizedPersonnel.player, <Users size={12} className="text-amber-400" />)}
+                {renderPersonnelTable('Trainerteam', categorizedPersonnel.coach, <Shield size={12} className="text-amber-400" />)}
+                {renderPersonnelTable('Funktionsteam', categorizedPersonnel.staff, <User size={12} className="text-amber-400" />)}
+                {renderPersonnelTable('Ärztliche Abteilung', categorizedPersonnel.medical, <Activity size={12} className="text-red-400" />)}
               </tbody>
-              <tfoot className="sticky bottom-0 bg-gray-100 font-black z-20 border-t-2 border-black">
+              <tfoot className="sticky bottom-0 bg-slate-950 font-black z-20 border-t-2 border-slate-800 text-white">
                 <tr>
-                  <td colSpan={3} className="px-2 py-2 text-right uppercase tracking-widest text-[10px]">Gesamt</td>
-                  <td className="px-2 py-2 text-right text-red-700">{formatCurrency(Gesamt_Abloese_Zugang)}</td>
-                  <td className="px-2 py-2 text-right text-green-700">{formatCurrency(Gesamt_Abloese_Abgang)}</td>
-                  <td className="px-2 py-2 text-right">{formatCurrency(Gesamt_Grundgehalt_monat)}</td>
-                  <td className="px-2 py-2 text-right">{formatCurrency(Gesamt_Boni_monat)}</td>
-                  <td className="px-2 py-2 text-center text-blue-700">-</td>
-                  <td className="px-2 py-2 text-right">{formatCurrency(Gesamt_Nebenvereinbarung_jahr)}</td>
-                  <td className="px-2 py-2 text-right text-green-700">{formatCurrency(Gesamt_IST)}</td>
-                  <td className="px-2 py-2 text-right bg-gray-200">{formatCurrency(Gesamtkosten_Spieler_Monat)}</td>
-                  <td className="px-2 py-2 text-right bg-gray-200">{formatCurrency(Gesamtkosten_Spieler_Jahr)}</td>
+                  <td colSpan={3} className="px-2 py-2 text-right uppercase tracking-widest text-[10px] text-amber-400">Gesamt</td>
+                  <td className="px-2 py-2 text-right text-red-400">{formatCurrency(Gesamt_Abloese_Zugang)}</td>
+                  <td className="px-2 py-2 text-right text-emerald-400">{formatCurrency(Gesamt_Abloese_Abgang)}</td>
+                  <td className="px-2 py-2 text-right text-white">{formatCurrency(Gesamt_Grundgehalt_monat)}</td>
+                  <td className="px-2 py-2 text-right text-white">{formatCurrency(Gesamt_Boni_monat)}</td>
+                  <td className="px-2 py-2 text-center text-amber-300">-</td>
+                  <td className="px-2 py-2 text-right text-white">{formatCurrency(Gesamt_Nebenvereinbarung_jahr)}</td>
+                  <td className="px-2 py-2 text-right text-blue-400">{formatCurrency(Gesamt_IST)}</td>
+                  <td className="px-2 py-2 text-right bg-slate-900 text-amber-400">{formatCurrency(Gesamtkosten_Spieler_Monat)}</td>
+                  <td className="px-2 py-2 text-right bg-slate-900 text-amber-400">{formatCurrency(Gesamtkosten_Spieler_Jahr)}</td>
                   <td className="px-2 py-2"></td>
                 </tr>
               </tfoot>
@@ -416,27 +416,27 @@ export const BudgetFinanceView: React.FC<BudgetFinanceViewProps> = ({
 
         {/* Right: Point Bonus Calculator & Summaries */}
         <div className="w-64 space-y-2 shrink-0 flex flex-col">
-          <section className="bg-white border border-black/10 p-3">
-            <h4 className="font-black uppercase text-[9px] tracking-widest flex items-center gap-2 mb-3">
-              <Target size={12} className="text-[#C00000]" /> Punktprämien
+          <section className="bg-slate-900 border border-slate-800 p-3 rounded">
+            <h4 className="font-black uppercase text-[9px] tracking-widest flex items-center gap-2 mb-3 text-amber-400">
+              <Target size={12} className="text-amber-400" /> Punktprämien
             </h4>
             <div className="space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="text-[7px] font-black uppercase opacity-60 block mb-0.5">Siege</label>
+                  <label className="text-[7px] font-black uppercase text-slate-400 block mb-0.5">Siege</label>
                   <input 
                     type="number"
-                    className={`w-full bg-gray-50 border border-black/20 p-1 font-black text-sm focus:outline-none text-center ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`w-full bg-slate-950 border border-slate-700 p-1 font-black text-sm focus:outline-none text-center text-white focus:border-amber-400 rounded ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
                     value={financeMeta.wins}
                     onChange={(e) => setFinanceMeta({ ...financeMeta, wins: parseInt(e.target.value) || 0 })}
                     disabled={!isEditing}
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[7px] font-black uppercase opacity-60 block mb-0.5">Remis</label>
+                  <label className="text-[7px] font-black uppercase text-slate-400 block mb-0.5">Remis</label>
                   <input 
                     type="number"
-                    className={`w-full bg-gray-50 border border-black/20 p-1 font-black text-sm focus:outline-none text-center ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`w-full bg-slate-950 border border-slate-700 p-1 font-black text-sm focus:outline-none text-center text-white focus:border-amber-400 rounded ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
                     value={financeMeta.draws}
                     onChange={(e) => setFinanceMeta({ ...financeMeta, draws: parseInt(e.target.value) || 0 })}
                     disabled={!isEditing}
@@ -444,82 +444,82 @@ export const BudgetFinanceView: React.FC<BudgetFinanceViewProps> = ({
                 </div>
               </div>
               <div>
-                <label className="text-[7px] font-black uppercase opacity-60 block mb-0.5">Prämie / Pkt (€)</label>
+                <label className="text-[7px] font-black uppercase text-slate-400 block mb-0.5">Prämie / Pkt (€)</label>
                 <input 
                   type="number"
-                  className={`w-full bg-gray-50 border border-black/20 p-1 font-black text-sm focus:outline-none text-center ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-slate-950 border border-slate-700 p-1 font-black text-sm focus:outline-none text-center text-white focus:border-amber-400 rounded ${!isEditing ? 'opacity-70 cursor-not-allowed' : ''}`}
                   value={financeMeta.bonusPerPoint || 0}
                   onChange={(e) => setFinanceMeta({ ...financeMeta, bonusPerPoint: parseInt(e.target.value) || 0 })}
                   disabled={!isEditing}
                 />
               </div>
               
-              <div className="pt-2 border-t border-black/10 mt-2">
+              <div className="pt-2 border-t border-slate-800 mt-2">
                 <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-[8px] font-black uppercase opacity-60">Punkte</span>
-                  <span className="text-sm font-black">{gesamtpunkte}</span>
+                  <span className="text-[8px] font-black uppercase text-slate-400">Punkte</span>
+                  <span className="text-sm font-black text-white">{gesamtpunkte}</span>
                 </div>
                 <div className="flex justify-between items-center mb-0.5">
-                  <span className="text-[8px] font-black uppercase opacity-60">Auszahlung / Spieler</span>
-                  <span className="text-sm font-black text-[#C00000]">{formatCurrency(auszahlung)}</span>
+                  <span className="text-[8px] font-black uppercase text-slate-400">Auszahlung / Spieler</span>
+                  <span className="text-sm font-black text-amber-400">{formatCurrency(auszahlung)}</span>
                 </div>
-                <div className="flex justify-between items-center bg-gray-50 p-1.5 mt-1 border border-black/5">
-                  <span className="text-[8px] font-black uppercase opacity-80">Gesamt Team</span>
-                  <span className="text-base font-black text-[#C00000]">{formatCurrency(totalPointBonuses)}</span>
+                <div className="flex justify-between items-center bg-slate-950 p-1.5 mt-1 border border-slate-800 rounded">
+                  <span className="text-[8px] font-black uppercase text-slate-300">Gesamt Team</span>
+                  <span className="text-base font-black text-amber-400">{formatCurrency(totalPointBonuses)}</span>
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="bg-black text-white border border-black p-3 flex-1 overflow-auto custom-scrollbar">
-            <h4 className="font-black uppercase text-[9px] tracking-widest flex items-center gap-2 mb-3 text-yellow-400">
-              <AlertCircle size={12} /> Analyse
+          <section className="bg-slate-900 text-white border border-slate-800 p-3 flex-1 overflow-auto custom-scrollbar rounded">
+            <h4 className="font-black uppercase text-[9px] tracking-widest flex items-center gap-2 mb-3 text-amber-400">
+              <AlertCircle size={12} className="text-amber-400" /> Analyse
             </h4>
             
             <div className="space-y-3">
               <div>
-                <h5 className="text-[8px] font-bold uppercase opacity-60 mb-1 border-b border-white/10 pb-0.5">Monatliche Fixkosten</h5>
+                <h5 className="text-[8px] font-bold uppercase text-slate-400 mb-1 border-b border-slate-800 pb-0.5">Monatliche Fixkosten</h5>
                 <div className="flex justify-between text-[11px] font-black">
-                  <span>Kader Grund</span>
-                  <span>{formatCurrency(Gesamt_Grundgehalt_monat)}</span>
+                  <span className="text-slate-300">Kader Grund</span>
+                  <span className="text-white">{formatCurrency(Gesamt_Grundgehalt_monat)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-gray-400">
-                  <span>Boni / Extras</span>
-                  <span>{formatCurrency(Gesamt_Boni_monat)}</span>
+                <div className="flex justify-between text-[11px] font-black">
+                  <span className="text-slate-400">Boni / Extras</span>
+                  <span className="text-slate-300">{formatCurrency(Gesamt_Boni_monat)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-green-400">
+                <div className="flex justify-between text-[11px] font-black text-blue-400">
                   <span>IST Aktuell</span>
                   <span>{formatCurrency(Gesamt_IST)}</span>
                 </div>
               </div>
 
               <div>
-                <h5 className="text-[8px] font-bold uppercase opacity-60 mb-1 border-b border-white/10 pb-0.5">Jahresprojektion</h5>
+                <h5 className="text-[8px] font-bold uppercase text-slate-400 mb-1 border-b border-slate-800 pb-0.5">Jahresprojektion</h5>
                 <div className="flex justify-between text-[11px] font-black">
-                  <span>Kader Gesamt</span>
-                  <span>{formatCurrency(Gesamtkosten_Spieler_Jahr)}</span>
+                  <span className="text-slate-300">Kader Gesamt</span>
+                  <span className="text-white">{formatCurrency(Gesamtkosten_Spieler_Jahr)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-gray-400">
-                  <span>Boni / Extras</span>
-                  <span>{playersWithCosts.reduce((sum, p) => sum + (p.bonusPerMatch * p.months), 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+                <div className="flex justify-between text-[11px] font-black">
+                  <span className="text-slate-400">Boni / Extras</span>
+                  <span className="text-slate-300">{playersWithCosts.reduce((sum, p) => sum + (p.bonusPerMatch * p.months), 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-gray-400">
-                  <span>Nebenvereinb.</span>
-                  <span>{formatCurrency(Gesamt_Nebenvereinbarung_jahr)}</span>
+                <div className="flex justify-between text-[11px] font-black">
+                  <span className="text-slate-400">Nebenvereinb.</span>
+                  <span className="text-slate-300">{formatCurrency(Gesamt_Nebenvereinbarung_jahr)}</span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-white/20">
-                <h5 className="text-[8px] font-bold uppercase opacity-60 mb-1 border-b border-white/10 pb-0.5 text-yellow-400">Transfer-Bilanz</h5>
+              <div className="pt-2 border-t border-slate-800">
+                <h5 className="text-[8px] font-bold uppercase mb-1 border-b border-slate-800 pb-0.5 text-amber-400">Transfer-Bilanz</h5>
                 <div className="flex justify-between text-[11px] font-black text-red-400">
                   <span>Ablöse Zugänge</span>
                   <span>{formatCurrency(Gesamt_Abloese_Zugang)}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-green-400">
+                <div className="flex justify-between text-[11px] font-black text-emerald-400">
                   <span>Ablöse Abgänge</span>
                   <span>{formatCurrency(Gesamt_Abloese_Abgang)}</span>
                 </div>
-                <div className={`flex justify-between text-[13px] font-black mt-1 p-1 border border-white/10 ${Abloese_Saldo >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`flex justify-between text-[13px] font-black mt-1 p-1.5 border border-slate-800 rounded bg-slate-950 ${Abloese_Saldo >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   <span>Saldo</span>
                   <span>{formatCurrency(Abloese_Saldo)}</span>
                 </div>

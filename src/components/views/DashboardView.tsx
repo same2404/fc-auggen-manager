@@ -472,7 +472,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         type: file.name.endsWith('.pdf') ? 'PDF' : 'BILD',
         date: 'Gerade eben',
         status: 'completed' as const,
-        summary: `KI-Import erfolgreich: Daten aus ${file.name} analysiert und automatisch im System hinterlegt.`
+        summary: `Import erfolgreich: Daten aus ${file.name} analysiert und automatisch im System hinterlegt.`
       };
       setUploads(prev => {
         const next = [newUpload, ...prev];
@@ -489,52 +489,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-950 text-slate-100 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+    <div className="h-full flex flex-col bg-[#F9FAFB] text-[#F8FAFC] rounded-xl border border-[#E2E8F0] overflow-hidden shadow-sm">
       {/* ----------------- TOP HEADER WITH FC AUGGEN WAPPEN ----------------- */}
-      <div className="px-6 py-6 border-b border-slate-800 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 relative overflow-hidden shrink-0">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="px-5 py-3 border-b border-[#2D2D2D] bg-[#1E1E1E] text-white relative overflow-hidden shrink-0">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#1A73E8]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-[#00C2FF]/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 relative z-10">
           {/* FC Auggen Title Branding */}
           <div className="text-center sm:text-left">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-              <span className="bg-gradient-to-r from-red-600 to-red-700 text-white font-black text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-md border border-red-500 shadow">
-                FC Auggen 1925 e.V.
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 mb-1">
+              <span className="bg-[#1A73E8] text-white font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shadow-xs">
+                FC Auggen 1921 e.V.
               </span>
-              <span className="bg-emerald-950/80 text-emerald-400 font-black text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-md border border-emerald-800/80 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="bg-[#E8EEF5] text-[#1A73E8] font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00C2FF] animate-pulse" />
                 Verbandsliga Südbaden
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-wider text-white">
-              Vereins-Dashboard
+            <h1 className="text-lg md:text-xl font-extrabold uppercase tracking-wide text-white leading-tight">
+              VEREINS-DASHBOARD
             </h1>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5 flex items-center justify-center sm:justify-start gap-2">
-              <ShieldCheck size={14} className="text-amber-400" />
+            <p className="text-[11px] text-[#00C2FF] font-semibold uppercase tracking-wider mt-0.5 flex items-center justify-center sm:justify-start gap-1.5">
+              <ShieldCheck size={14} className="text-[#00C2FF]" />
               Zentrale Steuerungs- & Analyse-Plattform • Saison 2026/27
             </p>
           </div>
 
-          {/* Quick Header KPI Bar */}
-          <div className="flex flex-wrap items-center justify-center gap-3 bg-slate-900/90 border border-slate-800 p-3 rounded-xl shadow-inner">
-            <div className="text-center px-3 border-r border-slate-800">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Tabellenplatz</span>
-              <span className="text-xl font-black text-amber-400"># -</span>
+          {/* Quick Header KPI Bar (Slim Layout) */}
+          <div className="flex flex-wrap items-center justify-center gap-2 bg-[#2A2A2A] border border-[#333333] px-3 py-1.5 rounded-lg shadow-sm">
+            <div className="text-center px-2.5 border-r border-slate-700">
+              <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Tabellenplatz</span>
+              <span className="text-base font-black text-amber-400"># -</span>
             </div>
-            <div className="text-center px-3 border-r border-slate-800">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Punkte</span>
-              <span className="text-xl font-black text-white">0 Pkt</span>
+            <div className="text-center px-2.5 border-r border-slate-700">
+              <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Punkte</span>
+              <span className="text-base font-black text-white">0 Pkt</span>
             </div>
-            <div className="text-center px-3 border-r border-slate-800">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Formkurve</span>
-              <span className="text-xs font-black text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60 inline-block mt-1">
+            <div className="text-center px-2.5 border-r border-slate-700">
+              <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Formkurve</span>
+              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/60 inline-block">
                 Saison 26/27 Start (0 Sp. / 0 Pkt)
               </span>
             </div>
-            <div className="text-center px-3">
-              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Spielerkader</span>
-              <span className="text-xl font-black text-amber-400">{squadPlayers.length || 25} <span className="text-[10px] font-normal text-slate-400">(Spieler)</span></span>
+            <div className="text-center px-2.5">
+              <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Spielerkader</span>
+              <span className="text-base font-black text-amber-400">{squadPlayers.length || 25} <span className="text-[10px] font-normal text-slate-400">(Spieler)</span></span>
             </div>
           </div>
         </div>
@@ -854,7 +854,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Analyse-Text / KI-Fazit</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Analyse-Text / Trainer-Fazit</label>
                     <textarea
                       rows={2}
                       value={customLastMatchData.notes ?? ''}
@@ -913,12 +913,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     )}
                   </div>
 
-                  {/* KI-Kurzkommentar */}
+                  {/* Trainer-Kurzkommentar */}
                   <div className="pt-3 border-t border-slate-800/80 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
                     <div className="flex items-center justify-between mb-1 text-amber-400">
                       <div className="flex items-center gap-1.5">
                         <Sparkles size={13} />
-                        <span className="text-[10px] font-black uppercase tracking-wider">KI-Analyse ({lastTestMatch.result})</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">Taktik-Analyse ({lastTestMatch.result})</span>
                       </div>
                       <button
                         onClick={() => setIsEditingLastMatch(true)}
@@ -1170,237 +1170,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* ROW 3: Team-Stimmung & Top-3 Spieler der Woche */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* MODULE 6: Team-Stimmung (KI-Analyse) */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col justify-between relative overflow-hidden group hover:border-slate-700 transition-all">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <Flame size={18} />
-                  </div>
-                  <div>
-                    <h3 className="font-black uppercase text-sm tracking-wider text-amber-400">6. Team-Stimmung (KI-Analyse)</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Psychologisches Klima & Dynamik</p>
-                  </div>
-                </div>
-                <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md shadow flex items-center gap-1">
-                  <Sparkles size={12} />
-                  STIMMUNG: HOCH
-                </span>
-              </div>
 
-              <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 mb-4">
-                {/* Visual Gauge */}
-                <div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    <span>Atmosphäre & Teamgeist Index</span>
-                    <span className="text-amber-400 font-black">94 / 100</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 w-[94%]" />
-                  </div>
-                </div>
 
-                {/* KI-Kurzkommentar */}
-                <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-1">
-                  <span className="text-[10px] font-black uppercase text-amber-400 block">KI-Analyse</span>
-                  <p className="text-xs text-slate-200 italic leading-relaxed">
-                    "Die Mannschaft startet voller Motivation und mit frischer Energie in die neue Verbandsliga-Saison 2026/27 (0 Punkte). Nach den souveränen Testspielsiegen (ua. 7:0 gegen FC Zell i.W.) richtet sich der volle Fokus auf den anstehenden SBFV-Pokal-Auftakt gegen den SV Oberachern."
-                  </p>
-                </div>
-
-                {/* Empfehlung für Trainer */}
-                <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-800/80 space-y-1">
-                  <span className="text-[10px] font-black uppercase text-emerald-400 block">Empfehlung für das Trainergremium</span>
-                  <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                    💡 Fokus auf Konzentration halten und Überheblichkeit in den ersten 15 Spielminuten konsequent vermeiden.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* MODULE 7: Top-3 Spieler der Woche (KI-Ranking) */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col justify-between relative overflow-hidden group hover:border-slate-700 transition-all">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <Award size={18} />
-                  </div>
-                  <div>
-                    <h3 className="font-black uppercase text-sm tracking-wider text-amber-400">7. Top-3 Spieler der Woche</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">KI-Performance-Ranking</p>
-                  </div>
-                </div>
-                <span className="bg-amber-950/80 text-amber-400 border border-amber-800/80 font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded">
-                  SPIELTAG 18
-                </span>
-              </div>
-
-              {/* Top 3 Cards */}
-              <div className="space-y-2 mb-4">
-                {/* Rank 1 */}
-                <div className="bg-slate-950 border-2 border-amber-500/60 p-3 rounded-xl flex items-center gap-3 relative shadow-md">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow">
-                    1
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-white text-xs truncate">Marco Ehret (ST)</span>
-                      <span className="text-[10px] font-black text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800">
-                        9.4 KI-Score
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-300 italic truncate mt-0.5">
-                      "Matchwinner mit Doppelpack und 11.8 km Laufleistung."
-                    </p>
-                  </div>
-                </div>
-
-                {/* Rank 2 */}
-                <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-black text-xs flex items-center justify-center shrink-0">
-                    2
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-slate-200 text-xs truncate">Jonathan Kalchschmidt (ZM)</span>
-                      <span className="text-[10px] font-black text-slate-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                        9.1 KI-Score
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 italic truncate mt-0.5">
-                      "Überragender Taktgeber im Zentrum mit 83% Zweikampfquote."
-                    </p>
-                  </div>
-                </div>
-
-                {/* Rank 3 */}
-                <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-black text-xs flex items-center justify-center shrink-0">
-                    3
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-slate-200 text-xs truncate">Mario Paolillo (IV)</span>
-                      <span className="text-[10px] font-black text-slate-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                        8.8 KI-Score
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 italic truncate mt-0.5">
-                      "Souveräne Abwehrarbeit und ständige Präsenz bei defensiven Standards."
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ROW 4: MODULE 8: KI-Datenimport */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <Brain size={18} />
-              </div>
-              <div>
-                <h3 className="font-black uppercase text-sm tracking-wider text-emerald-400">8. KI-Datenimport (Automatisches Einpflegen)</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Dokumente / PDFs / Bilder per KI analysieren & im System hinterlegen</p>
-              </div>
-            </div>
-            <span className="bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 font-black text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md flex items-center gap-1">
-              <Zap size={12} className="text-yellow-400" />
-              KI-System Aktiv
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Upload Zone */}
-            <div className="bg-slate-950 border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-6 text-center space-y-3 transition-all relative">
-              <input 
-                type="file" 
-                accept=".pdf,image/*" 
-                onChange={handleFileUpload}
-                disabled={isUploading}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
-              />
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
-                {isUploading ? (
-                  <Loader2 size={24} className="animate-spin text-amber-400" />
-                ) : (
-                  <FileUp size={24} />
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-black text-white text-xs uppercase tracking-wider">
-                  {isUploading ? 'KI analysiert Dokument...' : 'PDF oder Bild hierher ziehen oder klicken'}
-                </h4>
-                <p className="text-[10px] text-slate-400 font-medium mt-1">
-                  Unterstützt Spielberichte, Leistungsdiagnostik-Protokolle, Gegneranalysen & Physio-Atteste
-                </p>
-              </div>
-
-              <div className="inline-flex items-center gap-2 bg-emerald-950/80 text-emerald-300 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-emerald-800">
-                <Brain size={13} />
-                <span>KI trägt Daten automatisch ein</span>
-              </div>
-            </div>
-
-            {/* Letzte Uploads List */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-black text-slate-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText size={14} className="text-emerald-400" />
-                  <span>Letzte Importe & KI-Verarbeitungen</span>
-                </h4>
-                {uploads.length > 0 && (
-                  <button
-                    onClick={handleClearUploads}
-                    className="text-[10px] font-bold uppercase text-slate-400 hover:text-red-400 bg-slate-950 hover:bg-red-950/40 border border-slate-800 hover:border-red-800/60 px-2 py-0.5 rounded transition-all"
-                    title="Import-Verlauf leeren"
-                  >
-                    Verlauf leeren
-                  </button>
-                )}
-              </div>
-
-              {uploads.length === 0 ? (
-                <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl text-center space-y-1">
-                  <p className="text-xs font-bold text-slate-400">Keine bisherigen Importe oder KI-Verarbeitungen</p>
-                  <p className="text-[10px] text-slate-500">Der Verlauf ist leer. Laden Sie ein Dokument oder Bild hoch, um automatische KI-Analysen durchzuführen.</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                  {uploads.map(up => (
-                    <div key={up.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="bg-slate-800 text-slate-300 font-black text-[9px] uppercase px-1.5 py-0.5 rounded border border-slate-700">
-                            {up.type}
-                          </span>
-                          <span className="font-black text-white text-xs truncate">{up.name}</span>
-                        </div>
-                        <span className="text-[9px] font-bold text-slate-500 shrink-0">{up.date}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 font-medium leading-normal">
-                        {up.summary}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ROW 5: MODULE 9: FC Auggen Spielplan 2026/2027 (Test- & Pflichtspiele) */}
+        {/* ROW 5: FC Auggen Spielplan 2026/2027 (Test- & Pflichtspiele) */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 mb-4 gap-3">
             <div className="flex items-center gap-2">
@@ -1408,7 +1180,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <Calendar size={18} />
               </div>
               <div>
-                <h3 className="font-black uppercase text-sm tracking-wider text-amber-400">9. FC Auggen Spielplan 2026/2027</h3>
+                <h3 className="font-black uppercase text-sm tracking-wider text-amber-400">FC Auggen Spielplan 2026/2027</h3>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Alle Test- und Pflichtspiele im Überblick</p>
               </div>
             </div>

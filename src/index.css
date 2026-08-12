@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,700;1,900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -7,44 +7,97 @@
   --font-serif: "Playfair Display", serif;
 }
 
+:root {
+  /* Bundesliga Dark Mode (Haupttheme - Pomelli / Mixboard) */
+  --bg-app: #0A0E17;
+  --bg-dark: #0A0E17;
+  --bg-header: #121824;
+  --bg-panel: #1E293B;
+  --bg-segment: #121824;
+  --bg-card: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-dark: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --color-border: #334155;
+  --btn-primary: #10B981;
+  --btn-primary-hover: #059669;
+  --btn-secondary: #1E293B;
+  --btn-secondary-hover: #334155;
+  --color-accent: #F59E0B;
+  --color-accent-hover: #FBBF24;
+  --color-cyan: #06B6D4;
+  --color-red: #E11D48;
+  --color-green: #10B981;
+  --legend-green: #10B981;
+  --pitch-green: #15803D;
+}
+
+/* Light Mode Option (Zweittheme) */
+html.light, body.light {
+  --bg-app: #F8FAFC;
+  --bg-dark: #F8FAFC;
+  --bg-header: #FFFFFF;
+  --bg-panel: #FFFFFF;
+  --bg-segment: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-dark: #0F172A;
+  --text-secondary: #64748B;
+  --color-border: #CBD5E1;
+  --btn-primary: #10B981;
+  --btn-primary-hover: #059669;
+  --btn-secondary: #E2E8F0;
+  --btn-secondary-hover: #CBD5E1;
+  --color-accent: #D97706;
+  --color-accent-hover: #F59E0B;
+}
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased font-sans;
-    color: #f8fafc;
-    background-color: #020617;
+    background-color: var(--bg-app) !important;
+    color: var(--text-primary) !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Ensure text in light backgrounds defaults to dark slate/black */
-  .bg-white, .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-slate-50, .bg-slate-100, .bg-amber-50, .bg-amber-100 {
-    color: #0f172a;
+  /* Tracker-Daten, GPS, km/h, BPM Font Utility */
+  .font-mono, .tracker-data, .gps-metric, .bpm-value, .speed-value {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace !important;
   }
 
   /* Global input, select, textarea legibility and contrast */
-  input, select, textarea {
+  input:not(.bg-transparent), select:not(.bg-transparent), textarea:not(.bg-transparent) {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-header) !important;
+    border-color: var(--color-border) !important;
+    font-weight: 500;
+    border-radius: 0.5rem;
+  }
+
+  input.bg-transparent, select.bg-transparent, textarea.bg-transparent {
+    background-color: transparent !important;
     color: inherit;
-    border-color: #334155;
-    font-weight: 600;
   }
 
   input:focus, select:focus, textarea:focus {
-    border-color: #fbbf24;
+    border-color: #10B981 !important;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3) !important;
   }
 
   option {
-    background-color: #0f172a;
-    color: #f8fafc;
+    background-color: var(--bg-header) !important;
+    color: var(--text-primary) !important;
   }
 
-  select.bg-white option, .bg-white select option, select.text-slate-900 option, select.text-black option {
-    background-color: #ffffff;
-    color: #0f172a;
+  select option {
+    background-color: var(--bg-header) !important;
+    color: var(--text-primary) !important;
   }
 
   ::placeholder {
-    color: #94a3b8;
-    opacity: 0.85;
+    color: #64748B !important;
+    opacity: 1 !important;
   }
 
   /* Custom Scrollbar */
@@ -53,24 +106,94 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-slate-950;
+    background-color: var(--bg-app);
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-amber-500/40 rounded-full hover:bg-amber-500/70;
+    background-color: var(--color-border);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #10B981;
   }
   
   .custom-scrollbar::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-amber-500/30 rounded-full;
+    background-color: #475569;
+    border-radius: 9999px;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    @apply bg-amber-500/60;
+    background-color: #10B981;
   }
 }
 
 @layer components {
+  /* Digital SaaS & Bundesliga Pro Level Button & Panel Classes */
+  .btn-saas-primary {
+    background-color: #10B981 !important;
+    color: #0A0E17 !important;
+    font-weight: 800;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.45) !important;
+    transition: all 0.15s ease-in-out;
+  }
+  .btn-saas-primary:hover {
+    background-color: #059669 !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.65) !important;
+  }
+
+  .btn-saas-secondary {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    font-weight: 700;
+    border: 1px solid #334155 !important;
+    transition: all 0.15s ease-in-out;
+  }
+  .btn-saas-secondary:hover {
+    background-color: #334155 !important;
+  }
+
+  .btn-saas-warning {
+    background-color: #F59E0B !important;
+    color: #0A0E17 !important;
+    font-weight: 900;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.45) !important;
+    transition: all 0.15s ease-in-out;
+  }
+  .btn-saas-warning:hover {
+    background-color: #FBBF24 !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.65) !important;
+  }
+
+  .btn-saas-accent {
+    background-color: #F59E0B !important;
+    color: #0A0E17 !important;
+    font-weight: 900;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5) !important;
+    transition: all 0.15s ease-in-out;
+  }
+  .btn-saas-accent:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.75) !important;
+  }
+
+  /* Legend Highlight Badge with Aura / Glow */
+  .legend-highlight-badge {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    font-weight: 900 !important;
+    border: 2px solid #10B981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+  }
+
+  .legend-highlight-green {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    font-weight: 900 !important;
+    border: 2px solid #10B981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+  }
+
   .watermark-bg {
     position: relative;
     isolation: isolate;
@@ -85,41 +208,11 @@
     background-repeat: no-repeat;
     background-position: center 60%;
     background-size: 50%;
-    filter: grayscale(100%) opacity(0.08);
+    filter: grayscale(100%) opacity(0.03);
     pointer-events: none;
   }
 
-  /* Ensure content stays above watermark */
   .watermark-bg > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .data-grid-header {
-    @apply font-serif italic text-[11px] text-[#E2001A] uppercase tracking-widest;
-  }
-  
-  .brutalist-card {
-    @apply bg-white border border-[#E2001A] shadow-[4px_4px_0px_0px_rgba(226,0,26,1)];
-    /* Use standard CSS instead of @apply for custom class to avoid Vite error */
-    position: relative;
-    isolation: isolate;
-  }
-
-  .brutalist-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    background-image: url('https://storage.googleapis.com/static.aistudio.google.com/content/file-0-22');
-    background-repeat: no-repeat;
-    background-position: center 60%;
-    background-size: 50%;
-    filter: grayscale(100%) opacity(0.08);
-    pointer-events: none;
-  }
-
-  .brutalist-card > * {
     position: relative;
     z-index: 1;
   }

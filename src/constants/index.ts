@@ -20,7 +20,7 @@ export const TABS: { id: TabId; label: string }[] = [
   { id: 'individual_control', label: 'Individuelle Steuerung' },
   { id: 'runs_sw', label: 'Läufe' },
   { id: 'physio_plan', label: 'Physio' },
-  { id: 'tacticboard', label: 'Taktiktafel' },
+  { id: 'tacticboard', label: '📐 TAKTIKTAFEL' },
   { id: 'trainer_view', label: 'Kaderübersicht & Grundordnung' },
   { id: 'training_planning', label: 'Trainingsplanung' },
   { id: 'video_analysis', label: 'Videoanalyse (Beta) 📹' },

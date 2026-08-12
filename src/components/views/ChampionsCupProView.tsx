@@ -516,18 +516,18 @@ export const ChampionsCupProView: React.FC<ChampionsCupProViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* HEADER BANNER */}
-      <div className="bg-gradient-to-r from-red-950 via-slate-900 to-amber-950 border border-amber-500/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-[#0F1C2E] border border-[#1E293B] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-[#00C2FF]/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 mb-3 shadow">
-              <Trophy className="w-4 h-4 text-amber-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#00C2FF]/15 text-[#00C2FF] border border-[#00C2FF]/30 mb-3 shadow-xs">
+              <Trophy className="w-4 h-4 text-[#00C2FF]" />
               <span>FC Auggen · Elite Trainingsliga</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
               <span>FC Auggen – Champions Cup PRO</span>
-              <span className="text-xs bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+              <span className="text-xs bg-[#00C2FF] text-slate-950 font-black px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-sm">
                 PRO
               </span>
             </h1>
@@ -546,7 +546,7 @@ export const ChampionsCupProView: React.FC<ChampionsCupProViewProps> = ({
                 setFormNotes('');
                 setShowAddModal(true);
               }}
-              className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all transform hover:scale-105"
+              className="px-4 py-2.5 bg-[#1A73E8] hover:bg-blue-600 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 border border-[#00C2FF]/40"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>Einheit werten</span>
@@ -554,7 +554,7 @@ export const ChampionsCupProView: React.FC<ChampionsCupProViewProps> = ({
 
             <button
               onClick={handleResetAll}
-              className="px-3 py-2.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-600/50 font-bold text-xs rounded-xl shadow flex items-center gap-2 transition-all"
+              className="px-3 py-2.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/80 font-bold text-xs rounded-xl shadow flex items-center gap-2 transition-all"
               title="Alle Punkte, Einheiten & Badges auf 0 zurücksetzen"
             >
               <RotateCcw className="w-4 h-4 text-rose-400" />
@@ -564,28 +564,28 @@ export const ChampionsCupProView: React.FC<ChampionsCupProViewProps> = ({
         </div>
 
         {/* STATS OVERVIEW CARDS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800">
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#1E293B]">
+          <div className="bg-[#111827] border border-[#1E293B] p-3.5 rounded-xl">
             <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <Calendar className="w-3.5 h-3.5 text-[#00C2FF]" />
               <span>Gewertete Einheiten</span>
             </div>
             <div className="text-xl font-black text-white mt-1">{cupSessions.length} <span className="text-xs text-slate-400 font-normal">Einheiten</span></div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
+          <div className="bg-[#111827] border border-[#1E293B] p-3.5 rounded-xl">
             <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-red-400" />
+              <Target className="w-3.5 h-3.5 text-blue-400" />
               <span>Aktuelles Thema</span>
             </div>
-            <div className="text-xs font-bold text-amber-300 truncate mt-1">
+            <div className="text-xs font-bold text-[#00C2FF] truncate mt-1">
               {cupSessions.length > 0 
                 ? `#${cupSessions[cupSessions.length - 1].unitNumber}: ${trainingUnits.find(u => u.id === cupSessions[cupSessions.length - 1].unitNumber)?.title || 'Unbekannt'}`
                 : 'Einheit #1 (Start)'}
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
+          <div className="bg-[#111827] border border-[#1E293B] p-3.5 rounded-xl">
             <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1.5">
               <Crown className="w-3.5 h-3.5 text-amber-400" />
               <span>Spitzenreiter</span>
@@ -595,12 +595,12 @@ export const ChampionsCupProView: React.FC<ChampionsCupProViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
+          <div className="bg-[#111827] border border-[#1E293B] p-3.5 rounded-xl">
             <div className="text-slate-400 text-[11px] font-medium flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-cyan-400" />
+              <Award className="w-3.5 h-3.5 text-[#00C2FF]" />
               <span>Saison-Finale</span>
             </div>
-            <div className="text-xs font-bold text-cyan-300 truncate mt-1">
+            <div className="text-xs font-bold text-[#00C2FF] truncate mt-1">
               {championsCupWinner ? `🏆 Sieger: ${championsCupWinner}` : 'Top 8 K.O.-Phase'}
             </div>
           </div>
@@ -608,52 +608,52 @@ export const ChampionsCupProView: React.FC<ChampionsCupProViewProps> = ({
       </div>
 
       {/* VIEW TABS NAVIGATION */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[#DADADA] pb-3">
         <button
           onClick={() => setActiveTab('ranking')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs uppercase font-bold flex items-center gap-2 transition-all ${
             activeTab === 'ranking' 
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/10 border border-amber-400' 
-              : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700'
+              ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+              : 'bg-[#E8E8E8] text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#D8D8D8] border border-[#DADADA]'
           }`}
         >
-          <Trophy className="w-4 h-4 text-amber-400" />
+          <Trophy className="w-4 h-4 text-[#0A0A0A]" />
           <span>Tabelle & Wertung</span>
         </button>
 
         <button
           onClick={() => setActiveTab('curriculum')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs uppercase font-bold flex items-center gap-2 transition-all ${
             activeTab === 'curriculum' 
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/10 border border-amber-400' 
-              : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700'
+              ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+              : 'bg-[#E8E8E8] text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#D8D8D8] border border-[#DADADA]'
           }`}
         >
-          <Calendar className="w-4 h-4 text-amber-400" />
+          <Calendar className="w-4 h-4 text-[#0A0A0A]" />
           <span>Die 15 Elite-Einheiten</span>
         </button>
 
         <button
           onClick={() => setActiveTab('badges')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs uppercase font-bold flex items-center gap-2 transition-all ${
             activeTab === 'badges' 
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/10 border border-amber-400' 
-              : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700'
+              ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+              : 'bg-[#E8E8E8] text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#D8D8D8] border border-[#DADADA]'
           }`}
         >
-          <Award className="w-4 h-4 text-amber-400" />
+          <Award className="w-4 h-4 text-[#0A0A0A]" />
           <span>Badges & Trophäen</span>
         </button>
 
         <button
           onClick={() => setActiveTab('playoffs')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 rounded-xl text-xs uppercase font-bold flex items-center gap-2 transition-all ${
             activeTab === 'playoffs' 
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/10 border border-amber-400' 
-              : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700'
+              ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+              : 'bg-[#E8E8E8] text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#D8D8D8] border border-[#DADADA]'
           }`}
         >
-          <Flame className="w-4 h-4 text-amber-400" />
+          <Flame className="w-4 h-4 text-[#0A0A0A]" />
           <span>K.O.-Phase & Finale</span>
         </button>
       </div>

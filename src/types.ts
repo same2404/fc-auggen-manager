@@ -1,5 +1,65 @@
 export type TabId = 'dashboard' | 'personnel' | 'attendance' | 'trainer_view' | 'yearly' | 'cards' | 
-                   'scouting' | 'budget_finance' | 'meetings_calendar' | 'tacticboard' | 'individual_control' | 'runs_sw' | 'physio_plan' | 'summer_prep' | 'winter_prep' | 'team_list' | 'developer_tasks' | 'training_planning' | 'competitive_planning' | 'test_planning' | 'match_report' | 'access_control' | 'player_portal' | 'academy_analysis' | 'champions_cup' | 'video_analysis';
+                   'scouting' | 'budget_finance' | 'meetings_calendar' | 'tacticboard' | 'profi_3d_taktiktafel' | 'individual_control' | 'runs_sw' | 'physio_plan' | 'summer_prep' | 'winter_prep' | 'team_list' | 'developer_tasks' | 'training_planning' | 'competitive_planning' | 'test_planning' | 'match_report' | 'access_control' | 'player_portal' | 'academy_analysis' | 'champions_cup' | 'video_analysis' | 'tracker_academy_report';
+
+export interface PerformanceCategoryScore {
+  score: number; // 0-100
+  analysisText: string;
+}
+
+export interface TrackerAcademyReport {
+  id: string;
+  playerId: string;
+  playerName: string;
+  position: string;
+  age?: number;
+  analysisDate: string;
+  createdAt: number;
+  rawFileName?: string;
+  
+  // Telemetry raw metrics
+  metrics: {
+    totalDistanceKm: number;
+    maxSpeedKmh: number;
+    avgSpeedKmh: number;
+    sprintCount: number;
+    highSpeedDistanceMeters: number;
+    accelerationsCount: number;
+    decelerationsCount: number;
+    avgHeartRateBpm: number;
+    maxHeartRateBpm: number;
+    hrRecoveryDropBpm: number;
+    workloadScore: number;
+    repeatSprintDropoffPercent: number;
+  };
+
+  // 5 Performance Domains
+  categories: {
+    ausdauer: PerformanceCategoryScore;
+    belastungsstruktur: PerformanceCategoryScore;
+    gesamtfitness: PerformanceCategoryScore;
+    endgeschwindigkeit: PerformanceCategoryScore;
+    repeatSprintAbility: PerformanceCategoryScore;
+  };
+
+  // Overall Score & Comparison
+  overallScore: number; // 0-100
+  teamAverageOverall: number;
+  classification: string; // e.g. "Überdurchschnittlich (Top-Performer)"
+
+  // Strengths & Improvement
+  strengths: string[];
+  improvementAreas: string[];
+
+  // Trainer Recommendations
+  trainerRecommendations: {
+    measures: string[];
+    focusAreasNextWeeks: string;
+    loadControlNotes: string;
+  };
+
+  // Raw analysis summary / notes
+  rawAnalysisNotes?: string;
+}
 
 export interface AcademyPlayerEvaluation {
   spieler: string;
@@ -77,7 +137,7 @@ export interface TimelineEvent {
 
 export interface SceneClip {
   id: string;
-  category: 'TORE' | 'CHANCEN' | 'STANDARDS' | 'PRESSING' | 'AUFBAU' | 'UMSCHALTMOMENTE';
+  category: 'TORE' | 'CHANCEN' | 'STANDARDS' | 'PRESSING' | 'AUFBAU' | 'UMSCHALTMOMENTE' | 'LAUFWEGE' | 'FEHLERANALYSE' | 'BALLBESITZ';
   subcategory: string;
   title: string;
   startTimeSeconds: number; // 6s before event
@@ -89,6 +149,8 @@ export interface SceneClip {
   pitchZone: 'Abwehr' | 'Mittelfeld' | 'Angriff' | 'Strafraum' | 'Flügel' | 'Halbraum';
   teamInvolved: 'FC Auggen' | 'Gegner' | 'Beide';
   thumbnailUrl?: string;
+  tacticalRating?: string;
+  improvementSuggestions?: string;
 }
 
 export interface AiVideoAnalysisRecord {
@@ -111,6 +173,27 @@ export interface AiVideoAnalysisRecord {
   mappedPlayerIds?: string[];
 }
 
+export interface SubstitutionRecord {
+  minute: number | string;
+  playerIn: string;
+  playerOut: string;
+  note?: string;
+}
+
+export interface GoalRecord {
+  minute: number | string;
+  scorer: string;
+  assist?: string;
+  type?: 'Goal' | 'Penalty' | 'OwnGoal' | string;
+}
+
+export interface CardDetail {
+  minute: number | string;
+  player: string;
+  cardType: 'Yellow' | 'YellowRed' | 'Red';
+  reason?: string;
+}
+
 export interface VideoClip {
   id: string;
   title: string;
@@ -127,9 +210,25 @@ export interface MatchAnalysis {
   matchId?: string | number;
   opponent?: string;
   date?: string;
+  kickOff?: string;
+  location?: string;
   category?: 'Pflichtspiel' | 'Testspiel' | 'Pokalspiel' | string;
   isHome?: boolean;
   result?: string;
+
+  // Imported Pflichtspiel Base Data
+  startingLineup?: string[] | string;
+  substitutes?: string[] | string;
+  substitutions?: SubstitutionRecord[] | string;
+  scorers?: GoalRecord[] | string;
+  cards?: CardDetail[] | string;
+  matchNotes?: string;
+  isAutoImported?: boolean;
+  importedMatchTimestamp?: string;
+
+  // Manual Ergänzungen (Match Report / Spielbericht)
+  berichtText?: string; // Detaillierter Spielbericht Fließtext
+  teamRating?: string | number; // Teamnote (1-10)
   lineupImage?: string;
   lineupImages?: string[];
   openingPlay?: string;
@@ -323,6 +422,13 @@ export interface Match {
   notes?: string;
   scorers?: string;
   cards?: string;
+  
+  // Extended Pflichtspiel Data
+  startingLineup?: string[];
+  substitutes?: string[];
+  substitutions?: SubstitutionRecord[];
+  goalRecords?: GoalRecord[];
+  cardDetails?: CardDetail[];
 }
 
 export interface MatchPlanningEntry {
@@ -378,6 +484,7 @@ export interface Player {
   image?: string;
   additionalImages?: string[];
   geburtsdatum?: string;
+  age?: number;
   wochentag?: string;
   status?: string;
   notizen?: string;
@@ -625,7 +732,7 @@ export interface ScoutingEntry {
   position: string;
   club: string;
   marketValue: string;
-  recommendation: 'Verpflichten' | 'Beobachten' | 'Kein Interesse';
+  recommendation: 'Verpflichten' | 'Beobachten' | 'Kein Interesse' | 'Absage';
   category: 'Abwehr' | 'Mittelfeld' | 'Flügel' | 'Sturm' | 'Sonstige';
   date: string; // Added date
   createdAt?: number; // Added for sorting
@@ -685,6 +792,26 @@ export interface PlayerPerformance {
   trend?: 'positiv' | 'stagnierend' | 'rückläufig';
   nlzAnalysis?: string;
   jahrgang?: number;
+}
+
+export interface DecodedTrackerData {
+  id?: string;
+  filename?: string;
+  date?: string;
+  totalDistance?: number;
+  highSpeedDistance?: number;
+  sprintDistance?: number;
+  maxSpeed?: number;
+  sprintsCount?: number;
+  accelerationsCount?: number;
+  decelerationsCount?: number;
+  avgHeartRate?: number;
+  maxHeartRate?: number;
+  workloadScore?: number;
+  heatmapDescription?: string;
+  tacticalNotes?: string;
+  recommendations?: string;
+  [key: string]: any;
 }
 
 export interface PlayerPerformanceTeam {

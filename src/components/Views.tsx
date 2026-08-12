@@ -25,3 +25,5 @@ export * from './views/AcademyAnalysisView';
 export * from './views/ChampionsCupProView';
 export * from './views/DashboardView';
 export * from './views/VideoAnalysisView';
+export * from './views/Profi3DTacticBoardView';
+export * from './views/TrackerAcademyReportView';

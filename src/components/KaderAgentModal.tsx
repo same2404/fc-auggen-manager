@@ -76,7 +76,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
 }) => {
   const [activePreset, setActivePreset] = useState<'beste_formation' | 'topform_startelf' | 'vollbild_ordnung' | 'laufwege_profi'>(initialPreset);
   const [situation, setSituation] = useState<GameSituation>('offensiv');
-  const [selectedFormation, setSelectedFormation] = useState<TacticalFormation>('4-3-3');
+  const [selectedFormation, setSelectedFormation] = useState<TacticalFormation>('4-2-3-1');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(initialPreset === 'vollbild_ordnung');
   const [is3D, setIs3D] = useState<boolean>(true);
   const [tiltAngle, setTiltAngle] = useState<number>(20); // 0 (2D), 18 (Flach 3D), 28 (Steil 3D)
@@ -382,54 +382,54 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-2 sm:p-4 overflow-hidden text-slate-100 font-sans ${isFullscreen ? 'p-0 border-0 rounded-none' : ''}`}>
-      <div className={`relative flex flex-col bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden w-full h-full max-w-7xl max-h-[96vh] ${isFullscreen ? 'max-w-none max-h-none rounded-none border-0' : ''}`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-[#1A1A1A]/60 backdrop-blur-md p-2 sm:p-4 overflow-hidden text-[#F8FAFC] font-sans ${isFullscreen ? 'p-0 border-0 rounded-none' : ''}`}>
+      <div className={`relative flex flex-col bg-[#FFFFFF] border border-[#DADADA] rounded-3xl shadow-xl overflow-hidden w-full h-full max-w-7xl max-h-[96vh] ${isFullscreen ? 'max-w-none max-h-none rounded-none border-0' : ''}`}>
         
         {/* Header Bar */}
-        <header className="bg-gradient-to-r from-red-950 via-slate-900 to-slate-950 px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <header className="bg-[#E8E8E8] px-4 py-3 border-b border-[#DADADA] flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-red-900/40 border border-amber-300">
-              <Brain size={20} className="text-slate-950 animate-pulse" />
+            <div className="w-10 h-10 rounded-2xl bg-[#00C2FF] flex items-center justify-center text-[#0A0A0A] font-black shadow-xs border border-[#00C2FF]">
+              <Brain size={20} className="text-[#0A0A0A] animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md">
-                  KaderAgent Profi-Modus
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#0A0A0A] bg-[#00D47A] px-2 py-0.5 rounded-md border border-[#00D47A]">
+                  Kader Profi-Modus
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-[#00D47A] animate-ping" />
               </div>
-              <h1 className="text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <h1 className="text-base font-black uppercase tracking-wider text-[#F8FAFC] flex items-center gap-2">
                 Beste Aufstellung & Formation
               </h1>
             </div>
           </div>
 
           {/* Preset Selector Shortcuts */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar bg-[#FFFFFF] p-1.5 rounded-2xl border border-[#DADADA]">
             <button
               onClick={() => handlePresetChange('beste_formation')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                activePreset === 'beste_formation' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                activePreset === 'beste_formation' ? 'bg-[#FF4C4C] text-[#FFFFFF] shadow-xs' : 'text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#E8E8E8]'
               }`}
             >
-              <Sparkles size={13} className="text-amber-300" />
+              <Sparkles size={13} className="text-[#FFFFFF]" />
               <span>Beste Formation</span>
             </button>
 
             <button
               onClick={() => handlePresetChange('topform_startelf')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                activePreset === 'topform_startelf' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                activePreset === 'topform_startelf' ? 'bg-[#00D47A] text-[#0A0A0A] shadow-xs' : 'text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#E8E8E8]'
               }`}
             >
-              <Award size={13} className="text-emerald-300" />
+              <Award size={13} className="text-[#0A0A0A]" />
               <span>Startelf Topform</span>
             </button>
 
             <button
               onClick={() => handlePresetChange('vollbild_ordnung')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                activePreset === 'vollbild_ordnung' ? 'bg-amber-500 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                activePreset === 'vollbild_ordnung' ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-xs' : 'text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#E8E8E8]'
               }`}
             >
               <Maximize2 size={13} />
@@ -439,7 +439,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
             <button
               onClick={() => handlePresetChange('laufwege_profi')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                activePreset === 'laufwege_profi' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                activePreset === 'laufwege_profi' ? 'bg-[#4C6FFF] text-[#FFFFFF] shadow-xs' : 'text-[#4A4A4A] hover:text-[#F8FAFC] hover:bg-[#E8E8E8]'
               }`}
             >
               <Compass size={13} />
@@ -451,22 +451,22 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopyLineup}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center gap-1 text-xs font-bold cursor-pointer"
+              className="p-2 rounded-xl bg-[#FFFFFF] hover:bg-[#121824] text-[#F8FAFC] border border-[#DADADA] transition-all flex items-center gap-1 text-xs font-bold cursor-pointer"
               title="Aufstellung in Zwischenablage kopieren"
             >
-              {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+              {copied ? <Check size={16} className="text-[#00D47A]" /> : <Copy size={16} />}
               <span className="hidden sm:inline">{copied ? 'Kopiert!' : 'Kopieren'}</span>
             </button>
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-[#FFFFFF] hover:bg-[#121824] text-[#F8FAFC] border border-[#DADADA] transition-all cursor-pointer"
               title={isFullscreen ? 'Vollbild verlassen' : 'Vollbildmodus'}
             >
               {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/80 text-slate-200 hover:text-rose-200 border border-slate-700 hover:border-rose-700 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-[#FFFFFF] hover:bg-[#FF4C4C]/10 text-[#F8FAFC] hover:text-[#FF4C4C] border border-[#DADADA] hover:border-[#FF4C4C] transition-all cursor-pointer"
               title="Schließen"
             >
               <X size={20} />
@@ -475,12 +475,14 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
         </header>
 
         {/* Sub-Navigation Tabs */}
-        <div className="bg-slate-950 border-b border-slate-800 px-4 py-2 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
+        <div className="bg-[#1A1A1A] border-b border-[#3A3A3A] px-4 py-2 flex items-center justify-between shrink-0 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('3d_tafel')}
               className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === '3d_tafel' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-slate-200'
+                activeTab === '3d_tafel' 
+                  ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+                  : 'text-slate-300 hover:text-white hover:bg-[#2A2A2A]'
               }`}
             >
               <Layers size={14} />
@@ -489,7 +491,9 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
             <button
               onClick={() => setActiveTab('kader_bewertung')}
               className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === 'kader_bewertung' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-slate-200'
+                activeTab === 'kader_bewertung' 
+                  ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+                  : 'text-slate-300 hover:text-white hover:bg-[#2A2A2A]'
               }`}
             >
               <UserCheck size={14} />
@@ -498,7 +502,9 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
             <button
               onClick={() => setActiveTab('taktik_begruendung')}
               className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === 'taktik_begruendung' ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-400 hover:text-slate-200'
+                activeTab === 'taktik_begruendung' 
+                  ? 'bg-[#00C2FF] text-[#0A0A0A] font-black shadow-[0_0_10px_rgba(0,194,255,0.4)] border border-[#00C2FF]' 
+                  : 'text-slate-300 hover:text-white hover:bg-[#2A2A2A]'
               }`}
             >
               <Info size={14} />
@@ -534,7 +540,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
               <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 z-10 backdrop-blur">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Formation:</span>
-                  {(['4-3-3', '4-2-3-1', '3-5-2', '4-4-2', '3-4-3', '4-1-4-1', '3-4-1-2'] as TacticalFormation[]).map((fmt) => (
+                  {(['4-4-2', '4-2-3-1', '4-1-4-1', '3-4-3'] as TacticalFormation[]).map((fmt) => (
                     <button
                       key={fmt}
                       onClick={() => setSelectedFormation(fmt)}
@@ -816,7 +822,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-black uppercase tracking-wider text-white">
-                    Spielerform & Risikoindikatoren (KaderAgent Analyse)
+                    Spielerform & Risikoindikatoren (Kader-Analyse)
                   </h3>
                   <p className="text-xs text-slate-400">
                     Kombiniert Formwerte, High-Intensity Sprints, Heatmaps & Physio-Risiken aller Kader-Spieler.
@@ -910,7 +916,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
                   </div>
                   <div>
                     <h3 className="text-lg font-black uppercase text-white tracking-wider">
-                      Taktische Begründung des KaderAgenten
+                      Taktische Begründung der Aufstellung
                     </h3>
                     <p className="text-xs text-amber-400 font-bold">
                       Ausgewählte Formation: {selectedFormation} | Ausgewählte Ausrichtung: {situation.toUpperCase()}
@@ -924,7 +930,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
                       <CheckCircle2 size={14} className="text-emerald-400" /> Warum diese 11 Spieler gewählt wurden:
                     </h4>
                     <p className="text-slate-300 leading-relaxed">
-                      Der Agent hat automatisch die Spieler mit den höchsten High-Intensity-Werten ({evaluatedPlayers.filter(p => p.status === 'topform').length} Topform-Akteure) und den geringsten Verletzungsrisiken ausgewählt. Spieler mit Physio-Einträgen oder hoher Ermüdung wurden geschont.
+                      Das System hat automatisch die Spieler mit den höchsten High-Intensity-Werten ({evaluatedPlayers.filter(p => p.status === 'topform').length} Topform-Akteure) und den geringsten Verletzungsrisiken ausgewählt. Spieler mit Physio-Einträgen oder hoher Ermüdung wurden geschont.
                     </p>
                   </div>
 
@@ -963,60 +969,60 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
 
           {/* Right Inspector Sidebar for Selected Player Node & Manual Swap */}
           {activeTab === '3d_tafel' && (
-            <div className="w-full lg:w-80 bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-800 p-4 overflow-y-auto shrink-0 flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">
+            <div className="w-full lg:w-80 bg-[#FFFFFF] border-t lg:border-t-0 lg:border-l border-[#DADADA] p-4 overflow-y-auto shrink-0 flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-[#DADADA] pb-2">
+                <span className="text-[10px] font-black uppercase text-[#00C2FF] tracking-wider">
                   Position & Laufweg Details
                 </span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-xs font-bold text-white">
+                <span className="px-2 py-0.5 rounded bg-[#E8E8E8] text-xs font-bold text-[#F8FAFC]">
                   {selectedNode.positionKey}
                 </span>
               </div>
 
               {selectedNode.player ? (
-                <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+                <div className="bg-[#121824] p-3.5 rounded-2xl border border-[#DADADA] space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center font-black text-slate-950 text-sm">
+                    <div className="w-10 h-10 rounded-xl bg-[#00C2FF] flex items-center justify-center font-black text-[#0A0A0A] text-sm">
                       {selectedNode.player.player.rückennummer || selectedNode.player.player.number || '10'}
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-white">
+                      <h4 className="font-bold text-sm text-[#F8FAFC]">
                         {selectedNode.player.player.firstName} {selectedNode.player.player.lastName}
                       </h4>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">{selectedNode.positionLabel}</p>
+                      <p className="text-[10px] text-[#4A4A4A] font-bold uppercase">{selectedNode.positionLabel}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-[9px] font-bold text-slate-500 uppercase block">Topform Index</span>
-                      <span className="font-black text-emerald-400 text-sm">{selectedNode.player.topformScore}%</span>
+                    <div className="bg-[#FFFFFF] p-2 rounded-xl border border-[#DADADA]">
+                      <span className="text-[9px] font-bold text-[#4A4A4A] uppercase block">Topform Index</span>
+                      <span className="font-black text-[#00D47A] text-sm">{selectedNode.player.topformScore}%</span>
                     </div>
-                    <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                      <span className="text-[9px] font-bold text-slate-500 uppercase block">Intensität</span>
-                      <span className="font-black text-sky-400 text-sm">{selectedNode.intensity}</span>
+                    <div className="bg-[#FFFFFF] p-2 rounded-xl border border-[#DADADA]">
+                      <span className="text-[9px] font-bold text-[#4A4A4A] uppercase block">Intensität</span>
+                      <span className="font-black text-[#00C2FF] text-sm">{selectedNode.intensity}</span>
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase text-slate-400">Positionsspezifische Evaluierung:</span>
-                    <p className="text-xs text-amber-200 leading-relaxed bg-amber-950/30 p-2.5 rounded-xl border border-amber-800/40">
+                    <span className="text-[9px] font-black uppercase text-[#4A4A4A]">Positionsspezifische Evaluierung:</span>
+                    <p className="text-xs text-[#F8FAFC] leading-relaxed bg-[#FFFFFF] p-2.5 rounded-xl border border-[#DADADA]">
                       {selectedNode.positionRunEvaluation}
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500">Kein Spieler auf dieser Position zugewiesen.</p>
+                <p className="text-xs text-[#4A4A4A]">Kein Spieler auf dieser Position zugewiesen.</p>
               )}
 
               {/* Manual Player Swap / Override Controls */}
-              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+              <div className="bg-[#121824] p-3 rounded-2xl border border-[#DADADA] space-y-2">
+                <span className="text-[10px] font-black uppercase text-[#4A4A4A] tracking-wider flex items-center justify-between">
                   <span>Spieler manuell tauschen:</span>
                   {Object.keys(manualOverrides).length > 0 && (
                     <button
                       onClick={() => setManualOverrides({})}
-                      className="text-amber-400 text-[9px] font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                      className="text-[#00C2FF] text-[9px] font-bold flex items-center gap-1 hover:underline cursor-pointer"
                     >
                       <RefreshCw size={10} /> Reset AI
                     </button>
@@ -1032,7 +1038,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
                       [selectedNode.positionKey]: found
                     }));
                   }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full bg-[#FFFFFF] border border-[#DADADA] rounded-xl px-2.5 py-1.5 text-xs text-[#F8FAFC] font-medium focus:outline-none focus:border-[#00C2FF] cursor-pointer"
                 >
                   <option value="">-- Spieler wählen --</option>
                   {evaluatedPlayers.map(ev => (
@@ -1045,7 +1051,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
 
               {/* Position selector nodes list */}
               <div className="space-y-1.5 flex-1">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                <span className="text-[10px] font-black uppercase text-[#4A4A4A] tracking-wider">
                   Alle Startelf-Positionen:
                 </span>
                 <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
@@ -1054,7 +1060,7 @@ export const KaderAgentModal: React.FC<KaderAgentModalProps> = ({
                       key={node.positionKey}
                       onClick={() => setSelectedPosKey(node.positionKey)}
                       className={`w-full p-2 rounded-xl text-left text-xs transition-all flex items-center justify-between cursor-pointer ${
-                        selectedPosKey === node.positionKey ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-300 hover:bg-slate-800'
+                        selectedPosKey === node.positionKey ? 'bg-[#00C2FF] text-[#0A0A0A] font-black' : 'bg-[#121824] text-[#F8FAFC] hover:bg-[#E8E8E8]'
                       }`}
                     >
                       <span className="font-bold">{node.positionKey} - {node.player?.player.lastName || 'Unbelegt'}</span>

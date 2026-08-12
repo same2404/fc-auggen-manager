@@ -21,6 +21,7 @@ import {
 import { SummerPrepUnit } from '../../types';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { fixOklchForHtml2Canvas } from '../../utils/pdfExportHelper';
 
 interface PreparationViewProps {
   title: string;
@@ -164,6 +165,7 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
         backgroundColor: '#ffffff',
         windowWidth: 1200,
         onclone: (clonedDoc) => {
+          fixOklchForHtml2Canvas(clonedDoc);
           const clonedElement = clonedDoc.getElementById('prep-table-container');
           if (clonedElement) {
             clonedElement.style.width = '1200px';
@@ -449,17 +451,17 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden print:bg-white print:text-black">
+    <div className="flex flex-col h-full bg-[#0A0E17] text-[#F8FAFC] p-2 sm:p-4 rounded-2xl border border-[#334155] overflow-hidden print:bg-[#1E293B] print:text-black">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex flex-col gap-3 shrink-0 rounded-t-2xl">
+      <div className="p-4 border-b border-[#334155] bg-[#121824] flex flex-col gap-3 shrink-0 rounded-2xl shadow-lg">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-md">
+            <div className="w-8 h-8 rounded-xl bg-[#10B981] flex items-center justify-center text-white shadow-md">
               {icon}
             </div>
             <div>
-              <h2 className="text-base font-black uppercase tracking-wider text-amber-400 leading-tight">{title}</h2>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{subtitle}</p>
+              <h2 className="text-base font-black uppercase tracking-wider text-[#10B981] leading-tight">{title}</h2>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#94A3B8] mt-0.5">{subtitle}</p>
             </div>
           </div>
           <div className="flex gap-2 items-center print:hidden">
@@ -471,35 +473,35 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
             <button 
               type="button"
               onClick={handleExportPDF}
-              className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:brightness-110 transition-all flex items-center gap-1.5 shadow-md"
+              className="bg-[#10B981] hover:bg-[#059669] text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md border border-[#10B981]"
             >
               <Download size={12} /> PDF Download
             </button>
             <button 
               type="button"
               onClick={handleEmailPlan}
-              className="bg-slate-900 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+              className="bg-[#1E293B] text-[#F8FAFC] border border-[#334155] px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-[#334155] transition-colors flex items-center gap-1.5"
             >
               <Mail size={12} /> Per E-Mail
             </button>
             <button 
               type="button"
               onClick={handleWhatsAppPlan}
-              className="bg-slate-900 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+              className="bg-[#1E293B] text-[#F8FAFC] border border-[#334155] px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-[#334155] transition-colors flex items-center gap-1.5"
             >
               <MessageSquare size={12} /> WhatsApp
             </button>
             <button 
               type="button"
               onClick={handlePrint}
-              className="bg-slate-900 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-800 transition-colors flex items-center gap-1.5"
+              className="bg-[#1E293B] text-[#F8FAFC] border border-[#334155] px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-[#334155] transition-colors flex items-center gap-1.5"
             >
               <FileText size={12} /> Drucken
             </button>
             {isEditing && (
               <button 
                 onClick={() => handleAddEntry(0)}
-                className="bg-amber-500 text-slate-950 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-amber-400 transition-colors flex items-center gap-1.5 shadow-md active:scale-95"
+                className="bg-[#10B981] hover:bg-[#059669] text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-md active:scale-95 border border-[#10B981]"
               >
                 <Plus size={12} /> + Einheit
               </button>
@@ -508,9 +510,9 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
         </div>
 
         {onDateRangeChange && isEditing && (
-          <div className="flex items-center gap-4 bg-slate-950 p-2.5 border border-slate-800 rounded-xl print:hidden">
+          <div className="flex items-center gap-4 bg-[#1E293B] p-2.5 border border-[#334155] rounded-xl print:hidden">
             <div className="flex items-center gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Start:</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Start:</label>
               <input 
                 type="date" 
                 value={localStartDate}
@@ -518,11 +520,11 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                   setLocalStartDate(e.target.value);
                   onDateRangeChange(e.target.value, localEndDate);
                 }}
-                className="text-xs font-bold bg-slate-900 text-slate-100 border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400"
+                className="text-xs font-bold bg-[#121824] text-[#F8FAFC] border border-[#334155] rounded-lg px-2 py-1 focus:outline-none focus:border-[#10B981]"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ende:</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">Ende:</label>
               <input 
                 type="date" 
                 value={localEndDate}
@@ -530,45 +532,45 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                   setLocalEndDate(e.target.value);
                   onDateRangeChange(localStartDate, e.target.value);
                 }}
-                className="text-xs font-bold bg-slate-900 text-slate-100 border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400"
+                className="text-xs font-bold bg-[#121824] text-[#F8FAFC] border border-[#334155] rounded-lg px-2 py-1 focus:outline-none focus:border-[#10B981]"
               />
             </div>
-            <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 ml-auto">
+            <div className="text-[10px] font-black uppercase tracking-wider text-[#10B981] ml-auto">
               {weekCount} Wochen Planung
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-auto custom-scrollbar p-4 print:p-0 print:overflow-visible print:bg-white">
-        <div ref={tableRef} id="prep-table-container" className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden min-w-[1000px] print:shadow-none print:border-gray-300 print:min-w-0 print:w-full print:bg-white print:text-black">
-          <table className="w-full border-collapse text-xs print:text-[8px] text-slate-100">
+      <div className="flex-1 overflow-auto custom-scrollbar p-4 print:p-0 print:overflow-visible print:bg-[#1E293B]">
+        <div ref={tableRef} id="prep-table-container" className="bg-[#121824] border border-[#334155] rounded-2xl shadow-2xl overflow-hidden min-w-[1000px] print:shadow-none print:border-[#334155] print:min-w-0 print:w-full print:bg-[#1E293B] print:text-black">
+          <table className="w-full border-collapse text-xs print:text-[8px] text-[#F8FAFC]">
             <thead>
-              <tr className="bg-slate-950 text-amber-400 uppercase font-black tracking-wider text-[11px] border-b border-slate-800">
-                <th className="p-3 border-r border-slate-800/80 text-left w-10">KW</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-10">TE</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-28">Datum</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-14">Tag</th>
+              <tr className="bg-[#1E293B] text-[#10B981] uppercase font-black tracking-wider text-[11px] border-b border-[#334155]">
+                <th className="p-3 border-r border-[#334155] text-left w-10">KW</th>
+                <th className="p-3 border-r border-[#334155] text-left w-10">TE</th>
+                <th className="p-3 border-r border-[#334155] text-left w-28">Datum</th>
+                <th className="p-3 border-r border-[#334155] text-left w-14">Tag</th>
                 {config.showStartEnd ? (
                   <>
-                    <th className="p-3 border-r border-slate-800/80 text-left w-20">Start</th>
-                    <th className="p-3 border-r border-slate-800/80 text-left w-20">Ende</th>
+                    <th className="p-3 border-r border-[#334155] text-left w-20">Start</th>
+                    <th className="p-3 border-r border-[#334155] text-left w-20">Ende</th>
                   </>
                 ) : (
-                  <th className="p-3 border-r border-slate-800/80 text-left w-20">Zeit</th>
+                  <th className="p-3 border-r border-[#334155] text-left w-20">Zeit</th>
                 )}
-                <th className="p-3 border-r border-slate-800/80 text-left w-20">Treff</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-28">Typ</th>
-                <th className="p-3 border-r border-slate-800/80 text-left">Inhalt / Aktivität</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-28">Ort</th>
-                {config.showOpponent && <th className="p-3 border-r border-slate-800/80 text-left w-36">Gegner</th>}
-                <th className="p-3 border-r border-slate-800/80 text-left w-24">Ergebnis</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-28">Status</th>
-                <th className="p-3 border-r border-slate-800/80 text-left w-36">Notizen</th>
+                <th className="p-3 border-r border-[#334155] text-left w-20">Treff</th>
+                <th className="p-3 border-r border-[#334155] text-left w-28">Typ</th>
+                <th className="p-3 border-r border-[#334155] text-left">Inhalt / Aktivität</th>
+                <th className="p-3 border-r border-[#334155] text-left w-28">Ort</th>
+                {config.showOpponent && <th className="p-3 border-r border-[#334155] text-left w-36">Gegner</th>}
+                <th className="p-3 border-r border-[#334155] text-left w-24">Ergebnis</th>
+                <th className="p-3 border-r border-[#334155] text-left w-28">Status</th>
+                <th className="p-3 border-r border-[#334155] text-left w-36">Notizen</th>
                 {isEditing && <th className="p-3 text-center w-12 print:hidden"></th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 bg-slate-950">
+            <tbody className="divide-y divide-[#334155] bg-[#121824]">
               {sortedData.length === 0 ? (
                 <tr className="border-b border-slate-800 text-slate-500 italic">
                   <td colSpan={config.showOpponent ? (config.showStartEnd ? 15 : 14) : (config.showStartEnd ? 14 : 13)} className="p-12 text-center">
@@ -653,7 +655,7 @@ export const PreparationView: React.FC<PreparationViewProps> = ({
                         >
                           {Object.keys(typeColors).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
-                        <span className={`hidden print:inline-block px-1.5 py-0.5 rounded-sm border text-[6px] font-black uppercase ${typeColors[entry.type] || 'bg-gray-100'}`}>
+                        <span className={`hidden print:inline-block px-1.5 py-0.5 rounded-sm border text-[6px] font-black uppercase ${typeColors[entry.type] || 'bg-[#1E293B]'}`}>
                           {entry.type}
                         </span>
                       </div>

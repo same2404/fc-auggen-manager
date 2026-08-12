@@ -82,7 +82,9 @@ service cloud.firestore {
     match /player_session_logs/{id} { allow read, write: if true; }
     match /academy_evaluations/{id} { allow read, write: if true; }
     match /academy_weekly_reports/{id} { allow read, write: if true; }
+    match /tracker_academy_reports/{id} { allow read, write: if true; }
     match /video_analyses/{id} { allow read, write: if true; }
+    match /custom_formations/{id} { allow read, write: if true; }
     match /test/{id} { allow read, write: if true; }
   }
 }

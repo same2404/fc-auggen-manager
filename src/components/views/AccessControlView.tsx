@@ -85,12 +85,12 @@ export const AccessControlView: React.FC<{
   }
 
   return (
-    <div className="p-6 bg-white min-h-screen">
+    <div className="p-6 bg-[#1E293B] min-h-screen">
       <div className="mb-8 border-b-4 border-black pb-4 flex items-center gap-4">
         <Shield size={32} />
         <div>
           <h1 className="text-3xl font-black uppercase leading-none">Zugriffsverwaltung</h1>
-          <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-widest">Verwalten Sie, wer Zugriff auf die App hat</p>
+          <p className="text-[10px] text-[#94A3B8] font-bold mt-1 uppercase tracking-widest">Verwalten Sie, wer Zugriff auf die App hat</p>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ export const AccessControlView: React.FC<{
           <h2 className="text-xl font-black uppercase text-red-600 flex items-center gap-2 leading-none">
             <Shield className="animate-pulse" size={24} /> UNSICHTBARER APP-SCHUTZ (SECURITY SHIELD)
           </h2>
-          <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide mt-2 max-w-3xl leading-relaxed">
+          <p className="text-[11px] font-bold text-[#CBD5E1] uppercase tracking-wide mt-2 max-w-3xl leading-relaxed">
             Wenn dieser Schutz aktiv ist, können NUR Sie (als Besitzer) und im Hintergrund manuell freigegebene Personen die App nutzen. 
             Alle anderen (oder nicht angemeldeten) Nutzer sehen beim Öffnen der App stattdessen eine unauffällige Fehlermeldung: 
             <span className="text-[#C00000] font-black"> „MOMENTAN AUS TECHNISCHEN GRÜNDEN KEIN ZUGRIFF MÖGLICH“</span>. 
@@ -109,7 +109,7 @@ export const AccessControlView: React.FC<{
         </div>
         <div className="flex items-center gap-4 shrink-0">
           <span className="font-mono text-xs font-black uppercase">
-            STATUS: <span className={securityLockActive ? "text-green-600 bg-green-100 px-2 py-1 border border-green-600" : "text-gray-500 bg-gray-100 px-2 py-1 border border-gray-400"}>
+            STATUS: <span className={securityLockActive ? "text-green-600 bg-green-100 px-2 py-1 border border-green-600" : "text-[#94A3B8] bg-[#1E293B] px-2 py-1 border border-[#334155]"}>
               {securityLockActive ? 'AKTIV (GESPERRT)' : 'INAKTIV (OFFEN)'}
             </span>
           </span>
@@ -118,7 +118,7 @@ export const AccessControlView: React.FC<{
             className={`px-6 py-3 border-2 border-black font-black uppercase text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${
               securityLockActive 
                 ? 'bg-[#C00000] text-white hover:bg-red-700' 
-                : 'bg-white text-black hover:bg-gray-100'
+                : 'bg-[#1E293B] text-black hover:bg-[#1E293B]'
             }`}
           >
             {securityLockActive ? 'AUSSCHALTEN (APP ÖFFNEN)' : 'EINSCHALTEN (APP SPERREN)'}
@@ -134,7 +134,7 @@ export const AccessControlView: React.FC<{
           </div>
           <div className="space-y-4">
             {requests.length === 0 ? (
-              <div className="p-8 border-2 border-dashed border-gray-300 text-center text-gray-400 font-black uppercase text-xs">
+              <div className="p-8 border-2 border-dashed border-[#334155] text-center text-gray-400 font-black uppercase text-xs">
                 Keine ausstehenden Anfragen
               </div>
             ) : (
@@ -142,7 +142,7 @@ export const AccessControlView: React.FC<{
                 <div key={req.id} className="border-2 border-black p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   <div>
                     <div className="font-black uppercase text-sm">{req.name}</div>
-                    <div className="text-[10px] text-gray-500 flex items-center gap-1">
+                    <div className="text-[10px] text-[#94A3B8] flex items-center gap-1">
                       <Mail size={10} /> {req.email}
                     </div>
                     <div className="text-[9px] text-gray-400 mt-1 italic">
@@ -184,7 +184,7 @@ export const AccessControlView: React.FC<{
                       <span className="bg-amber-400 text-black text-[8px] px-1 py-0.5 border border-black italic">OWNER</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-gray-500">{user.email}</div>
+                  <div className="text-[10px] text-[#94A3B8]">{user.email}</div>
                   <div className="mt-1 flex items-center gap-2">
                     <span className={`text-[8px] font-black uppercase px-1 py-0.5 border border-black ${
                       user.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'

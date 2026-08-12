@@ -46,13 +46,13 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 text-center">
+        <div className="min-h-screen bg-[#121824] flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-[#1E293B] border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 text-center">
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-black">
               <AlertTriangle size={32} />
             </div>
             <h1 className="text-2xl font-black uppercase tracking-tighter mb-4">Hoppla!</h1>
-            <p className="text-gray-600 mb-8 font-bold">
+            <p className="text-[#94A3B8] mb-8 font-bold">
               {isFirestoreError ? errorMessage : 'Etwas ist schief gelaufen. Bitte versuche die Seite neu zu laden.'}
             </p>
             <button

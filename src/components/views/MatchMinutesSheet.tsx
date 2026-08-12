@@ -59,45 +59,45 @@ export const MatchMinutesSheet: React.FC<MatchMinutesSheetProps> = ({
   });
 
   return (
-    <div className="flex flex-col h-full bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-      <div className="p-2 border-b-2 border-black bg-gray-50 flex justify-between items-center shrink-0">
+    <div className="flex flex-col h-full bg-[#FFFFFF] border border-[#DADADA] rounded-xl shadow-xs overflow-hidden">
+      <div className="p-3 border-b border-[#DADADA] bg-[#E8E8E8] flex justify-between items-center shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Timer size={14} className="text-[#C00000]" />
-            <h3 className="font-black uppercase text-xs tracking-widest">
+            <Timer size={14} className="text-[#00C2FF]" />
+            <h3 className="font-black uppercase text-xs tracking-widest text-[#F8FAFC]">
               {type === 'competitive' ? 'Einsatzminuten Pflichtspiele' : 'Einsatzminuten Testspiele'}
             </h3>
           </div>
           {isEditing && (
             <button 
               onClick={onAddMatch}
-              className="bg-black text-white px-3 py-1 text-[8px] font-black uppercase tracking-widest border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center gap-1"
+              className="bg-[#00C2FF] text-[#0A0A0A] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border border-[#00C2FF] shadow-[0_0_8px_rgba(0,194,255,0.4)] hover:bg-[#00B0E6] transition-all flex items-center gap-1"
             >
-              <Plus size={10} /> Spiel hinzufügen
+              <Plus size={12} /> Spiel hinzufügen
             </button>
           )}
-          <div className="flex items-center gap-1 text-[8px] font-bold uppercase opacity-40">
-            <Activity size={10} />
+          <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-[#4A4A4A]">
+            <Activity size={12} />
             <span>Saison 26/27</span>
           </div>
         </div>
         {!isEditing && (
-          <p className="text-[8px] font-bold uppercase opacity-40 italic">
+          <p className="text-[10px] font-bold uppercase text-[#4A4A4A] italic">
             Aktiviere den Bearbeitungsmodus, um Gegnernamen einzutragen.
           </p>
         )}
       </div>
 
       <div className="flex-1 overflow-auto custom-scrollbar">
-        <table className="w-full border-collapse text-[10px] font-bold">
-          <thead className="sticky top-0 bg-black text-white z-20">
+        <table className="w-full border-collapse text-[10px] font-bold text-[#F8FAFC]">
+          <thead className="sticky top-0 bg-[#E8E8E8] text-[#F8FAFC] z-20 border-b border-[#DADADA]">
             <tr>
-              <th className="p-3 border border-white/20 text-left w-10">Nr</th>
-              <th className="p-3 border border-white/20 text-center w-12">#</th>
-              <th className="p-3 border border-white/20 text-left w-96">Spieler</th>
-              <th className="p-3 border border-white/20 text-center w-12">Pos</th>
-              <th className="p-3 border border-white/20 text-center w-20">Gesamt</th>
-              {isEditing && <th className="p-3 border border-white/20 text-center w-20">Aktion</th>}
+              <th className="p-3 border border-[#DADADA] text-left w-10 uppercase tracking-wider">Nr</th>
+              <th className="p-3 border border-[#DADADA] text-center w-12 uppercase tracking-wider">#</th>
+              <th className="p-3 border border-[#DADADA] text-left w-96 uppercase tracking-wider">Spieler</th>
+              <th className="p-3 border border-[#DADADA] text-center w-12 uppercase tracking-wider">Pos</th>
+              <th className="p-3 border border-[#DADADA] text-center w-20 uppercase tracking-wider">Gesamt</th>
+              {isEditing && <th className="p-3 border border-[#DADADA] text-center w-20 uppercase tracking-wider">Aktion</th>}
               {displayMatches.map((match, idx) => (
                 <th key={match.id} className="p-0 border border-white/20 min-w-[120px]">
                   <div className="flex flex-col bg-gray-900">
@@ -167,7 +167,7 @@ export const MatchMinutesSheet: React.FC<MatchMinutesSheetProps> = ({
                         <div className="flex gap-1 mt-1 border-t border-white/10 pt-1">
                           <button 
                             onClick={() => setSelectedMatch(match)}
-                            className="flex-1 bg-white/10 hover:bg-white/20 text-white py-1 rounded flex justify-center transition-colors"
+                            className="flex-1 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white py-1 rounded flex justify-center transition-colors"
                             title="Match Maske öffnen"
                           >
                             <Maximize2 size={10} />
@@ -208,7 +208,7 @@ export const MatchMinutesSheet: React.FC<MatchMinutesSheetProps> = ({
                     const totalMins = Object.values(record?.matchMinutes || {}).reduce((a, b) => a + b, 0);
 
                     return (
-                      <tr key={player.id} className="hover:bg-gray-50 transition-colors border-b border-black/10">
+                      <tr key={player.id} className="hover:bg-[#121824] transition-colors border-b border-black/10">
                         <td className="p-3 border-r border-black/10 text-center opacity-40">{pIdx + 1}</td>
                         <td className="p-3 border-r border-black/10 text-center font-black">
                           {player.category === 'player' ? player.number : (player.category === 'coach' ? 'T' : (player.category === 'staff' ? 'F' : 'M'))}
@@ -230,7 +230,7 @@ export const MatchMinutesSheet: React.FC<MatchMinutesSheetProps> = ({
                           )}
                         </td>
                         <td className="p-3 border-r border-black/10 text-center text-[#C00000] text-[9px]">{player.position}</td>
-                        <td className="p-3 border-r border-black/10 text-center font-black bg-gray-50">{totalMins}</td>
+                        <td className="p-3 border-r border-black/10 text-center font-black bg-[#121824]">{totalMins}</td>
                         {isEditing && (
                           <td className="p-3 border-r border-black/10 text-center">
                             <div className="flex items-center justify-center gap-2">
@@ -275,14 +275,14 @@ export const MatchMinutesSheet: React.FC<MatchMinutesSheetProps> = ({
         </table>
       </div>
 
-      <div className="p-4 bg-black text-white border-t-2 border-black flex justify-between items-center shrink-0">
+      <div className="p-4 bg-[#E8E8E8] text-[#F8FAFC] border-t border-[#DADADA] flex justify-between items-center shrink-0">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <History size={14} className="text-[#C00000]" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Gesamtminuten Kader: {data.reduce((sum, r) => sum + Object.values(r.matchMinutes || {}).reduce((a, b) => a + b, 0), 0)}</span>
+            <History size={14} className="text-[#00C2FF]" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Gesamtminuten Kader: {data.reduce((sum, r) => sum + Object.values(r.matchMinutes || {}).reduce((a, b) => a + b, 0), 0)}</span>
           </div>
         </div>
-        <p className="text-[9px] font-bold uppercase opacity-60 italic">
+        <p className="text-[9px] font-bold uppercase text-[#4A4A4A] italic">
           Gegnernamen werden in den Spaltenköpfen eingetragen.
         </p>
       </div>

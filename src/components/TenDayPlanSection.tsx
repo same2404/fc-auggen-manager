@@ -85,40 +85,39 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 border-2 border-slate-950 text-white rounded-2xl p-4 sm:p-6 shadow-xl mb-6 relative overflow-hidden">
+    <div className="bg-[#1A1A1A] border border-[#2A2A2A] text-[#F5F5F5] rounded-2xl p-4 sm:p-6 shadow-xl mb-6 relative overflow-hidden">
       {/* Background Accent Lines */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-[#FFD54F]/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Sync Success Toast */}
       {syncSuccessToast && (
-        <div className="absolute top-4 right-4 z-50 bg-emerald-500 text-slate-950 font-black text-xs px-4 py-2 rounded-xl shadow-2xl border border-white flex items-center gap-2 animate-bounce">
+        <div className="absolute top-4 right-4 z-50 bg-[#FFD54F] text-[#0F0F0F] font-black text-xs px-4 py-2 rounded-xl shadow-lg border border-[#FFD54F] flex items-center gap-2 animate-bounce">
           <Sparkles size={16} />
           <span>{syncSuccessToast}</span>
         </div>
       )}
 
       {/* Card Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#2A2A2A]">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-md border border-red-500 shadow-sm flex items-center gap-1">
+            <span className="bg-[#FFD54F] text-[#0F0F0F] font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-[#FFD54F] shadow-xs flex items-center gap-1">
               <Flame size={12} className="animate-pulse" />
               Offizielles Vorbereitungsprogramm
             </span>
-            <span className="bg-slate-800 text-slate-300 font-bold text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-md border border-slate-700 flex items-center gap-1">
-              <Calendar size={12} className="text-amber-400" />
+            <span className="bg-[#202020] text-[#F5F5F5] font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-md border border-[#2A2A2A] flex items-center gap-1">
+              <Calendar size={12} className="text-[#FFD54F]" />
               17.06.2026 – 03.07.2026
             </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wide text-white flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wide text-[#F5F5F5] flex items-center gap-2">
             <span>10-Tage-Aktiv Plan</span>
-            <span className="text-xs font-black text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-800">
+            <span className="text-xs font-black text-[#FF4C4C] bg-[#FF4C4C]/10 px-2 py-0.5 rounded border border-[#FF4C4C]/30">
               Verbindlich abarbeiten
             </span>
           </h2>
-          <p className="text-xs text-slate-400 font-medium mt-1">
+          <p className="text-xs text-[#C7C7C7] font-medium mt-1">
             Vor-Vorbereitungsplan für alle Kader-Spieler des FC Auggen. Tracking über Adidas Running App an Athletik Klaus.
           </p>
         </div>
@@ -126,14 +125,14 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
         {/* Progress & Quick Actions */}
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           {/* Progress Bar */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-2.5 px-3 min-w-[150px]">
-            <div className="flex items-center justify-between gap-2 text-[10px] font-black uppercase text-slate-300 mb-1">
+          <div className="bg-[#202020] border border-[#2A2A2A] rounded-xl p-2.5 px-3 min-w-[150px]">
+            <div className="flex items-center justify-between gap-2 text-[10px] font-black uppercase text-[#F5F5F5] mb-1">
               <span>Fortschritt</span>
-              <span className="text-amber-400 font-mono text-xs">{completedCount} / 10 ({progressPercent}%)</span>
+              <span className="text-[#FFD54F] font-mono text-xs">{completedCount} / 10 ({progressPercent}%)</span>
             </div>
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-[#0F0F0F] h-2 rounded-full overflow-hidden border border-[#2A2A2A]">
               <div 
-                className="bg-gradient-to-r from-red-500 to-amber-400 h-full transition-all duration-500 rounded-full"
+                className="bg-[#FFD54F] h-full transition-all duration-500 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -142,7 +141,7 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
           {onSyncWithRunTable && (
             <button
               onClick={handleSyncClick}
-              className="bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs uppercase px-3.5 py-2.5 rounded-xl border border-black shadow-md flex items-center gap-1.5 transition-all cursor-pointer hover:scale-[1.02]"
+              className="bg-[#FFD54F] hover:bg-[#ffe082] text-[#0F0F0F] font-black text-xs uppercase px-3.5 py-2.5 rounded-xl border border-[#FFD54F] shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
               title="10-Tage Plan Daten in die 15-Lauf Spalten der Haupttabelle übernehmen"
             >
               <Sparkles size={15} />
@@ -152,7 +151,7 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl border border-slate-700 transition-colors"
+            className="bg-[#202020] hover:bg-[#2A2A2A] text-[#F5F5F5] p-2.5 rounded-xl border border-[#2A2A2A] transition-colors"
             title={isExpanded ? 'Plan einklappen' : 'Plan ausklappen'}
           >
             {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -173,34 +172,34 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
                   onClick={() => toggleDayCompletion(unit.id)}
                   className={`border rounded-xl p-3 flex flex-col justify-between transition-all cursor-pointer group relative overflow-hidden ${
                     isDone 
-                      ? 'bg-emerald-950/40 border-emerald-700/80 shadow-inner' 
-                      : 'bg-slate-950/80 border-slate-800 hover:border-slate-600 hover:bg-slate-950'
+                      ? 'bg-[#FFD54F]/10 border-[#FFD54F] shadow-md' 
+                      : 'bg-[#202020] border-[#2A2A2A] hover:border-[#FFD54F]'
                   }`}
                 >
                   {/* Top Day Header */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-black text-xs uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                        <Calendar size={12} className="text-slate-400" />
+                      <span className="font-black text-xs uppercase tracking-wider text-[#FFD54F] flex items-center gap-1">
+                        <Calendar size={12} className="text-[#888888]" />
                         {unit.tag} • {unit.date}
                       </span>
                       <button 
                         type="button" 
-                        className="text-slate-400 hover:text-white transition-colors"
+                        className="text-[#888888] hover:text-[#F5F5F5] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleDayCompletion(unit.id);
                         }}
                       >
                         {isDone ? (
-                          <CheckSquare size={18} className="text-emerald-400 fill-emerald-950" />
+                          <CheckSquare size={18} className="text-[#FFD54F] fill-[#FFD54F]" />
                         ) : (
-                          <Square size={18} className="text-slate-500 group-hover:text-slate-300" />
+                          <Square size={18} className="text-[#888888] group-hover:text-[#F5F5F5]" />
                         )}
                       </button>
                     </div>
 
-                    <h4 className={`font-black text-sm uppercase tracking-tight mb-1.5 ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>
+                    <h4 className={`font-black text-sm uppercase tracking-tight mb-1.5 ${isDone ? 'line-through text-[#888888]' : 'text-[#F5F5F5]'}`}>
                       {unit.title}
                     </h4>
 
@@ -209,26 +208,26 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
                       <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${getIntensityBadgeColor(unit.type)}`}>
                         {unit.type}
                       </span>
-                      <span className="bg-slate-800 text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-700">
+                      <span className="bg-[#1A1A1A] text-[#F5F5F5] text-[9px] font-bold px-1.5 py-0.5 rounded border border-[#2A2A2A]">
                         {unit.intensity}
                       </span>
                     </div>
 
                     {/* Content Details */}
-                    <p className="text-[11px] text-slate-300 font-medium leading-relaxed mb-2 bg-slate-900/80 p-2 rounded-lg border border-slate-800/80">
-                      <strong className="text-slate-200 font-bold block text-[9px] uppercase tracking-wider text-slate-400 mb-0.5">Inhalt:</strong>
+                    <p className="text-[11px] text-[#F5F5F5] font-medium leading-relaxed mb-2 bg-[#1A1A1A] p-2 rounded-lg border border-[#2A2A2A]">
+                      <strong className="font-bold block text-[9px] uppercase tracking-wider text-[#C7C7C7] mb-0.5">Inhalt:</strong>
                       {unit.content}
                     </p>
                   </div>
 
                   {/* Goal / Why Footer */}
-                  <div className="pt-2 border-t border-slate-800/80 mt-1">
-                    <p className="text-[10px] text-slate-400 font-medium italic flex items-start gap-1">
-                      <Target size={12} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div className="pt-2 border-t border-[#2A2A2A] mt-1">
+                    <p className="text-[10px] text-[#C7C7C7] font-medium italic flex items-start gap-1">
+                      <Target size={12} className="text-[#FFD54F] shrink-0 mt-0.5" />
                       <span>{unit.goal}</span>
                     </p>
                     <div className="mt-2 flex items-center justify-between text-[9px] font-black uppercase">
-                      <span className={isDone ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                      <span className={isDone ? 'text-[#FFD54F] font-bold' : 'text-[#888888]'}>
                         {isDone ? '[ x ] erledigt' : '[  ] ausstehend'}
                       </span>
                     </div>
@@ -239,16 +238,16 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
           </div>
 
           {/* Rahmenbedingungen & Vorgaben Section */}
-          <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="font-black text-sm uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                <ShieldAlert size={16} className="text-red-500" />
+          <div className="bg-[#202020] border border-[#2A2A2A] rounded-xl p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#2A2A2A]">
+              <h3 className="font-black text-sm uppercase tracking-wider text-[#FFD54F] flex items-center gap-2">
+                <ShieldAlert size={16} className="text-[#FF4C4C]" />
                 <span>Rahmenbedingungen & Vorgaben (verbindlich)</span>
               </h3>
               {completedCount > 0 && (
                 <button
                   onClick={handleResetProgress}
-                  className="text-[10px] font-bold uppercase text-slate-400 hover:text-red-400 flex items-center gap-1 transition-colors"
+                  className="text-[10px] font-bold uppercase text-[#888888] hover:text-[#FF4C4C] flex items-center gap-1 transition-colors"
                 >
                   <RotateCcw size={12} />
                   <span>Fortschritt zurücksetzen</span>
@@ -258,45 +257,45 @@ export const TenDayPlanSection: React.FC<TenDayPlanSectionProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
               {/* Rule 1 */}
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-slate-200 font-black uppercase text-[11px]">
-                  <Activity size={14} className="text-amber-400" />
+              <div className="bg-[#1A1A1A] p-3 rounded-lg border border-[#2A2A2A] space-y-1">
+                <div className="flex items-center gap-1.5 text-[#F5F5F5] font-black uppercase text-[11px]">
+                  <Activity size={14} className="text-[#FFD54F]" />
                   <span>1. Reihenfolge</span>
                 </div>
-                <p className="text-slate-300 text-[11px]">
+                <p className="text-[#C7C7C7] text-[11px]">
                   {TEN_DAY_ACTIV_RULES.reihenfolge}
                 </p>
               </div>
 
               {/* Rule 2 */}
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-slate-200 font-black uppercase text-[11px]">
-                  <Clock size={14} className="text-blue-400" />
+              <div className="bg-[#1A1A1A] p-3 rounded-lg border border-[#2A2A2A] space-y-1">
+                <div className="flex items-center gap-1.5 text-[#F5F5F5] font-black uppercase text-[11px]">
+                  <Clock size={14} className="text-[#60A5FA]" />
                   <span>2. Ruhetage</span>
                 </div>
-                <p className="text-slate-300 text-[11px]">
+                <p className="text-[#C7C7C7] text-[11px]">
                   {TEN_DAY_ACTIV_RULES.ruhetage}
                 </p>
               </div>
 
               {/* Rule 3 */}
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-slate-200 font-black uppercase text-[11px]">
-                  <Flame size={14} className="text-rose-400" />
+              <div className="bg-[#1A1A1A] p-3 rounded-lg border border-[#2A2A2A] space-y-1">
+                <div className="flex items-center gap-1.5 text-[#F5F5F5] font-black uppercase text-[11px]">
+                  <Flame size={14} className="text-[#FF4C4C]" />
                   <span>3. Verletzungsprophylaxe</span>
                 </div>
-                <p className="text-slate-300 text-[11px]">
+                <p className="text-[#C7C7C7] text-[11px]">
                   {TEN_DAY_ACTIV_RULES.verletzungsprophylaxe}
                 </p>
               </div>
 
               {/* Rule 4 */}
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-slate-200 font-black uppercase text-[11px]">
-                  <Smartphone size={14} className="text-emerald-400" />
+              <div className="bg-[#1A1A1A] p-3 rounded-lg border border-[#2A2A2A] space-y-1">
+                <div className="flex items-center gap-1.5 text-[#F5F5F5] font-black uppercase text-[11px]">
+                  <Smartphone size={14} className="text-[#00D47A]" />
                   <span>4. Datenübermittlung</span>
                 </div>
-                <p className="text-slate-300 text-[11px]">
+                <p className="text-[#C7C7C7] text-[11px]">
                   {TEN_DAY_ACTIV_RULES.datenuebermittlung}
                 </p>
               </div>

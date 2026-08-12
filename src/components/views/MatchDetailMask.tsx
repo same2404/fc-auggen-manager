@@ -159,7 +159,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
       <motion.div 
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
-        className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-[#1E293B] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -178,7 +178,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
                     <EditableInput 
                       type="text"
                       listId="opponent-list-mask"
-                      className="bg-white/10 border-b-2 border-white/20 focus:border-[#C00000] outline-none w-full text-2xl md:text-4xl font-black uppercase py-1"
+                      className="bg-[#1E293B]/10 border-b-2 border-white/20 focus:border-[#C00000] outline-none w-full text-2xl md:text-4xl font-black uppercase py-1"
                       value={match.opponent || ''}
                       onSave={(val) => onUpdateMatch?.(match.id, 'opponent', val)}
                       placeholder="GEGNER EINTRAGEN..."
@@ -196,7 +196,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
                 )}
               </div>
               
-              <div className="shrink-0 flex flex-col items-center justify-center bg-white/10 px-6 py-2 border-2 border-white/20 rounded-lg">
+              <div className="shrink-0 flex flex-col items-center justify-center bg-[#1E293B]/10 px-6 py-2 border-2 border-white/20 rounded-lg">
                 <label className="text-[10px] font-black uppercase opacity-40 block mb-1">Ergebnis</label>
                 {isEditing ? (
                   <EditableInput 
@@ -222,7 +222,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
             </button>
             <button 
               onClick={onClose}
-              className="bg-white text-black p-2 hover:bg-[#C00000] hover:text-white transition-colors border-2 border-black"
+              className="bg-[#1E293B] text-black p-2 hover:bg-[#C00000] hover:text-white transition-colors border-2 border-black"
             >
               <X size={24} />
             </button>
@@ -230,7 +230,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
         </div>
 
         {/* Info Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 border-b-4 border-black bg-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-4 border-b-4 border-black bg-[#1E293B]">
           <div className="p-4 border-r-2 border-black flex items-center gap-3">
             <div className="bg-black p-2 rounded text-white shrink-0">
               <MapPin size={18} />
@@ -305,7 +305,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
         </div>
 
         {/* Player List */}
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-auto p-6 bg-[#121824]">
           <div className="flex items-center gap-2 mb-4">
             <Users size={16} className="text-[#C00000]" />
             <h3 className="font-black uppercase text-sm tracking-widest">Eingesetzte Spieler</h3>
@@ -315,7 +315,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
             {sortedMatchPlayers.map((player) => (
               <div 
                 key={player.id}
-                className={`flex items-center gap-3 p-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white transition-all ${player.minutes === 0 ? 'opacity-40' : ''}`}
+                className={`flex items-center gap-3 p-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#1E293B] transition-all ${player.minutes === 0 ? 'opacity-40' : ''}`}
               >
                 <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-black text-lg shrink-0">
                   {player.number}
@@ -339,55 +339,55 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
 
           {/* Scorers, Cards & Notes */}
           <div className="mt-8 border-t-4 border-black pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-[#1E293B] border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <h4 className="font-black uppercase text-xs mb-3 flex items-center gap-1.5 text-red-600">
                 <span>⚽</span> Torschützen
               </h4>
               {isEditing ? (
                 <EditableInput 
-                  className="w-full border-2 border-black p-2 font-black text-xs uppercase outline-none focus:border-[#C00000] bg-white text-black"
+                  className="w-full border-2 border-black p-2 font-black text-xs uppercase outline-none focus:border-[#C00000] bg-[#1E293B] text-black"
                   placeholder="Z.B. Müller (2), Meier (45')..."
                   value={match.scorers || ''}
                   onSave={(val) => onUpdateMatch?.(match.id, 'scorers', val)}
                 />
               ) : (
-                <p className="font-bold text-xs uppercase opacity-80 min-h-[36px] bg-white p-2 border border-dashed border-black/10 text-black">
+                <p className="font-bold text-xs uppercase opacity-80 min-h-[36px] bg-[#1E293B] p-2 border border-dashed border-black/10 text-black">
                   {match.scorers || 'Keine Torschützen eingetragen'}
                 </p>
               )}
             </div>
 
-            <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-[#1E293B] border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <h4 className="font-black uppercase text-xs mb-3 flex items-center gap-1.5 text-yellow-600">
                 <span>🟨</span> Karten (Gelb/Rot)
               </h4>
               {isEditing ? (
                 <EditableInput 
-                  className="w-full border-2 border-black p-2 font-black text-xs uppercase outline-none focus:border-[#C00000] bg-white text-black"
+                  className="w-full border-2 border-black p-2 font-black text-xs uppercase outline-none focus:border-[#C00000] bg-[#1E293B] text-black"
                   placeholder="Z.B. Müller (Gelb), Schmidt (Rot)..."
                   value={match.cards || ''}
                   onSave={(val) => onUpdateMatch?.(match.id, 'cards', val)}
                 />
               ) : (
-                <p className="font-bold text-xs uppercase opacity-80 min-h-[36px] bg-white p-2 border border-dashed border-black/10 text-black">
+                <p className="font-bold text-xs uppercase opacity-80 min-h-[36px] bg-[#1E293B] p-2 border border-dashed border-black/10 text-black">
                   {match.cards || 'Keine Karten eingetragen'}
                 </p>
               )}
             </div>
 
-            <div className="col-span-full bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="col-span-full bg-[#1E293B] border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <h4 className="font-black uppercase text-xs mb-3 flex items-center gap-1.5 text-black">
                 <span>📝</span> Allgemeine Spielnotizen & Taktikberichte
               </h4>
               {isEditing ? (
                 <EditableTextarea 
-                  className="w-full border-2 border-black p-2 font-bold text-xs outline-none focus:border-[#C00000] min-h-[100px] bg-white text-black"
+                  className="w-full border-2 border-black p-2 font-bold text-xs outline-none focus:border-[#C00000] min-h-[100px] bg-[#1E293B] text-black"
                   placeholder="Allgemeine Spielnotizen, Aufstellungsdetails, Notizen..."
                   value={match.notes || ''}
                   onSave={(val) => onUpdateMatch?.(match.id, 'notes', val)}
                 />
               ) : (
-                <p className="font-bold text-xs opacity-80 min-h-[60px] whitespace-pre-wrap bg-white p-2 border border-dashed border-black/10 text-black">
+                <p className="font-bold text-xs opacity-80 min-h-[60px] whitespace-pre-wrap bg-[#1E293B] p-2 border border-dashed border-black/10 text-black">
                   {match.notes || 'Keine Spielnotizen vorhanden'}
                 </p>
               )}
@@ -396,7 +396,7 @@ export const MatchDetailMask: React.FC<MatchDetailMaskProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-gray-100 border-t-2 border-black flex justify-between items-center shrink-0">
+        <div className="p-4 bg-[#1E293B] border-t-2 border-black flex justify-between items-center shrink-0">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Shield size={14} className="text-[#C00000]" />

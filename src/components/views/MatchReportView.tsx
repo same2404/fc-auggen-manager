@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Match, MatchAnalysis, Opponent, Spieler } from '../../types';
+import { MatchReportService } from '../../services/matchReportService';
 import { 
   Trophy, 
   Calendar, 
@@ -27,7 +28,16 @@ import {
   RotateCw,
   ExternalLink,
   Activity,
-  FileText
+  FileText,
+  BarChart3,
+  Layers,
+  ShieldAlert,
+  Sparkles,
+  TrendingUp,
+  AlertTriangle,
+  Users,
+  Compass,
+  Brain
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -116,7 +126,7 @@ const ImageLightbox: React.FC<{
           <>
             <button 
               onClick={handleRotate}
-              className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex items-center gap-2 font-black uppercase text-[10px]"
+              className="p-3 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white rounded-full transition-colors flex items-center gap-2 font-black uppercase text-[10px]"
             >
               <RotateCw size={20} /> Rotieren
             </button>
@@ -137,7 +147,7 @@ const ImageLightbox: React.FC<{
         )}
         <button 
           onClick={onClose}
-          className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+          className="p-3 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white rounded-full transition-colors"
         >
           <X size={24} />
         </button>
@@ -197,7 +207,7 @@ const ImageUpload: React.FC<{
   if (currentImage) {
     return (
       <>
-        <div className={`relative group border-2 border-black/10 overflow-hidden ${className}`}>
+        <div className={`relative group border border-[#2A2A2A] bg-[#1A1A1A] rounded-xl overflow-hidden ${className}`}>
           <img 
             src={currentImage} 
             alt="Upload" 
@@ -205,13 +215,13 @@ const ImageUpload: React.FC<{
             referrerPolicy="no-referrer"
             onClick={() => setShowLightbox(true)}
           />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-            <Maximize2 size={24} className="text-white" />
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+            <Maximize2 size={24} className="text-[#FFD54F]" />
           </div>
           {onDelete && (
             <button 
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="absolute top-2 right-2 bg-red-600 text-white p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+              className="absolute top-2 right-2 bg-[#FF4C4C] text-white p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg rounded-lg"
             >
               <Trash2 size={14} />
             </button>
@@ -231,7 +241,7 @@ const ImageUpload: React.FC<{
   return (
     <div 
       onPaste={handlePaste}
-      className={`relative border-2 border-dashed border-black/20 hover:border-black/40 transition-colors flex flex-col items-center justify-center p-4 cursor-pointer group ${className}`}
+      className={`relative border border-dashed border-[#2A2A2A] bg-[#1A1A1A] hover:border-[#FFD54F]/60 rounded-xl transition-colors flex flex-col items-center justify-center p-4 cursor-pointer group ${className}`}
     >
       <input 
         type="file" 
@@ -239,8 +249,8 @@ const ImageUpload: React.FC<{
         onChange={handleFileChange} 
         className="absolute inset-0 opacity-0 cursor-pointer"
       />
-      <Upload size={16} className="mb-2 opacity-40 group-hover:opacity-100 transition-opacity" />
-      <span className="text-[9px] font-black uppercase opacity-40 group-hover:opacity-100 transition-opacity text-center">
+      <Upload size={16} className="mb-2 text-[#888888] group-hover:text-[#FFD54F] transition-colors" />
+      <span className="text-[9px] font-black uppercase text-[#888888] group-hover:text-[#F5F5F5] transition-colors text-center">
         {label || "Bild hochladen oder einfügen"}
       </span>
     </div>
@@ -364,6 +374,37 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
     onSaveAnalysis({ ...currentAnalysis, [field]: value });
   };
 
+  /**
+   * One-Click Import Logik:
+   * Übernimmt 1:1 alle Pflichtspieldaten (Gegner, Datum, Uhrzeit, Heim/Auswärts,
+   * Ergebnis, Wettbewerb, Aufstellung, Bank, Auswechslungen, Torschützen, Karten).
+   */
+  const handleSelectMatchImport = (matchId: string) => {
+    if (!currentAnalysis || !matchId) return;
+    const allMatches = [...(matches || []), ...(testMatches || [])];
+    const selectedMatch = allMatches.find(m => String(m.id) === String(matchId));
+    if (!selectedMatch) return;
+
+    const importedReport = MatchReportService.createSpielberichtFromPflichtspiel(selectedMatch, currentAnalysis.id);
+    
+    // Bestehende, manuelle Ergänzungen (Berichtstext, Fazit, etc.) beibehalten
+    const mergedReport: MatchAnalysis = {
+      ...importedReport,
+      berichtText: currentAnalysis.berichtText || importedReport.berichtText,
+      trainerFazit: currentAnalysis.trainerFazit || importedReport.trainerFazit,
+      trainerTactical: currentAnalysis.trainerTactical || importedReport.trainerTactical,
+      teamRating: currentAnalysis.teamRating || importedReport.teamRating,
+      playerOfTheMatch: currentAnalysis.playerOfTheMatch || importedReport.playerOfTheMatch,
+      goodActions: currentAnalysis.goodActions || importedReport.goodActions,
+      badActions: currentAnalysis.badActions || importedReport.badActions,
+      specialMoments: currentAnalysis.specialMoments || importedReport.specialMoments,
+      presentationImages: (currentAnalysis.presentationImages && currentAnalysis.presentationImages.length > 0) ? currentAnalysis.presentationImages : importedReport.presentationImages,
+      videoClips: (currentAnalysis.videoClips && currentAnalysis.videoClips.length > 0) ? currentAnalysis.videoClips : importedReport.videoClips,
+    };
+
+    onSaveAnalysis(mergedReport);
+  };
+
   const handleCreateNew = () => {
     const newId = `analysis_${Date.now()}`;
     const newAnalysis: MatchAnalysis = {
@@ -404,7 +445,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-white overflow-hidden relative">
+    <div className="flex h-full bg-slate-950 text-slate-100 overflow-hidden relative">
       {/* Sidebar - List of reports */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -412,31 +453,31 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: typeof window !== 'undefined' && window.innerWidth < 768 ? '100%' : 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="border-r-4 border-black flex flex-col shrink-0 bg-gray-50 absolute md:relative inset-y-0 left-0 z-40 h-full w-full md:w-auto"
+            className="border-r border-[#2A2A2A] flex flex-col shrink-0 bg-[#1A1A1A] absolute md:relative inset-y-0 left-0 z-40 h-full w-full md:w-auto shadow-xl"
           >
-            <div className="p-4 bg-black text-white shrink-0">
+            <div className="p-4 bg-[#141414] text-[#F5F5F5] shrink-0 border-b border-[#2A2A2A]">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-[10px] font-black uppercase tracking-widest">ALLE ANALYSEN</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#FFD54F]">ALLE ANALYSEN</h3>
                 <button 
                   onClick={() => setIsSidebarOpen(false)}
-                  className="md:hidden text-white/60 hover:text-white"
+                  className="md:hidden text-[#888888] hover:text-[#F5F5F5]"
                 >
                   <X size={16} />
                 </button>
               </div>
               <div className="relative mb-3">
-                <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 opacity-40" />
+                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#888888]" />
                 <input 
                   type="text" 
                   placeholder="SUCHEN..."
-                  className="w-full bg-white/10 border border-white/20 text-[10px] font-black uppercase p-2 pl-7 focus:outline-none focus:bg-white/20"
+                  className="w-full bg-[#202020] border border-[#2A2A2A] text-[10px] font-black uppercase p-2 pl-7 text-[#F5F5F5] placeholder-[#888888] rounded-xl focus:outline-none focus:border-[#FFD54F]"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <button 
                 onClick={handleCreateNew}
-                className="w-full bg-green-500 text-black py-2 text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-green-400 transition-colors"
+                className="w-full bg-[#FFD54F] text-[#0F0F0F] py-2 text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-[#ffe082] transition-all rounded-xl border border-[#FFD54F] shadow-xs"
               >
                 <Plus size={14} /> NEUER BERICHT
               </button>
@@ -444,7 +485,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {filteredAnalyses.length === 0 ? (
-                <div className="p-8 text-center opacity-30 italic text-[10px]">KEINE BERICHTE</div>
+                <div className="p-8 text-center text-slate-500 italic text-[10px]">KEINE BERICHTE</div>
               ) : (
                 filteredAnalyses.map(a => (
                   <button 
@@ -455,21 +496,21 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                         setIsSidebarOpen(false);
                       }
                     }}
-                    className={`w-full text-left p-3 border-b-2 border-black/5 hover:bg-black/5 transition-all relative ${selectedAnalysisId === a.id ? 'bg-amber-50 border-l-4 border-l-black' : ''}`}
+                    className={`w-full text-left p-3 border-b border-slate-800 hover:bg-slate-800/60 transition-all relative ${selectedAnalysisId === a.id ? 'bg-slate-800 border-l-4 border-l-amber-400' : ''}`}
                   >
                     <div className="flex justify-between items-start mb-1">
-                      <span className="text-[8px] font-black opacity-40 uppercase truncate mr-2">
+                      <span className="text-[9px] font-black text-slate-400 uppercase truncate mr-2">
                         {a.date || 'KEIN DATUM'}
                       </span>
-                      <span className={`text-[7px] font-black uppercase px-1 py-0.5 border border-black ${a.category === 'Pflichtspiel' ? 'bg-black text-white' : 'bg-white text-black'}`}>
+                      <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 border ${a.category === 'Pflichtspiel' ? 'bg-red-950 text-red-300 border-red-500/50' : 'bg-slate-950 text-slate-300 border-slate-700'}`}>
                         {a.category === 'Pflichtspiel' ? 'PS' : a.category === 'Testspiel' ? 'TS' : 'PK'}
                       </span>
                     </div>
-                    <div className="text-[10px] font-black uppercase truncate leading-none">
+                    <div className="text-[11px] font-black text-slate-100 uppercase truncate leading-none">
                       {a.opponent || 'UNBEKANNT'}
                     </div>
                     {a.result && (
-                      <div className="text-[9px] font-black text-green-600 mt-1">
+                      <div className="text-[9px] font-black text-emerald-400 mt-1">
                         RESULTAT: {a.result}
                       </div>
                     )}
@@ -482,20 +523,69 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="flex-1 flex flex-col overflow-hidden relative bg-slate-950">
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-black text-white p-1 hover:bg-[#C00000] transition-colors"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-slate-900 border border-slate-700 text-white p-1.5 hover:bg-[#C00000] transition-colors shadow-lg"
         >
           {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>
 
         {currentAnalysis ? (
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 bg-white">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-8 bg-slate-950">
             <div className="max-w-6xl mx-auto space-y-10 pb-16">
               
+              {/* ⚡ 1-CLICK PFLICHTSPIEL-AUTOMATIK IMPORT BANNER */}
+              <div className="bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-2 border-amber-400 p-5 rounded-2xl shadow-2xl space-y-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-lg shrink-0">
+                      <Zap size={22} className="animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm sm:text-base font-black uppercase text-amber-300 tracking-wider flex items-center gap-2">
+                        1-CLICK PFLICHTSPIEL-AUTOMATIK IMPORT
+                      </h4>
+                      <p className="text-[11px] text-slate-300 font-medium leading-snug">
+                        Wähle ein Ansetzung aus, um Gegner, Datum, Uhrzeit, Heim/Auswärts, Aufstellung, Kader, Auswechslungen, Torschützen & Karten automatisch in den Spielbericht zu übernehmen.
+                      </p>
+                    </div>
+                  </div>
+
+                  {currentAnalysis.isAutoImported && (
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 text-[10px] font-black uppercase px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 self-start md:self-auto">
+                      <CheckCircle2 size={14} /> 1:1 Synchronisiert mit Pflichtspiel #{currentAnalysis.matchId}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                  <select
+                    value={currentAnalysis.matchId || ''}
+                    onChange={(e) => handleSelectMatchImport(e.target.value)}
+                    className="flex-1 bg-slate-950 border-2 border-amber-400/80 hover:border-amber-400 text-xs sm:text-sm font-bold text-amber-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  >
+                    <option value="">-- Pflichtspiel für automatischen Import auswählen --</option>
+                    {[...(matches || []), ...(testMatches || [])].map((m) => (
+                      <option key={m.id} value={m.id}>
+                        ⚽ [{m.date || 'Kein Datum'}] FC Auggen vs. {m.opponent} ({m.isHome ? 'Heim' : 'Auswärts'}, {m.competition || 'Pflichtspiel'} {m.result ? `| ${m.result}` : ''})
+                      </option>
+                    ))}
+                  </select>
+
+                  {currentAnalysis.matchId && (
+                    <button
+                      onClick={() => handleSelectMatchImport(String(currentAnalysis.matchId))}
+                      className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 shrink-0"
+                    >
+                      <RotateCw size={15} /> 1-Click Sync
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Header Section (Editable) */}
-              <div className="border-4 border-black p-6 sm:p-8 relative watermark-bg overflow-hidden bg-white shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]">
+              <div className="border-2 border-amber-500/30 p-6 sm:p-8 relative watermark-bg overflow-hidden bg-slate-900/90 shadow-2xl rounded-xl">
                 <div className="absolute top-0 right-0 p-3">
                   <button 
                     onClick={() => {
@@ -504,7 +594,7 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                         setSelectedAnalysisId(analyses.find(a => a.id !== currentAnalysis.id)?.id || '');
                       }
                     }}
-                    className="text-red-600 hover:text-red-800 p-2.5 bg-white/80 border-2 border-black font-bold shadow-sm"
+                    className="text-red-400 hover:text-red-300 p-2.5 bg-slate-950 border border-red-500/30 font-bold shadow-sm rounded-lg"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -512,16 +602,16 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 
                 <div className="flex flex-col gap-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-3.5 h-3.5 bg-green-500 rounded-full animate-pulse" />
+                    <div className="w-3.5 h-3.5 bg-emerald-400 rounded-full animate-pulse shadow-md" />
                     <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
-                      <span className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight">SPIEL – FC AUGGEN vs.</span>
+                      <span className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white">SPIEL – FC AUGGEN vs.</span>
                       <EditableArea 
                         isTextArea={false}
                         listId="opponent-list-report"
                         value={currentAnalysis.opponent || ''}
                         onSave={(val) => handleUpdate('opponent', val)}
                         placeholder="GEGNERNAME..."
-                        className="flex-1 bg-transparent border-b-4 border-black text-2xl sm:text-4xl font-black uppercase italic focus:outline-none focus:border-green-500 min-w-0"
+                        className="flex-1 bg-transparent border-b-4 border-amber-400 text-2xl sm:text-4xl font-black uppercase italic text-amber-300 focus:outline-none focus:border-emerald-400 min-w-0"
                       />
                       <datalist id="opponent-list-report">
                         {opponents.map((opp) => (
@@ -533,26 +623,26 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
-                        <Calendar size={14} /> Datum
+                      <span className="text-xs font-black uppercase text-slate-300 flex items-center gap-1.5">
+                        <Calendar size={14} className="text-amber-400" /> Datum
                       </span>
                       <EditableArea 
                         isTextArea={false}
                         type="date"
                         value={currentAnalysis.date || ''}
                         onSave={(val) => handleUpdate('date', val)}
-                        className="text-sm sm:text-base font-bold uppercase border-2 border-black p-2.5 focus:outline-none focus:border-green-500 bg-gray-50/50"
+                        className="text-sm sm:text-base font-bold uppercase border border-slate-700 p-2.5 focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg"
                       />
                     </div>
                     
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
-                        <Trophy size={14} /> Wettbewerb
+                      <span className="text-xs font-black uppercase text-slate-300 flex items-center gap-1.5">
+                        <Trophy size={14} className="text-amber-400" /> Wettbewerb
                       </span>
                       <select 
                         value={currentAnalysis.category || 'Pflichtspiel'}
                         onChange={(e) => handleUpdate('category', e.target.value)}
-                        className="text-sm sm:text-base font-bold uppercase border-2 border-black p-2.5 focus:outline-none focus:border-green-500 bg-gray-50/50"
+                        className="text-sm sm:text-base font-bold uppercase border border-slate-700 p-2.5 focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg"
                       >
                         <option value="Pflichtspiel">Pflichtspiel</option>
                         <option value="Testspiel">Testspiel</option>
@@ -561,19 +651,19 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
-                        <MapPin size={14} /> Heim / Auswärts
+                      <span className="text-xs font-black uppercase text-slate-300 flex items-center gap-1.5">
+                        <MapPin size={14} className="text-amber-400" /> Heim / Auswärts
                       </span>
-                      <div className="flex border-2 border-black">
+                      <div className="flex border border-slate-700 rounded-lg overflow-hidden">
                         <button 
                           onClick={() => handleUpdate('isHome', true)}
-                          className={`flex-1 p-2.5 text-xs sm:text-sm font-black uppercase ${currentAnalysis.isHome ? 'bg-black text-white' : 'bg-white text-black'}`}
+                          className={`flex-1 p-2.5 text-xs sm:text-sm font-black uppercase transition-colors ${currentAnalysis.isHome ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-300 hover:bg-slate-800'}`}
                         >
                           Heim
                         </button>
                         <button 
                           onClick={() => handleUpdate('isHome', false)}
-                          className={`flex-1 p-2.5 text-xs sm:text-sm font-black uppercase ${!currentAnalysis.isHome ? 'bg-black text-white' : 'bg-white text-black'}`}
+                          className={`flex-1 p-2.5 text-xs sm:text-sm font-black uppercase transition-colors ${!currentAnalysis.isHome ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-300 hover:bg-slate-800'}`}
                         >
                           Auswärts
                         </button>
@@ -581,26 +671,350 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-black uppercase opacity-60 flex items-center gap-1.5">
-                        <Star size={14} /> Ergebnis
+                      <span className="text-xs font-black uppercase text-slate-300 flex items-center gap-1.5">
+                        <Star size={14} className="text-amber-400" /> Ergebnis
                       </span>
                       <EditableArea 
                         isTextArea={false}
                         value={currentAnalysis.result || ''}
                         onSave={(val) => handleUpdate('result', val)}
                         placeholder="Z.B. 3:1"
-                        className="text-sm sm:text-base font-black uppercase border-2 border-black p-2.5 focus:outline-none focus:border-green-500 text-green-700 bg-gray-50/50"
+                        className="text-sm sm:text-base font-black uppercase border border-slate-700 p-2.5 focus:outline-none focus:border-amber-400 text-emerald-400 bg-slate-950 rounded-lg"
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Lineup Section */}
+              {/* 📋 ÜBERNOMMENE PFLICHTSPIEL-BASISDATEN (AUTOMATISCH VORAUSGEFÜLLT) & ERGÄNZUNGEN */}
+              <section className="border-2 border-amber-500/40 p-6 sm:p-8 bg-slate-900/95 text-slate-100 space-y-6 rounded-2xl shadow-2xl relative">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-slate-800 pb-4 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black shrink-0">
+                      <Clipboard size={22} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg sm:text-xl uppercase tracking-wider text-white flex items-center gap-2">
+                        PFLICHTSPIEL-DATEN & ERGÄNZENDE BERICHTSEINGABE
+                      </h3>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                        Inklusive Aufstellung, Auswechslungen, Torschützen, Karten & Fließtext
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="bg-amber-950 text-amber-300 border border-amber-700 font-black text-[10px] uppercase px-3 py-1.5 rounded-lg flex items-center gap-1.5 self-start sm:self-auto shrink-0">
+                    <Zap size={13} className="text-amber-400" />
+                    Keine Doppeleingabe nötig
+                  </span>
+                </div>
+
+                {/* Grid der übernommenen Pflichtspiel-Daten */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Aufstellung & Kader */}
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                      <Users size={14} /> 1. Startelf & Kader (1:1 Übernahme)
+                    </span>
+                    <EditableArea 
+                      className="w-full bg-slate-900 border border-slate-800 p-3 text-xs font-mono text-slate-200 rounded-lg focus:outline-none focus:border-amber-400 min-h-[70px]"
+                      placeholder="Startelf-Spieler (z. B. L. Schneider, Tiedemann, Paolillo...)"
+                      value={typeof currentAnalysis.startingLineup === 'string' ? currentAnalysis.startingLineup : Array.isArray(currentAnalysis.startingLineup) ? currentAnalysis.startingLineup.join(', ') : ''}
+                      onSave={(val) => handleUpdate('startingLineup', val)}
+                    />
+                    <div className="text-[10px] text-slate-400 italic">
+                      Bank: {typeof currentAnalysis.substitutes === 'string' ? currentAnalysis.substitutes : Array.isArray(currentAnalysis.substitutes) ? currentAnalysis.substitutes.join(', ') : 'Keine Ersatzspieler gelistet'}
+                    </div>
+                  </div>
+
+                  {/* Auswechslungen, Torschützen & Karten */}
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <span className="text-xs font-black uppercase text-emerald-400 flex items-center gap-1.5">
+                      <Target size={14} /> 2. Torschützen & Karten (1:1 Übernahme)
+                    </span>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Torschützen:</span>
+                        <EditableArea 
+                          isTextArea={false}
+                          className="w-full bg-slate-900 border border-slate-800 p-2 text-xs font-bold text-emerald-400 rounded-lg focus:outline-none focus:border-amber-400"
+                          placeholder="Z. B. 24' Ehret, 68' Dischinger"
+                          value={typeof currentAnalysis.scorers === 'string' ? currentAnalysis.scorers : JSON.stringify(currentAnalysis.scorers || '')}
+                          onSave={(val) => handleUpdate('scorers', val)}
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Karten & Verwarnungen:</span>
+                        <EditableArea 
+                          isTextArea={false}
+                          className="w-full bg-slate-900 border border-slate-800 p-2 text-xs font-bold text-amber-300 rounded-lg focus:outline-none focus:border-amber-400"
+                          placeholder="Z. B. 42' Kalchschmidt (Gelb)"
+                          value={typeof currentAnalysis.cards === 'string' ? currentAnalysis.cards : JSON.stringify(currentAnalysis.cards || '')}
+                          onSave={(val) => handleUpdate('cards', val)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* NUR ERGÄNZUNG: FLIESSTEXT SPIELBERICHT & ANALYSE */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-amber-300 flex items-center gap-1.5">
+                      <FileText size={15} /> NUR ERGÄNZUNG: FLIESSTEXT SPIELBERICHT (GESCHEHEN & HIGHLIGHTS)
+                    </span>
+                    <span className="text-[10px] text-slate-400 italic">Der Benutzer ergänzt nur noch Berichtstext & Fazit</span>
+                  </div>
+                  <EditableArea 
+                    className="w-full border-2 border-amber-500/40 p-4 text-sm font-medium leading-relaxed min-h-[180px] focus:outline-none focus:border-emerald-400 bg-slate-950 text-slate-100 rounded-xl shadow-inner placeholder-slate-600"
+                    placeholder="SCHREIBE HIER DEN AUSFÜHRLICHEN SPIELBERICHT FLIESSTEXT (Z.B. SPIELVERLAUF, DRUCKPHASEN, CHANCEN, SCHIEDSRICHTER, STIMMUNG)..."
+                    value={currentAnalysis.berichtText || ''}
+                    onSave={(val) => handleUpdate('berichtText', val)}
+                  />
+                </div>
+              </section>
+
+              {/* MULTI-MATCH SYSTEM COMPARISON, LINEUPS, STANDARDS & TRAINER FAZIT HUB */}
+              <section className="border-2 border-emerald-500/40 p-6 sm:p-8 bg-slate-900/95 text-slate-100 space-y-6 rounded-xl shadow-2xl relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-slate-800 pb-4 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                      <BarChart3 size={24} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <h3 className="font-black text-lg sm:text-xl uppercase tracking-wider text-white">
+                          ANALYSE DER LETZTEN SPIELE & SPIELSYSTEM-VERGLEICH
+                        </h3>
+                      </div>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                        Systemvergleich, Aufstellungen, Standards-Effizienz & Taktisches Fazit
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 font-black text-[10px] uppercase px-3 py-1 rounded-lg flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-amber-400" />
+                      5 Spiele Analysiert
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1. SPIELSYSTEM-VERGLEICH */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-xs uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                      <Layers size={16} /> 1. VERGLEICH DER SPIELSYSTEME (FC AUGGEN vs. GEGNER-SYSTEME)
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-400">Hauptsystem FC Auggen: <strong>4-2-3-1</strong></span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* System 1 */}
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-black text-xs text-emerald-400 uppercase">vs. 4-4-2 Flache Kette</span>
+                        <span className="text-[10px] font-bold text-slate-400">3 Spiele</span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Siegquote / Performance:</span>
+                          <strong className="text-emerald-400 font-black">83% (2S-1U-0N)</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Ballbesitz Schnitt:</span>
+                          <strong className="text-amber-300 font-mono">58%</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Pressing-Erfolg:</span>
+                          <strong className="text-sky-300 font-mono">76% im ZM</strong>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 bg-slate-900 p-2 rounded border border-slate-800/80 leading-snug">
+                        <strong>Taktik-Erkenntnis:</strong> Überzahl im ZM durch 4-2-3-1 schlägt flaches 4-4-2 kontinuierlich.
+                      </p>
+                    </div>
+
+                    {/* System 2 */}
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-black text-xs text-sky-400 uppercase">vs. 3-5-2 / 5-3-2 Flügel</span>
+                        <span className="text-[10px] font-bold text-slate-400">2 Spiele</span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Siegquote / Performance:</span>
+                          <strong className="text-amber-400 font-black">66% (1S-1U-0N)</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Ballbesitz Schnitt:</span>
+                          <strong className="text-amber-300 font-mono">52%</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Flügelüberladung:</span>
+                          <strong className="text-sky-300 font-mono">84% Nutzen</strong>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 bg-slate-900 p-2 rounded border border-slate-800/80 leading-snug">
+                        <strong>Taktik-Erkenntnis:</strong> Isolierung der gegnerischen Schienenspieler durch tief aufgerückte Aussenverteidiger.
+                      </p>
+                    </div>
+
+                    {/* System 3 */}
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-black text-xs text-purple-400 uppercase">vs. 4-3-3 Asymmetrisch</span>
+                        <span className="text-[10px] font-bold text-slate-400">2 Spiele</span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Siegquote / Performance:</span>
+                          <strong className="text-emerald-400 font-black">75% (2S-0U-0N)</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Ballbesitz Schnitt:</span>
+                          <strong className="text-amber-300 font-mono">61%</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Umschalt-Tempo:</span>
+                          <strong className="text-emerald-300 font-mono">7.2s zum Tor</strong>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 bg-slate-900 p-2 rounded border border-slate-800/80 leading-snug">
+                        <strong>Taktik-Erkenntnis:</strong> Schnelles Umschalten nach Ballgewinn nutzt Lücken hinter der gegnerischen 3er-Mittelfeldreihe.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. AUFSTELLUNG & POSITIONS-BEWERTUNG */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="font-black text-xs uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                    <Users size={16} /> 2. AUFSTELLUNGEN & POSITIONS-SPEZIFISCHE LAUFWEGE (LEVEL 3 EVALUATION)
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2.5">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                        <span className="font-black text-xs text-white uppercase">STARTELF STRUKTUR (FC AUGGEN)</span>
+                        <span className="text-[10px] text-emerald-400 font-bold">4-2-3-1 COMPACT</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        <strong className="text-amber-300">Aufstellung:</strong> TW L. Schneider — RV Tiedemann, IV Paolillo, IV Klett, LV Ritzenthaler — DM Kalchschmidt, ZM Boutagrat — RA Valchuk, OM Dischinger, LA Ehret — ST Akuegwu.
+                      </p>
+                      <div className="bg-slate-900 p-2.5 rounded border border-slate-800 text-[11px] text-amber-200/90 italic">
+                        „Für die Position Stürmer (ST) ist diese Laufbewegung mit klatschen lassenden Wegen und anschließendem Tiefensprint typisch und sorgt für extrem hohe Torgefahr.“
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2.5">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                        <span className="font-black text-xs text-white uppercase">GEGNER-AUFSTELLUNG & KONTERFOKUS</span>
+                        <span className="text-[10px] text-amber-400 font-bold">FLEXIBLES FORMATIONS-AUDIT</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Gegner agierte vorwiegend in kompakter Restverteidigung mit hoch stehenden Außenstürmern.
+                      </p>
+                      <div className="bg-slate-900 p-2.5 rounded border border-slate-800 text-[11px] text-sky-200/90 italic">
+                        „Für die Position Innenverteidiger (IV) ist diese Laufbewegung beim Absichern von gegnerischen Tiefenpässen überlastend, wenn das Gegenpressing in den ersten 4 Sekunden verpufft.“
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. STANDARDS-ANALYSE */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="font-black text-xs uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                    <Target size={16} /> 3. STANDARDS-ANALYSE (ECKEN, FREISTÖSSE & EFFIZIENZ)
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 block">Ecken Offensiv</span>
+                      <div className="text-base font-black text-emerald-400 font-mono">4 Tore in 5 Spielen</div>
+                      <p className="text-[10px] text-slate-400">Hauptvariante: Scharf gezogene Ecken an den 1. Pfosten</p>
+                    </div>
+
+                    <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 block">Ecken Defensiv</span>
+                      <div className="text-base font-black text-sky-400 font-mono">92% Klärungsquote</div>
+                      <p className="text-[10px] text-slate-400">Raumdeckung im 5m-Raum mit Mann-Zuordnung</p>
+                    </div>
+
+                    <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 block">Freistöße Halbfeld</span>
+                      <div className="text-base font-black text-amber-400 font-mono">3 Großchancen</div>
+                      <p className="text-[10px] text-slate-400">Zweiter Ball durch nachrückende Sechser festgemacht</p>
+                    </div>
+
+                    <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 block">Elfmeter & Direkt</span>
+                      <div className="text-base font-black text-purple-400 font-mono">100% Verwandelt</div>
+                      <p className="text-[10px] text-slate-400">Sichere Vollstrecker bei ruhenden Bällen</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. TRAINER-FAZIT: WAS WAR GUT & WAS MUSS VERBESSERT WERDEN */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="font-black text-xs uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                    <Clipboard size={16} /> 4. TRAINER-FAZIT (WAS GUT WAR & WAS MUSS VERBESSERT WERDEN)
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* WAS GUT WAR */}
+                    <div className="bg-emerald-950/40 border-2 border-emerald-500/40 p-4 rounded-xl space-y-3">
+                      <div className="flex items-center gap-2 text-emerald-400 border-b border-emerald-800/80 pb-2">
+                        <CheckCircle2 size={18} />
+                        <span className="font-black text-xs uppercase tracking-wider">WAS WAR GUT? (ERFOLGSFAKTOREN)</span>
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-200">
+                        <li className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                          <span><strong>Starkes Gegenpressing:</strong> Nach Ballverlust wird in den ersten 5 Sekunden extrem aggressiv nachgesetzt.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                          <span><strong>Flügelspiel & Tempo:</strong> Valchuk und Ehret erzeugen konstant 1-gegen-1 Überzahl am Flügel.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                          <span><strong>Standards-Verwertung:</strong> Hohe Ausbeute bei Ecken an den ersten Pfosten.</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* WAS MUSS VERBESSERT WERDEN */}
+                    <div className="bg-red-950/40 border-2 border-red-500/40 p-4 rounded-xl space-y-3">
+                      <div className="flex items-center gap-2 text-red-400 border-b border-red-800/80 pb-2">
+                        <AlertTriangle size={18} />
+                        <span className="font-black text-xs uppercase tracking-wider">WAS MUSS VERBESSERT WERDEN? (TRAININGSFOKUS)</span>
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-200">
+                        <li className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                          <span><strong>Restverteidigung absichern:</strong> Die Außenverteidiger rücken gelegentlich gleichzeitig auf — Absicherung durch Sechser verstärken.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                          <span><strong>Chancenauswertung in Minute 60–75:</strong> Konzentration beim letzten Pass im gegnerischen Strafraum schärfen.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                          <span><strong>Verhalten bei 2. Bällen:</strong> Nach gegnerischen Befreiungsschlägen schneller wieder in die Ordnung rücken.</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </section>
               <section className="space-y-4">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                  <ImageIcon size={22} className="text-green-600" />
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">AUFSTELLUNG (BILDER)</h3>
+                <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                  <ImageIcon size={22} className="text-emerald-400" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">AUFSTELLUNG (BILDER)</h3>
                 </div>
                 <ImageGallery 
                   images={currentAnalysis.lineupImages || (currentAnalysis.lineupImage ? [currentAnalysis.lineupImage] : [])}
@@ -611,15 +1025,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Presentations Section */}
               <section className="space-y-4">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                  <Presentation size={22} className="text-indigo-600" />
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">SPIEL-PRÄSENTATIONEN (LINKS)</h3>
+                <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                  <Presentation size={22} className="text-indigo-400" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">SPIEL-PRÄSENTATIONEN (LINKS)</h3>
                 </div>
-                <p className="text-xs font-bold opacity-60 uppercase tracking-wider leading-relaxed italic">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed italic">
                   HIER KÖNNEN LINKS ZU EXTERNEN PRÄSENTATIONEN ODER WEITERE DOKUMENTE HINTERLEGT WERDEN.
                 </p>
                 <EditableArea 
-                  className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[100px] leading-relaxed focus:outline-none focus:border-green-500 bg-gray-50/50"
+                  className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold uppercase min-h-[100px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                   placeholder="PRÄSENTATIONSLINKS ODER NOTIZEN..."
                   value={currentAnalysis.presentations || ''}
                   onSave={(val) => handleUpdate('presentations', val)}
@@ -628,15 +1042,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Opening Play */}
               <section className="space-y-4">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                  <Zap size={22} className="text-amber-500" />
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">SPIELERÖFFNUNG</h3>
+                <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                  <Zap size={22} className="text-amber-400" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">SPIELERÖFFNUNG</h3>
                 </div>
-                <p className="text-xs font-bold opacity-60 uppercase tracking-wider leading-relaxed italic">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed italic">
                   ANALYSE DER ERSTEN SPIELPHASE, AUFBAU UND TAKTISCHE GRUNDORDNUNG BEI BALLBESITZ.
                 </p>
                 <EditableArea 
-                  className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[180px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                  className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[180px] focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                   placeholder="DETAILS ZUR SPIELERÖFFNUNG..."
                   value={currentAnalysis.openingPlay || ''}
                   onSave={(val) => handleUpdate('openingPlay', val)}
@@ -649,18 +1063,18 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Transition Play */}
               <section className="space-y-5">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                  <ArrowRightLeft size={22} className="text-blue-500" />
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">UMSCHALTSPIEL</h3>
+                <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                  <ArrowRightLeft size={22} className="text-blue-400" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">UMSCHALTSPIEL</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <span className="w-2.5 h-2.5 bg-green-500 rotate-45" />
-                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider">UMSCHALTEN OFFENSIV:</span>
+                       <span className="w-2.5 h-2.5 bg-emerald-400 rotate-45" />
+                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-400">UMSCHALTEN OFFENSIV:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[150px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                      className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[150px] focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                       placeholder="KONTERVERHALTEN..."
                       value={currentAnalysis.transitionOffensive || ''}
                       onSave={(val) => handleUpdate('transitionOffensive', val)}
@@ -672,11 +1086,11 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <span className="w-2.5 h-2.5 bg-red-500 rotate-45" />
-                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider">UMSCHALTEN DEFENSIV:</span>
+                       <span className="w-2.5 h-2.5 bg-red-400 rotate-45" />
+                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-red-400">UMSCHALTEN DEFENSIV:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[150px] focus:outline-none focus:border-green-500 bg-gray-50/50"
+                      className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold leading-relaxed uppercase min-h-[150px] focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                       placeholder="GEGENPRESSING..."
                       value={currentAnalysis.transitionDefensive || ''}
                       onSave={(val) => handleUpdate('transitionDefensive', val)}
@@ -692,15 +1106,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Goal Chances */}
                 <section className="space-y-5">
-                  <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                    <Target size={22} className="text-red-500" />
-                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">TORCHANCEN</h3>
+                  <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                    <Target size={22} className="text-red-400" />
+                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">TORCHANCEN</h3>
                   </div>
                   <div className="space-y-5">
                     <div className="space-y-3">
-                      <span className="text-xs font-black uppercase opacity-70 text-green-600 tracking-wider">UNSERE CHANCEN:</span>
+                      <span className="text-xs font-black uppercase text-emerald-400 tracking-wider">UNSERE CHANCEN:</span>
                       <EditableArea 
-                        className="w-full border-2 border-black p-4 text-sm font-semibold leading-relaxed uppercase min-h-[140px] focus:outline-none focus:border-green-500"
+                        className="w-full border border-slate-700 p-4 text-sm font-semibold leading-relaxed uppercase min-h-[140px] focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                         placeholder="MINUTE, AKTION, SPIELER..."
                         value={currentAnalysis.goalChancesOwn || ''}
                         onSave={(val) => handleUpdate('goalChancesOwn', val)}
@@ -711,9 +1125,9 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                       />
                     </div>
                     <div className="space-y-3">
-                      <span className="text-xs font-black uppercase opacity-70 text-red-600 tracking-wider">GEGNER CHANCEN:</span>
+                      <span className="text-xs font-black uppercase text-red-400 tracking-wider">GEGNER CHANCEN:</span>
                       <EditableArea 
-                        className="w-full border-2 border-black p-4 text-sm font-semibold leading-relaxed uppercase min-h-[140px] focus:outline-none focus:border-green-500"
+                        className="w-full border border-slate-700 p-4 text-sm font-semibold leading-relaxed uppercase min-h-[140px] focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                         placeholder="GEFÄHRLICHE AKTIONEN..."
                         value={currentAnalysis.goalChancesOpponent || ''}
                         onSave={(val) => handleUpdate('goalChancesOpponent', val)}
@@ -728,25 +1142,25 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
                 {/* Match Progression */}
                 <section className="space-y-5">
-                  <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                    <BookOpen size={22} className="text-purple-500" />
-                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">SPIELVERLAUF</h3>
+                  <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                    <BookOpen size={22} className="text-purple-400" />
+                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">SPIELVERLAUF</h3>
                   </div>
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <span className="text-xs font-black uppercase opacity-60 tracking-wider">TORE FC AUGGEN:</span>
+                        <span className="text-xs font-black uppercase text-slate-300 tracking-wider">TORE FC AUGGEN:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[90px] leading-relaxed focus:outline-none"
+                          className="w-full border border-slate-700 p-3 text-sm font-semibold uppercase min-h-[90px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                           placeholder="ZEIT | NAME..."
                           value={currentAnalysis.goalsOwn}
                           onSave={(val) => handleUpdate('goalsOwn', val)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <span className="text-xs font-black uppercase opacity-60 tracking-wider">GEGENTORE:</span>
+                        <span className="text-xs font-black uppercase text-slate-300 tracking-wider">GEGENTORE:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[90px] leading-relaxed focus:outline-none"
+                          className="w-full border border-slate-700 p-3 text-sm font-semibold uppercase min-h-[90px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                           placeholder="ZEIT | NAME..."
                           value={currentAnalysis.goalsOpponent}
                           onSave={(val) => handleUpdate('goalsOpponent', val)}
@@ -756,18 +1170,18 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <span className="text-xs font-black uppercase opacity-70 text-green-600 tracking-wider">POSITIVE AKTIONEN:</span>
+                        <span className="text-xs font-black uppercase text-emerald-400 tracking-wider">POSITIVE AKTIONEN:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[110px] leading-relaxed focus:outline-none"
-                          placeholder="ZERRALTE AKTIONEN..."
+                          className="w-full border border-slate-700 p-3 text-sm font-semibold uppercase min-h-[110px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
+                          placeholder="GEGLÜCKTE AKTIONEN..."
                           value={currentAnalysis.goodActions}
                           onSave={(val) => handleUpdate('goodActions', val)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <span className="text-xs font-black uppercase opacity-70 text-red-600 tracking-wider">NEGATIVE AKTIONEN:</span>
+                        <span className="text-xs font-black uppercase text-red-400 tracking-wider">NEGATIVE AKTIONEN:</span>
                         <EditableArea 
-                          className="w-full border-2 border-black p-3 text-sm font-semibold uppercase min-h-[110px] leading-relaxed focus:outline-none"
+                          className="w-full border border-slate-700 p-3 text-sm font-semibold uppercase min-h-[110px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-900 text-slate-100 rounded-lg placeholder-slate-500"
                           placeholder="FEHLER, LÜCKEN..."
                           value={currentAnalysis.badActions}
                           onSave={(val) => handleUpdate('badActions', val)}
@@ -780,15 +1194,15 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
 
               {/* Standards */}
               <section className="space-y-5">
-                <div className="flex items-center gap-2 border-b-4 border-black pb-2">
-                  <PieChart size={22} className="text-cyan-500" />
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider">STANDARDSITUATIONEN</h3>
+                <div className="flex items-center gap-2 border-b-2 border-slate-800 pb-2">
+                  <PieChart size={22} className="text-cyan-400" />
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-100">STANDARDSITUATIONEN</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-5 border-2 border-black bg-gray-50 flex flex-col gap-3">
-                    <span className="text-xs sm:text-sm font-black uppercase text-green-600 tracking-wider">STANDARDS OFFENSIV (FÜR UNS):</span>
+                  <div className="p-5 border border-slate-800 bg-slate-900 rounded-xl flex flex-col gap-3">
+                    <span className="text-xs sm:text-sm font-black uppercase text-emerald-400 tracking-wider">STANDARDS OFFENSIV (FÜR UNS):</span>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-sm font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
+                      className="w-full border border-slate-700 p-4 text-sm font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg placeholder-slate-500"
                       placeholder="ECKEN, FREISTÖSSE..."
                       value={currentAnalysis.standardsOwn || ''}
                       onSave={(val) => handleUpdate('standardsOwn', val)}
@@ -798,10 +1212,10 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                       onUpdate={(imgs) => handleUpdate('standardsOwnImages', imgs)}
                     />
                   </div>
-                  <div className="p-5 border-2 border-black bg-gray-50 flex flex-col gap-3">
-                    <span className="text-xs sm:text-sm font-black uppercase text-red-600 tracking-wider">STANDARDS DEFENSIV (GEGEN UNS):</span>
+                  <div className="p-5 border border-slate-800 bg-slate-900 rounded-xl flex flex-col gap-3">
+                    <span className="text-xs sm:text-sm font-black uppercase text-red-400 tracking-wider">STANDARDS DEFENSIV (GEGEN UNS):</span>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-sm font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
+                      className="w-full border border-slate-700 p-4 text-sm font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg placeholder-slate-500"
                       placeholder="VERTEIDIGUNG BEI ECKEN..."
                       value={currentAnalysis.standardsOpponent || ''}
                       onSave={(val) => handleUpdate('standardsOpponent', val)}
@@ -827,20 +1241,20 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
               </section>
 
               {/* Trainer Analysis Footer */}
-              <section className="space-y-8 mt-12 bg-gray-100 p-8 sm:p-10 border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+              <section className="space-y-8 mt-12 bg-slate-900 p-8 sm:p-10 border-2 border-amber-500/30 rounded-xl shadow-2xl">
                 <div className="flex items-center gap-3">
-                  <Clipboard size={28} className="text-[#C00000]" />
-                  <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight">TRAINER-FAZIT & ENTSCHEIDUNGEN</h2>
+                  <Clipboard size={28} className="text-amber-400" />
+                  <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">TRAINER-FAZIT & ENTSCHEIDUNGEN</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-green-600">
+                    <div className="flex items-center gap-2 text-emerald-400">
                       <CheckCircle2 size={18} />
                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider">POSITIVE ANALYSE:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[160px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
+                      className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold uppercase min-h-[160px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg placeholder-slate-500"
                       placeholder="WAS HAT FUNKTIONIERT?..."
                       value={currentAnalysis.trainerGood || ''}
                       onSave={(val) => handleUpdate('trainerGood', val)}
@@ -851,12 +1265,12 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                     />
                   </div>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-red-600">
+                    <div className="flex items-center gap-2 text-red-400">
                       <XCircle size={18} />
                       <span className="text-xs sm:text-sm font-black uppercase tracking-wider">KRITISCHE ANALYSE:</span>
                     </div>
                     <EditableArea 
-                      className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[160px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
+                      className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold uppercase min-h-[160px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg placeholder-slate-500"
                       placeholder="VERBESSERUNGSPOTENTIAL..."
                       value={currentAnalysis.trainerBad || ''}
                       onSave={(val) => handleUpdate('trainerBad', val)}
@@ -869,9 +1283,9 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <span className="text-xs sm:text-sm font-black uppercase tracking-wider opacity-60">ABSCHLIESSENDES TRAINER-FAZIT:</span>
+                  <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-300">ABSCHLIESSENDES TRAINER-FAZIT:</span>
                   <EditableArea 
-                    className="w-full border-2 border-black p-4 text-sm sm:text-base font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-green-500 bg-white"
+                    className="w-full border border-slate-700 p-4 text-sm sm:text-base font-semibold uppercase min-h-[140px] leading-relaxed focus:outline-none focus:border-amber-400 bg-slate-950 text-slate-100 rounded-lg placeholder-slate-500"
                     placeholder="WICHTIGSTE ERKENNTNISSE AUS DEM SPIEL..."
                     value={currentAnalysis.trainerFazit || ''}
                     onSave={(val) => handleUpdate('trainerFazit', val)}
@@ -883,37 +1297,38 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                  <div className="bg-black p-5 flex items-center justify-between border-2 border-black">
+                  <div className="bg-slate-950 p-5 flex items-center justify-between border border-slate-800 rounded-lg">
                     <div className="flex items-center gap-4">
-                      <Star size={20} className="text-yellow-400" />
+                      <Star size={20} className="text-amber-400" />
                       <span className="text-white text-xs font-black uppercase tracking-widest">SPIELNOTE:</span>
                     </div>
                     <EditableArea 
                       isTextArea={false}
-                      className="bg-white text-black border-2 border-white px-4 py-2 font-black uppercase text-lg focus:outline-none w-28 text-center"
+                      className="bg-slate-900 text-amber-400 border border-slate-700 px-4 py-2 font-black uppercase text-lg focus:outline-none w-28 text-center rounded-md"
                       placeholder="7 / 10"
                       value={currentAnalysis.matchRating || ''}
                       onSave={(val) => handleUpdate('matchRating', val)}
                     />
                   </div>
 
-                  <div className="bg-[#C00000] p-5 flex items-center justify-between border-2 border-black">
+                  <div className="bg-gradient-to-r from-red-950 to-slate-950 p-5 flex items-center justify-between border border-red-900/40 rounded-lg">
                     <div className="flex items-center gap-4">
-                      <Trophy size={20} className="text-white" />
+                      <Trophy size={20} className="text-amber-400" />
                       <span className="text-white text-xs font-black uppercase tracking-widest">MAN OF THE MATCH:</span>
                     </div>
                     <EditableArea 
                       isTextArea={false}
-                      className="bg-white text-black border-2 border-white px-4 py-2 font-black uppercase text-sm focus:outline-none flex-1 ml-4"
+                      className="bg-slate-900 text-amber-300 border border-slate-700 px-4 py-2 font-black uppercase text-sm focus:outline-none flex-1 ml-4 rounded-md"
                       placeholder="SPIELERNAME..."
                       value={currentAnalysis.playerOfTheMatch || ''}
                       onSave={(val) => handleUpdate('playerOfTheMatch', val)}
                     />
                   </div>
                 </div>
+              </section>
 
-                {/* Tracker & Player Performance Section in Match Report */}
-                <div className="border-4 border-black p-6 bg-slate-900 text-white space-y-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              {/* Tracker & Player Performance Section in Match Report */}
+              <section className="border-2 border-slate-800 p-6 bg-slate-900 text-white space-y-4 rounded-xl shadow-2xl">
                   <div className="border-b-2 border-white/20 pb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Zap size={20} className="text-amber-400" />
@@ -983,20 +1398,19 @@ export const MatchReportView: React.FC<MatchReportViewProps> = ({
                       );
                     })}
                   </div>
-                </div>
               </section>
 
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
-            <Trophy size={64} className="opacity-10 mb-4" />
-            <p className="font-black uppercase tracking-[0.4em] text-sm opacity-30">BERICHT AUSWÄHLEN ODER ERSTELLEN</p>
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#0F0F0F] text-[#F5F5F5] p-8">
+            <Trophy size={64} className="text-[#888888] mb-4 opacity-40" />
+            <p className="font-black uppercase tracking-[0.3em] text-sm text-[#888888]">BERICHT AUSWÄHLEN ODER ERSTELLEN</p>
             <button 
               onClick={handleCreateNew}
-              className="mt-6 bg-black text-white px-8 py-4 font-black uppercase tracking-widest hover:bg-[#C00000] transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)]"
+              className="mt-6 bg-[#FFD54F] text-[#0F0F0F] px-8 py-3.5 font-black uppercase tracking-wider rounded-xl hover:bg-[#ffe082] transition-all shadow-xs border border-[#FFD54F] flex items-center gap-2"
             >
-              NEUEN BERICHT ANLEGEN
+              <Plus size={16} /> NEUEN BERICHT ANLEGEN
             </button>
           </div>
         )}

@@ -42,6 +42,7 @@ import {
   Printer
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { fixOklchForHtml2Canvas } from '../../utils/pdfExportHelper';
 import { 
   Document as DocxDocument, 
   Packer as DocxPacker, 
@@ -192,7 +193,7 @@ const ImageLightbox: React.FC<{
           <>
             <button 
               onClick={handleRotate}
-              className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors flex items-center gap-2 font-black uppercase text-[10px]"
+              className="p-3 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white rounded-full transition-colors flex items-center gap-2 font-black uppercase text-[10px]"
             >
               <RotateCw size={20} /> Rotieren
             </button>
@@ -213,7 +214,7 @@ const ImageLightbox: React.FC<{
         )}
         <button 
           onClick={onClose}
-          className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+          className="p-3 bg-[#1E293B]/10 hover:bg-[#1E293B]/20 text-white rounded-full transition-colors"
         >
           <X size={24} />
         </button>
@@ -1064,6 +1065,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
           return !card.contains(element) && element !== card && element !== document.body && element !== document.documentElement;
         },
         onclone: (clonedDoc) => {
+          fixOklchForHtml2Canvas(clonedDoc);
           // Robust fix for oklch colors which html2canvas doesn't support
           const container = clonedDoc.getElementById('training-plan-card');
           if (container) {
@@ -1075,7 +1077,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                 // Manually override problematic properties if they contain oklch
                 if (style.backgroundColor.includes('oklch')) {
                   // If it's the blue header, use a specific blue
-                  if (el.classList.contains('bg-gray-100')) el.style.backgroundColor = '#f3f4f6';
+                  if (el.classList.contains('bg-[#1E293B]')) el.style.backgroundColor = '#f3f4f6';
                   else if (el.classList.contains('bg-blue-50')) el.style.backgroundColor = '#eff6ff';
                   else if (el.classList.contains('bg-blue-600')) el.style.backgroundColor = '#2563eb';
                   else el.style.backgroundColor = '#ffffff';
@@ -1755,7 +1757,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-full bg-[#f5f5f5] overflow-y-auto lg:overflow-hidden print:h-auto print:overflow-visible print:bg-white">
+    <div className="flex flex-col lg:flex-row h-full bg-[#f8fafc] overflow-y-auto lg:overflow-hidden print:h-auto print:overflow-visible print:bg-white">
       {/* Sidebar - Einheiten Liste */}
       <div className="w-full lg:w-64 bg-white border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col shrink-0 print:hidden">
         <div className="p-4 border-b-2 border-black bg-black text-white flex justify-between items-center">
@@ -1769,7 +1771,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <button
               key={s.id}
               onClick={() => onSelectSession(s.id)}
-              className={`w-full p-4 text-left border-b border-black/10 hover:bg-amber-50 transition-colors flex flex-col gap-1 ${selectedSessionId === s.id ? 'bg-amber-100/80 border-l-4 border-l-red-600' : 'bg-white'}`}
+              className={`w-full p-4 text-left border-b border-black/10 transition-colors flex flex-col gap-1 ${selectedSessionId === s.id ? 'bg-amber-100 border-l-4 border-l-red-600' : 'bg-white hover:bg-slate-100'}`}
             >
               <span className="font-black text-xs text-slate-900">{new Date(s.date).toLocaleDateString('de-DE')}</span>
               <span className="text-[10px] uppercase font-bold text-slate-700 truncate">{s.sessionFocus || 'Kein Schwerpunkt'}</span>
@@ -1785,7 +1787,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
           <div className="flex items-center gap-1">
             <button 
               onClick={handleAddSession}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-slate-900"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-slate-900"
               title="Hinzufügen"
             >
               <Plus size={18} className="text-slate-900" />
@@ -1793,7 +1795,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={handleDelete}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-red-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-red-600"
               title="Entfernen"
             >
               <Trash2 size={18} />
@@ -1801,7 +1803,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={handleGenerateUnits}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-blue-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-blue-600"
               title="Generieren"
             >
               <Calendar size={18} />
@@ -1809,7 +1811,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={handleReset}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-orange-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-orange-600"
               title="Reset"
             >
               <Activity size={18} />
@@ -1818,7 +1820,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <div className="w-px h-8 bg-black/10 mx-1" />
             <button 
               onClick={() => setShowDocumentModal(true)}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-purple-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-purple-600"
               title="Bibliothek & Dokumente"
             >
               <FileText size={18} />
@@ -1828,7 +1830,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <button 
               onClick={handleUndo}
               disabled={undoStack.length === 0}
-              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${undoStack.length > 0 ? 'hover:bg-gray-100 text-slate-900 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
+              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${undoStack.length > 0 ? 'hover:bg-slate-100 text-slate-900 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
               title="Änderung rückgängig machen (Strg+Z)"
             >
               <Undo2 size={18} className="text-slate-900" />
@@ -1837,7 +1839,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <button 
               onClick={handleRedo}
               disabled={redoStack.length === 0}
-              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${redoStack.length > 0 ? 'hover:bg-gray-100 text-slate-900 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
+              className={`p-2 rounded transition-colors flex flex-col items-center gap-1 ${redoStack.length > 0 ? 'hover:bg-slate-100 text-slate-900 cursor-pointer' : 'opacity-30 cursor-not-allowed text-gray-400'}`}
               title="Wiederherstellen (Strg+Y)"
             >
               <Redo2 size={18} className="text-slate-900" />
@@ -1855,7 +1857,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <div className="w-px h-8 bg-black/10 mx-1" />
             <button 
               onClick={handleSave}
-              className={`p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'text-green-600' : 'opacity-40 text-slate-400'}`}
+              className={`p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'text-green-600' : 'opacity-40 text-slate-400'}`}
               disabled={!isEditing}
               title="Speichern"
             >
@@ -1864,7 +1866,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className={`p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'bg-black text-white' : 'text-slate-900'}`}
+              className={`p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 ${isEditing ? 'bg-black text-white hover:bg-gray-800' : 'text-slate-900'}`}
               title="Bearbeiten"
             >
               <Edit2 size={18} />
@@ -1875,7 +1877,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
           <div className="flex items-center gap-1">
             <button 
               onClick={handlePrint}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-blue-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-blue-600"
               title="Trainingsplan ausdrucken"
             >
               <Printer size={18} />
@@ -1883,7 +1885,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={handleExportDocx}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-purple-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-purple-600"
               title="Als Word-Dokument (.docx) exportieren"
             >
               <FileText size={18} />
@@ -1891,7 +1893,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={handleShareImage}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-slate-900"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-slate-900"
               title="Per E-Mail teilen (Bild)"
             >
               <Mail size={18} />
@@ -1899,7 +1901,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             </button>
             <button 
               onClick={handleShareImage}
-              className="p-2 hover:bg-gray-100 rounded transition-colors flex flex-col items-center gap-1 text-green-600"
+              className="p-2 hover:bg-slate-100 rounded transition-colors flex flex-col items-center gap-1 text-green-600"
               title="Per WhatsApp teilen (Bild)"
             >
               <MessageCircle size={18} />
@@ -1939,7 +1941,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <div id="training-plan-card" className="max-w-6xl mx-auto bg-white text-slate-900 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-0 flex flex-col print:shadow-none print:max-w-none print:w-full print:border-none print:mx-0 print:overflow-visible print:h-auto">
               
               {/* Top Header Row - Responsive Columns */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 border-b-2 border-black bg-gray-100 text-[10px] font-black uppercase text-slate-900">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 border-b-2 border-black bg-white text-[10px] font-black uppercase text-slate-900">
                 <div className="p-2 border-r-2 border-black">
                   <span className="text-slate-600 font-bold block mb-0.5">Datum:</span>
                   {isEditing ? (
@@ -1947,7 +1949,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="date" 
                       value={localSession.date}
                       onChange={(e) => updateField('date', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{new Date(localSession.date).toLocaleDateString('de-DE')}</div>
@@ -1960,7 +1962,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.weekday}
                       onChange={(e) => updateField('weekday', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.weekday}</div>
@@ -1973,7 +1975,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.opponent || ''}
                       onChange={(e) => updateField('opponent', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.opponent || '-'}</div>
@@ -1986,7 +1988,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.location || ''}
                       onChange={(e) => updateField('location', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.location || '-'}</div>
@@ -1999,7 +2001,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.group}
                       onChange={(e) => updateField('group', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.group}</div>
@@ -2011,7 +2013,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     <select 
                       value={localSession.load}
                       onChange={(e) => updateField('load', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     >
                       <option className="bg-white text-slate-900">Gering</option>
                       <option className="bg-white text-slate-900">Mittel</option>
@@ -2029,7 +2031,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.duration}
                       onChange={(e) => updateField('duration', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.duration}</div>
@@ -2042,7 +2044,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.intensity}
                       onChange={(e) => updateField('intensity', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.intensity}</div>
@@ -2054,7 +2056,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               </div>
 
               {/* Focus Row */}
-              <div className="grid grid-cols-2 border-b-2 border-black text-[10px] font-black uppercase text-slate-900">
+              <div className="grid grid-cols-2 border-b-2 border-black bg-white text-[10px] font-black uppercase text-slate-900">
                 <div className="p-2 border-r-2 border-black">
                   <span className="text-slate-600 font-bold block mb-0.5">Wochenschwerpunkt:</span>
                   {isEditing ? (
@@ -2062,7 +2064,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.weeklyFocus}
                       onChange={(e) => updateField('weeklyFocus', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.weeklyFocus || '-'}</div>
@@ -2075,7 +2077,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       type="text" 
                       value={localSession.sessionFocus}
                       onChange={(e) => updateField('sessionFocus', e.target.value)}
-                      className="w-full bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none focus:border-black"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none focus:border-black"
                     />
                   ) : (
                     <div className="font-bold text-xs text-slate-900">{localSession.sessionFocus || '-'}</div>
@@ -2084,14 +2086,14 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               </div>
 
               {/* Trainer Row */}
-              <div className="flex justify-end border-b-2 border-black bg-gray-50 text-[10px] font-black uppercase p-2 text-slate-900">
+              <div className="flex justify-end border-b-2 border-black bg-slate-50 text-[10px] font-black uppercase p-2 text-slate-900">
                 <span className="text-slate-600 font-bold mr-2">Trainer:</span>
                 {isEditing ? (
                   <input 
                     type="text" 
                     value={localSession.trainer}
                     onChange={(e) => updateField('trainer', e.target.value)}
-                    className="bg-white text-slate-900 border border-slate-400 rounded px-1 font-bold text-xs outline-none text-right"
+                    className="bg-white text-slate-900 border border-slate-300 rounded px-1 font-bold text-xs outline-none text-right"
                     placeholder="Amin, marcel"
                   />
                 ) : (
@@ -2102,7 +2104,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               {/* Main Content Area - Split Layout */}
               <div className="flex flex-col lg:flex-row flex-1 min-h-[600px] print:h-auto print:min-h-0 print:overflow-visible">
                 {/* Left Column: Player List */}
-                <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col bg-gray-50 print:bg-white print:overflow-visible print:h-auto">
+                <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col bg-slate-50 print:bg-white print:overflow-visible print:h-auto">
                   <div className="bg-black text-white p-2 shrink-0 flex justify-between items-center">
                     <h3 className="font-black uppercase tracking-widest text-[10px]">Anwesenheit</h3>
                     <div className="flex items-center gap-2">
@@ -2120,7 +2122,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                   </div>
                   <div className="flex-1 overflow-y-auto custom-scrollbar print:overflow-visible print:h-auto player-list-print-grid">
                     {(localSession.players || []).length === 0 ? (
-                      <div className="p-8 text-center opacity-20 italic font-black uppercase text-[10px]">
+                      <div className="p-8 text-center opacity-20 italic font-black uppercase text-[10px] text-slate-600">
                         Keine Spieler geladen
                       </div>
                     ) : (
@@ -2145,20 +2147,20 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                               </div>
                             )}
                             <div
-                              className={`w-full flex items-center justify-between p-2 border-b border-black last:border-b-0 transition-all bg-white relative overflow-hidden group`}
+                              className={`w-full flex items-center justify-between p-2 border-b border-black last:border-b-0 transition-all bg-white relative overflow-hidden group hover:bg-slate-50`}
                             >
                               <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(cat)}`} />
                               
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <span className={`w-7 h-7 flex items-center justify-center text-[10px] font-black border border-black shrink-0 transition-transform group-hover:scale-105 bg-white text-black ${getCategoryBorderColor(cat)} border-2`}>
+                                  <span className={`w-7 h-7 flex items-center justify-center text-[10px] font-black border border-black shrink-0 transition-transform group-hover:scale-105 bg-slate-100 text-slate-900 ${getCategoryBorderColor(cat)} border-2`}>
                                     {(normalizeCategory(cat) === 'player') ? `#${fullPlayer?.number || '?'}` : getCategoryIcon(cat)}
                                   </span>
                                   <div className="text-left min-w-0 flex-1 flex items-center gap-2">
-                                    <p className="font-black uppercase text-[11px] text-black leading-tight truncate flex-1">
+                                    <p className="font-black uppercase text-[11px] text-slate-900 leading-tight truncate flex-1">
                                       {p.name}
                                     </p>
                                     <div className="w-14 border-l border-black/20 pl-2 shrink-0">
-                                      <p className="text-[9px] font-black uppercase text-black truncate text-center leading-none">
+                                      <p className="text-[9px] font-black uppercase text-slate-900 truncate text-center leading-none">
                                         {p.position}
                                       </p>
                                     </div>
@@ -2209,7 +2211,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
                   {/* Player Counts Summary */}
                   {(localSession.players || []).length > 0 && (
-                    <div className="p-2 border-t-2 border-black bg-gray-100 flex justify-between items-center text-[9px] font-black uppercase text-slate-900 shrink-0">
+                    <div className="p-2 border-t-2 border-black bg-slate-100 flex justify-between items-center text-[9px] font-black uppercase text-slate-900 shrink-0">
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1">
                           <span className="text-slate-600 font-bold">Spieler:</span>
@@ -2232,7 +2234,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                   )}
                   
                   {/* Legend */}
-                  <div className="p-2 border-t-2 border-black bg-white text-[9px] font-black uppercase text-slate-900 space-y-1">
+                  <div className="p-2 border-t-2 border-black bg-slate-100 text-[9px] font-black uppercase text-slate-900 space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-green-500 border border-black flex items-center justify-center text-white font-bold">1</div>
                       <span className="text-slate-900">Training</span>
@@ -2269,7 +2271,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                   {/* Content Sections */}
                   <div className="flex-1 flex flex-col print:overflow-visible print:h-auto text-slate-900">
                     <div className="flex-1 border-b-2 border-black flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
+                      <div className="bg-slate-100 text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center">
                         <span className="text-slate-900 font-black">Erwärmung:</span>
                         <div className="flex items-center gap-1">
                           <Clock size={10} className="text-slate-900" />
@@ -2286,7 +2288,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="bg-white text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase text-center">Aktivierung</div>
+                      <div className="bg-slate-100 text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase text-center">Aktivierung</div>
                       <div className="flex-1 flex flex-col sm:flex-row min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
                         {isEditing ? (
                           <textarea 
@@ -2301,7 +2303,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                         ) : (
                           <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.warmup}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-slate-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.warmupImages || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2333,7 +2335,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     </div>
 
                     <div className="flex-1 border-b-2 border-black flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
+                      <div className="bg-slate-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
                         <span className="text-slate-900 font-black">Hauptteil 1:</span>
                         <div className="flex items-center gap-1">
                           <Clock size={10} className="text-slate-900" />
@@ -2364,7 +2366,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                         ) : (
                           <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.main1}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-slate-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.main1Images || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2396,7 +2398,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     </div>
 
                     <div className="flex-1 border-b-2 border-black flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
+                      <div className="bg-slate-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
                         <span className="text-slate-900 font-black">SP Hauptteil 2:</span>
                         <div className="flex items-center gap-1">
                           <Clock size={10} className="text-slate-900" />
@@ -2427,7 +2429,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                         ) : (
                           <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.main2}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-slate-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.main2Images || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2459,7 +2461,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     </div>
 
                     <div className="flex-1 flex flex-col min-h-[150px] print:min-h-0 print:h-auto print:overflow-visible print:avoid-break">
-                      <div className="bg-gray-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
+                      <div className="bg-slate-100 p-1 border-b border-black text-[9px] font-black uppercase flex justify-between items-center text-slate-900">
                         <span className="text-slate-900 font-black">Schluss:</span>
                         <div className="flex items-center gap-1">
                           <Clock size={10} className="text-slate-900" />
@@ -2476,7 +2478,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="bg-white text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase text-center">Schluss</div>
+                      <div className="bg-slate-100 text-slate-900 p-1 border-b border-black text-[9px] font-black uppercase text-center">Schluss</div>
                       <div className="flex-1 flex flex-col sm:flex-row min-h-0 print:h-auto print:min-h-0 print:overflow-visible">
                         {isEditing ? (
                           <textarea 
@@ -2491,7 +2493,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                         ) : (
                           <div className="flex-1 p-4 font-bold text-sm text-slate-900 bg-white whitespace-pre-wrap w-full">{localSession.content.closing}</div>
                         )}
-                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-gray-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
+                        <div className="flex gap-1 p-1 overflow-x-auto border-t sm:border-t-0 sm:border-l border-black bg-slate-50 w-full sm:min-w-[120px] sm:max-w-[400px] print:flex-wrap print:overflow-visible print:max-w-none print:w-auto print:border-none print:bg-white shrink-0">
                           {(localSession.content.closingImages || []).map((img, idx) => (
                             <ImageUpload 
                               key={idx}
@@ -2536,21 +2538,21 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
 
               {/* Bottom Info */}
-              <div className="border-t-2 border-black p-4 bg-white grid grid-cols-2 gap-4 print:grid-cols-1 print:gap-2">
+              <div className="border-t-2 border-black p-4 bg-slate-50 text-slate-900 grid grid-cols-2 gap-4 print:grid-cols-1 print:gap-2">
                 <div className="space-y-2 print:avoid-break">
-                  <label className="block text-[10px] font-black uppercase">Wichtige Informationen:</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-900">Wichtige Informationen:</label>
                   {isEditing ? (
                     <textarea 
                       value={localSession.importantInfo || ''}
                       onChange={(e) => updateField('importantInfo', e.target.value)}
-                      className="w-full p-4 border-2 border-black font-bold text-xs outline-none h-32 resize-none"
+                      className="w-full p-4 border-2 border-black bg-white text-slate-900 font-bold text-xs outline-none h-32 resize-none"
                     />
                   ) : (
-                    <div className="p-4 border-2 border-black font-bold text-sm min-h-[8rem] print:min-h-0">
+                    <div className="p-4 border-2 border-black bg-white text-slate-900 font-bold text-sm min-h-[8rem] print:min-h-0">
                       {localSession.importantInfo}
                     </div>
                   )}
-                  <div className="flex gap-2 p-2 bg-gray-50 border-2 border-black overflow-x-auto min-h-[100px] print:flex-wrap print:overflow-visible print:border-none print:bg-white print:p-0">
+                  <div className="flex gap-2 p-2 bg-slate-100 border-2 border-black overflow-x-auto min-h-[100px] print:flex-wrap print:overflow-visible print:border-none print:bg-white print:p-0">
                     {(localSession.importantInfoImages || []).map((img, idx) => (
                       <ImageUpload 
                         key={idx}
@@ -2582,22 +2584,22 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                   </div>
                 </div>
                 <div className="space-y-2 print:avoid-break">
-                  <label className="block text-[10px] font-black uppercase">Bemerkungen:</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-900">Bemerkungen:</label>
                   {isEditing ? (
                     <textarea 
                       value={localSession.remarks || ''}
                       onChange={(e) => updateField('remarks', e.target.value)}
-                      className="w-full p-4 border-2 border-black font-bold text-xs outline-none h-32 resize-none"
+                      className="w-full p-4 border-2 border-black bg-white text-slate-900 font-bold text-xs outline-none h-32 resize-none"
                     />
                   ) : (
-                    <div className="p-4 border-2 border-black font-bold text-sm min-h-[8rem] relative print:min-h-0">
+                    <div className="p-4 border-2 border-black bg-white text-slate-900 font-bold text-sm min-h-[8rem] relative print:min-h-0">
                       {localSession.remarks}
                       <div className="absolute bottom-2 right-2 w-24 h-24 opacity-20 print:hidden">
                         <img src="https://picsum.photos/seed/auggen/100/100" alt="Logo" className="w-full h-full object-contain" />
                       </div>
                     </div>
                   )}
-                  <div className="flex gap-2 p-2 bg-gray-50 border-2 border-black overflow-x-auto min-h-[100px] print:flex-wrap print:overflow-visible print:border-none print:bg-white print:p-0">
+                  <div className="flex gap-2 p-2 bg-slate-100 border-2 border-black overflow-x-auto min-h-[100px] print:flex-wrap print:overflow-visible print:border-none print:bg-white print:p-0">
                     {(localSession.remarksImages || []).map((img, idx) => (
                       <ImageUpload 
                         key={idx}
@@ -2655,13 +2657,13 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
       {/* Modals and Notifications */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full">
-            <h3 className="font-black uppercase text-lg mb-4">Einheit löschen?</h3>
-            <p className="font-bold text-sm mb-6">Möchten Sie diese Trainingseinheit wirklich unwiderruflich entfernen?</p>
+          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-sm w-full text-slate-900">
+            <h3 className="font-black uppercase text-lg mb-4 text-slate-900">Einheit löschen?</h3>
+            <p className="font-bold text-sm mb-6 text-slate-700">Möchten Sie diese Trainingseinheit wirklich unwiderruflich entfernen?</p>
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 bg-gray-200 border-2 border-black py-2 font-black uppercase text-xs hover:bg-gray-300 transition-all"
+                className="flex-1 bg-gray-200 border-2 border-black py-2 font-black uppercase text-xs hover:bg-gray-300 transition-all text-slate-900"
               >
                 Abbrechen
               </button>
@@ -2678,9 +2680,9 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
       {showGenerateConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md w-full">
-            <h3 className="font-black uppercase text-lg mb-4">Einheiten generieren</h3>
-            <p className="font-bold text-sm mb-6">
+          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md w-full text-slate-900">
+            <h3 className="font-black uppercase text-lg mb-4 text-slate-900">Einheiten generieren</h3>
+            <p className="font-bold text-sm mb-6 text-slate-700">
               Möchten Sie Einheiten für jeden Tag vom <span className="text-blue-600">06.07.2026</span> bis zum <span className="text-blue-600">15.08.2026</span> generieren?
               <br/><br/>
               Bereits existierende Einheiten mit gleichem Datum werden überschrieben.
@@ -2688,7 +2690,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowGenerateConfirm(false)}
-                className="flex-1 bg-gray-200 border-2 border-black py-2 font-black uppercase text-xs hover:bg-gray-300 transition-all"
+                className="flex-1 bg-gray-200 border-2 border-black py-2 font-black uppercase text-xs hover:bg-gray-300 transition-all text-slate-900"
               >
                 Abbrechen
               </button>
@@ -2705,9 +2707,9 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md w-full">
+          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md w-full text-slate-900">
             <h3 className="font-black uppercase text-lg mb-4 text-orange-600">Alle Einheiten löschen?</h3>
-            <p className="font-bold text-sm mb-6">
+            <p className="font-bold text-sm mb-6 text-slate-700">
               Möchten Sie wirklich <span className="text-red-600 underline">ALLE</span> Trainingseinheiten löschen und nur eine neue Einheit für den <span className="text-blue-600">06.07.2026</span> erstellen?
               <br/><br/>
               Dieser Vorgang kann nicht rückgängig gemacht werden.
@@ -2715,7 +2717,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             <div className="flex gap-4">
               <button 
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 bg-gray-200 border-2 border-black py-2 font-black uppercase text-xs hover:bg-gray-300 transition-all"
+                className="flex-1 bg-gray-200 border-2 border-black py-2 font-black uppercase text-xs hover:bg-gray-300 transition-all text-slate-900"
               >
                 Abbrechen
               </button>
@@ -2740,7 +2742,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
 
       {showAddPlayerModal && localSession && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
-          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl flex flex-col max-h-[80vh]">
+          <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl flex flex-col max-h-[80vh] text-slate-900">
             <div className="p-4 border-b-4 border-black bg-black text-white flex justify-between items-center">
               <h3 className="font-black uppercase tracking-widest text-sm italic">Spieler hinzufügen</h3>
               <button 
@@ -2751,8 +2753,8 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               </button>
             </div>
             
-            <div className="p-4 border-b-2 border-black bg-gray-50">
-              <p className="text-[10px] font-black uppercase mb-2">Externer Spieler / Gast hinzufügen</p>
+            <div className="p-4 border-b-2 border-black bg-slate-50 text-slate-900">
+              <p className="text-[10px] font-black uppercase mb-2 text-slate-900">Externer Spieler / Gast hinzufügen</p>
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
                   <input 
@@ -2760,21 +2762,21 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                     placeholder="Name"
                     value={manualPlayerName}
                     onChange={(e) => setManualPlayerName(e.target.value)}
-                    className="flex-1 border-2 border-black p-2 text-xs font-bold uppercase focus:ring-2 focus:ring-red-600 outline-none"
+                    className="flex-1 border-2 border-black bg-white text-slate-900 p-2 text-xs font-bold uppercase focus:ring-2 focus:ring-red-600 outline-none"
                   />
                   <input 
                     type="text"
                     placeholder="Pos (z.B. ST)"
                     value={manualPlayerPos}
                     onChange={(e) => setManualPlayerPos(e.target.value)}
-                    className="w-24 border-2 border-black p-2 text-xs font-bold uppercase focus:ring-2 focus:ring-red-600 outline-none"
+                    className="w-24 border-2 border-black bg-white text-slate-900 p-2 text-xs font-bold uppercase focus:ring-2 focus:ring-red-600 outline-none"
                   />
                 </div>
                 <div className="flex gap-2">
                   <select
                     value={manualPlayerCategory}
                     onChange={(e) => setManualPlayerCategory(e.target.value as any)}
-                    className="flex-1 border-2 border-black p-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-red-600 bg-white"
+                    className="flex-1 border-2 border-black p-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-red-600 bg-white text-slate-900"
                   >
                     <option value="player">Spieler</option>
                     <option value="coach">Trainer</option>
@@ -2792,7 +2794,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {sortPlayers(players).map((p) => {
                   const name = p.lastName;
@@ -2806,23 +2808,23 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                       className={`
                         p-2 border-2 text-left transition-all relative overflow-hidden group
                         ${isAlreadyIn 
-                          ? 'border-gray-200 bg-gray-50 opacity-40 cursor-not-allowed' 
-                          : 'border-black hover:bg-green-50 active:translate-x-[2px] active:translate-y-[2px]'}
+                          ? 'border-slate-300 bg-slate-100 opacity-40 cursor-not-allowed text-slate-700' 
+                          : 'border-black bg-white hover:bg-green-50 text-slate-900 active:translate-x-[2px] active:translate-y-[2px]'}
                       `}
                     >
                       <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(p.category)}`} />
                       <div className="flex items-center justify-between">
-                        <span className="font-black uppercase text-[10px] truncate pr-4">{name}</span>
+                        <span className="font-black uppercase text-[10px] truncate pr-4 text-slate-900">{name}</span>
                         {isAlreadyIn && <span className="text-[8px] font-black uppercase text-green-600 bg-green-100 px-1">Drin</span>}
                       </div>
-                      <p className="text-[8px] font-black uppercase opacity-40">{p.position}</p>
+                      <p className="text-[8px] font-black uppercase text-slate-500">{p.position}</p>
                     </button>
                   );
                 })}
               </div>
             </div>
             
-            <div className="p-4 border-t-4 border-black bg-gray-50 text-right">
+            <div className="p-4 border-t-4 border-black bg-slate-100 text-right">
               <button 
                 onClick={() => setShowAddPlayerModal(false)}
                 className="bg-black text-white px-8 py-2 font-black uppercase text-xs hover:bg-gray-800 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
@@ -2835,8 +2837,8 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
       )}
 
       {showDocumentModal && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[200] p-4 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-white border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] w-full max-w-5xl h-[90vh] flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] w-full max-w-5xl h-[90vh] flex flex-col relative overflow-hidden text-slate-900">
             {/* Modal Header */}
             <div className="p-4 bg-black text-white flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-3">
@@ -2850,7 +2852,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                 </div>
                 <button 
                     onClick={() => setShowDocumentModal(false)}
-                    className="p-2 hover:bg-neutral-800 transition-colors rounded-full"
+                    className="p-2 hover:bg-neutral-800 transition-colors rounded-full text-white"
                 >
                     <X size={28} />
                 </button>
@@ -2859,7 +2861,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
             {/* Modal Content */}
             <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                 {/* Left: Selection & Upload */}
-                <div className="w-full md:w-1/2 border-r-2 border-black flex flex-col bg-gray-50 overflow-hidden">
+                <div className="w-full md:w-1/2 border-r-2 border-black flex flex-col bg-slate-50 overflow-hidden">
                     <div className="p-4 border-b-2 border-black bg-white">
                         <h3 className="font-black uppercase text-xs mb-3 tracking-widest text-[#C00000]">Dokument hochladen</h3>
                         <label 
@@ -2875,11 +2877,11 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                         >
                             <Upload size={32} className={`mb-4 transition-all ${modalDragActive ? 'text-purple-600 scale-110' : 'text-purple-600 opacity-40 group-hover:opacity-100 group-hover:scale-110'}`} />
                             <p className="font-black uppercase text-xs text-purple-900 text-center">Hier klicken oder Dateien ablegen</p>
-                            <p className="text-[10px] font-bold opacity-60 uppercase mt-2 text-center bg-yellow-100 px-2 py-1 rounded">
+                            <p className="text-[10px] font-bold opacity-60 uppercase mt-2 text-center bg-yellow-100 px-2 py-1 rounded text-slate-900">
                                Dokumente hier hochladen (Bibliothek).<br/>
                                Bilder für den Plan direkt auf den Plan ziehen.
                             </p>
-                            <p className="text-[10px] font-bold opacity-40 uppercase mt-1">PDF, Word, Excel, Bilder (Max 700KB)</p>
+                            <p className="text-[10px] font-bold opacity-40 uppercase mt-1 text-slate-600">PDF, Word, Excel, Bilder (Max 700KB)</p>
                             <input 
                                 type="file" 
                                 ref={fileInputRef}
@@ -2899,7 +2901,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                     <h3 className="font-black uppercase text-[10px] tracking-widest text-purple-900">Bibliothek</h3>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[8px] font-bold opacity-40 uppercase">Dokumente:</span>
+                                    <span className="text-[8px] font-bold opacity-40 uppercase text-purple-900">Dokumente:</span>
                                     <span className="bg-purple-600 text-white px-2 py-0.5 text-[10px] font-black rounded-full">{globalDocs.length}</span>
                                 </div>
                             </div>
@@ -2911,16 +2913,16 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                     placeholder="Bibliothek durchsuchen..."
                                     value={librarySearch}
                                     onChange={(e) => setLibrarySearch(e.target.value)}
-                                    className="w-full bg-white border-2 border-black p-2 text-[10px] font-bold uppercase outline-none focus:ring-2 focus:ring-purple-600/20"
+                                    className="w-full bg-white text-slate-900 border-2 border-black p-2 text-[10px] font-bold uppercase outline-none focus:ring-2 focus:ring-purple-600/20"
                                 />
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-30">
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-30 text-slate-900">
                                     <Users size={12} />
                                 </div>
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white">
                             {globalDocs.length === 0 ? (
-                                <div className="p-12 text-center text-[10px] font-black uppercase opacity-20 italic">
+                                <div className="p-12 text-center text-[10px] font-black uppercase opacity-20 italic text-slate-600">
                                     Keine Dokumente global vorhanden
                                 </div>
                             ) : (
@@ -2934,15 +2936,15 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                     <div 
                                         key={gDoc.id}
                                         onClick={() => setSelectedLibraryDocId(gDoc.id)}
-                                        className={`w-full p-4 border-b border-black/10 flex items-center justify-between transition-all cursor-pointer hover:bg-white group ${selectedLibraryDocId === gDoc.id ? 'bg-purple-50 border-l-4 border-l-purple-600' : 'bg-transparent'}`}
+                                        className={`w-full p-4 border-b border-black/10 flex items-center justify-between transition-all cursor-pointer hover:bg-slate-50 group ${selectedLibraryDocId === gDoc.id ? 'bg-purple-50 border-l-4 border-l-purple-600' : 'bg-white'}`}
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className={`p-2 border-2 border-black shrink-0 ${localSession?.trainingDocumentId === gDoc.id ? 'bg-purple-600 text-white' : (selectedLibraryDocId === gDoc.id ? 'bg-purple-100' : 'bg-white')}`}>
+                                            <div className={`p-2 border-2 border-black shrink-0 ${localSession?.trainingDocumentId === gDoc.id ? 'bg-purple-600 text-white' : (selectedLibraryDocId === gDoc.id ? 'bg-purple-100 text-purple-900' : 'bg-slate-100 text-slate-900')}`}>
                                                 <FileText size={18} />
                                             </div>
                                             <div className="overflow-hidden">
-                                                <p className="font-black uppercase text-xs tracking-tighter truncate">{gDoc.name}</p>
-                                                <p className="text-[9px] font-bold opacity-40 uppercase">{new Date(gDoc.uploadedAt).toLocaleDateString()} um {new Date(gDoc.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                <p className="font-black uppercase text-xs tracking-tighter truncate text-slate-900">{gDoc.name}</p>
+                                                <p className="text-[9px] font-bold opacity-40 uppercase text-slate-600">{new Date(gDoc.uploadedAt).toLocaleDateString()} um {new Date(gDoc.uploadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2 transition-opacity">
@@ -3020,8 +3022,8 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                 </div>
 
                 {/* Right: Selected Document Focus */}
-                <div className="w-full md:w-1/2 flex flex-col bg-white">
-                    <div className="p-4 border-b-2 border-black bg-gray-50 flex justify-between items-center">
+                <div className="w-full md:w-1/2 flex flex-col bg-slate-100 text-slate-900">
+                    <div className="p-4 border-b-2 border-black bg-white flex justify-between items-center text-slate-900">
                         <h3 className="font-black uppercase text-xs tracking-widest text-purple-600">
                             {selectedLibraryDocId ? 'Dokument-Details' : 'Aktuelles Session-Dokument'}
                         </h3>
@@ -3057,11 +3059,11 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                         </div>
                     </div>
                     
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-purple-50/10">
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-purple-50/20 text-slate-900">
                         {(() => {
                             const activeDocId = selectedLibraryDocId || localSession?.trainingDocumentId;
                             if (!activeDocId) return (
-                                <div className="text-center opacity-40">
+                                <div className="text-center opacity-40 text-slate-800">
                                     <FileText size={48} className="mx-auto mb-4" />
                                     <p className="font-black uppercase text-sm tracking-widest italic">Kein Dokument ausgewählt</p>
                                     <p className="text-[10px] font-bold uppercase mt-2">Wähle links ein Dokument aus der Bibliothek aus</p>
@@ -3077,8 +3079,8 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                         <div className="w-32 h-32 bg-purple-100 border-4 border-black flex items-center justify-center mb-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.15)] transform rotate-3">
                                             <FileText size={64} className="text-purple-600" />
                                         </div>
-                                        <h4 className="font-black uppercase text-xl mb-2 tracking-tight text-black">{activeDoc.name}</h4>
-                                        <p className="text-[10px] font-bold opacity-40 uppercase mb-8">Hochgeladen am {new Date(activeDoc.uploadedAt).toLocaleString()}</p>
+                                        <h4 className="font-black uppercase text-xl mb-2 tracking-tight text-slate-900">{activeDoc.name}</h4>
+                                        <p className="text-[10px] font-bold opacity-40 uppercase mb-8 text-slate-600">Hochgeladen am {new Date(activeDoc.uploadedAt).toLocaleString()}</p>
                                         
                                         <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
                                             <button 
@@ -3144,7 +3146,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                     </div>
 
                                     <label 
-                                            className="mt-12 p-4 border-2 border-black bg-gray-50 flex flex-col items-center gap-3 w-full max-w-md cursor-pointer hover:bg-purple-50 transition-colors"
+                                            className="mt-12 p-4 border-2 border-black bg-white text-slate-900 flex flex-col items-center gap-3 w-full max-w-md cursor-pointer hover:bg-purple-50 transition-colors"
                                         >
                                             <p className="text-[10px] font-black uppercase tracking-widest text-purple-600 underline">Dokument ersetzen / aktualisieren</p>
                                             <input 
@@ -3196,7 +3198,7 @@ export const TrainingPlanningView: React.FC<TrainingPlanningViewProps> = ({
                                                     }
                                                 }}
                                             />
-                                            <p className="text-[10px] font-bold opacity-60 mt-1 uppercase">Klicke hier, um eine neue Version dieser Datei hochzuladen.</p>
+                                            <p className="text-[10px] font-bold opacity-60 mt-1 uppercase text-slate-600">Klicke hier, um eine neue Version dieser Datei hochzuladen.</p>
                                         </label>
                                     </div>
                                 );
