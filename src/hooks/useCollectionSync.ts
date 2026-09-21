@@ -1,5 +1,3 @@
-
-Usecollectionsync · TS
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   collection,
@@ -39,11 +37,11 @@ import {
   TEST_MINUTES,
   INITIAL_MATCH_ANALYSES
 } from '../constants';
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Error helpers                                                             */
 /* -------------------------------------------------------------------------- */
- 
+
 // Ensures Firestore quota errors always contain 'Quota limit exceeded' (used by firebase.ts and App.tsx UI)
 export function wrappedError(err: any): any {
   if (isQuotaError(err)) {
@@ -56,7 +54,7 @@ export function wrappedError(err: any): any {
   }
   return err;
 }
- 
+
 // Safe write: THROWS when quota is exceeded, so callers never believe a skipped write succeeded.
 export async function safeWrite<T>(writeOp: () => Promise<T>): Promise<T> {
   if (isQuotaExceededActive()) {
@@ -71,7 +69,7 @@ export async function safeWrite<T>(writeOp: () => Promise<T>): Promise<T> {
     throw err;
   }
 }
- 
+
 // For fire-and-forget code paths: handleFirestoreError may throw, which must never become an unhandled rejection.
 function reportErrorSafe(err: any, op: OperationType, path: string) {
   try {
@@ -80,13 +78,13 @@ function reportErrorSafe(err: any, op: OperationType, path: string) {
     console.error(`[sync] ${path}:`, e);
   }
 }
- 
+
 const canWriteNow = () => !isQuotaExceededActive() && navigator.onLine;
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Small utilities                                                           */
 /* -------------------------------------------------------------------------- */
- 
+
 // Firestore throws on `undefined` values -> remove them recursively.
 function stripUndefined(value: any): any {
   if (Array.isArray(value)) {
@@ -101,7 +99,7 @@ function stripUndefined(value: any): any {
   }
   return value;
 }
- 
+
 function sortItems<T>(items: T[], sortField: string | undefined, sortDirection: 'asc' | 'desc'): T[] {
   if (!sortField) return items;
   return [...items].sort((a: any, b: any) => {
@@ -115,7 +113,7 @@ function sortItems<T>(items: T[], sortField: string | undefined, sortDirection: 
     return 0;
   });
 }
- 
+
 function persistCollection(collectionName: string, items: any[]) {
   void saveLocalCollection(collectionName, items);
   try {
@@ -124,7 +122,7 @@ function persistCollection(collectionName: string, items: any[]) {
     console.warn(`localStorage quota exceeded or blocked for fca_col_${collectionName}`, storageError);
   }
 }
- 
+
 // Persistent sets of ids (pending deletes)
 const pendingDeleteKey = (c: string) => `fca_pending_delete_${c}`;
 function readIdSet(key: string): Set<string> {
@@ -156,7 +154,7 @@ function removePendingDelete(collectionName: string, id: string) {
   const s = readIdSet(pendingDeleteKey(collectionName));
   if (s.delete(id)) writeIdSet(pendingDeleteKey(collectionName), s);
 }
- 
+
 // "Seeded" flag: initial/legacy data has been uploaded to Firestore once from this device
 const seededKey = (c: string) => `fca_seeded_${c}`;
 const isSeeded = (c: string) => localStorage.getItem(seededKey(c)) === '1';
@@ -167,15 +165,15 @@ const markSeeded = (c: string) => {
     console.warn('Could not persist seeded flag', e);
   }
 };
- 
+
 // Guards against duplicate parallel writes
 const inFlightWrites = new Set<string>();
 const seedingCollections = new Set<string>();
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Initial / legacy data                                                     */
 /* -------------------------------------------------------------------------- */
- 
+
 const normalizeDate = (dateStr: string) => {
   if (!dateStr) return '';
   if (dateStr.includes('.')) {
@@ -184,7 +182,7 @@ const normalizeDate = (dateStr: string) => {
   }
   return dateStr;
 };
- 
+
 const getYearlyPlanArray = () => {
   if (!YEARLY_PLAN) return [];
   return Object.entries(YEARLY_PLAN).map(([date, plan]) => {
@@ -192,7 +190,7 @@ const getYearlyPlanArray = () => {
     return { ...(plan as any), id: norm, date: norm };
   });
 };
- 
+
 function getLegacyKey(collectionName: string): string | null {
   switch (collectionName) {
     case 'spieler': return 'players';
@@ -216,7 +214,7 @@ function getLegacyKey(collectionName: string): string | null {
     default: return null;
   }
 }
- 
+
 function getInitialFallback(collectionName: string): any[] {
   const legacyKey = getLegacyKey(collectionName);
   if (legacyKey) {
@@ -233,7 +231,7 @@ function getInitialFallback(collectionName: string): any[] {
       }
     }
   }
- 
+
   switch (collectionName) {
     case 'spieler':
       return INITIAL_PLAYERS || [];
@@ -273,7 +271,7 @@ function getInitialFallback(collectionName: string): any[] {
       return [];
   }
 }
- 
+
 // Loads the initial state: localStorage cache + legacy data, otherwise built-in fallback.
 function loadInitial(collectionName: string, idField: string): any[] {
   let currentCached: any[] = [];
@@ -286,7 +284,7 @@ function loadInitial(collectionName: string, idField: string): any[] {
       console.error(`Error parsing cached collection ${collectionName}`, e);
     }
   }
- 
+
   const legacyKey = getLegacyKey(collectionName);
   if (legacyKey) {
     const legacyData = localStorage.getItem(`fca_${legacyKey}`);
@@ -322,9 +320,9 @@ function loadInitial(collectionName: string, idField: string): any[] {
       }
     }
   }
- 
+
   if (currentCached.length > 0) return currentCached;
- 
+
   const fallback = getInitialFallback(collectionName);
   if (fallback.length > 0) {
     try {
@@ -335,11 +333,11 @@ function loadInitial(collectionName: string, idField: string): any[] {
   }
   return fallback;
 }
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Image optimisation                                                        */
 /* -------------------------------------------------------------------------- */
- 
+
 const compressLargeImageString = (base64: string, maxDim = 300, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
     if (typeof base64 !== 'string' || !base64.startsWith('data:image/')) {
@@ -350,14 +348,14 @@ const compressLargeImageString = (base64: string, maxDim = 300, quality = 0.7): 
       resolve(base64);
       return;
     }
- 
+
     const img = new Image();
     img.src = base64;
     img.onload = () => {
       const canvas = document.createElement('canvas');
       let width = img.width;
       let height = img.height;
- 
+
       if (width > height) {
         if (width > maxDim) {
           height = Math.round(height * (maxDim / width));
@@ -369,7 +367,7 @@ const compressLargeImageString = (base64: string, maxDim = 300, quality = 0.7): 
           height = maxDim;
         }
       }
- 
+
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
@@ -383,7 +381,7 @@ const compressLargeImageString = (base64: string, maxDim = 300, quality = 0.7): 
     img.onerror = () => resolve(base64);
   });
 };
- 
+
 const optimizeItems = async (items: any[], idField: string): Promise<{ optimized: any[]; changed: boolean }> => {
   let changed = false;
   const optimized = [...items];
@@ -423,11 +421,11 @@ const optimizeItems = async (items: any[], idField: string): Promise<{ optimized
   }
   return { optimized, changed };
 };
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Item comparison                                                           */
 /* -------------------------------------------------------------------------- */
- 
+
 const normalizeForComparison = (obj: any, idField: string): any => {
   if (obj === null || obj === undefined) return null;
   if (typeof obj !== 'object') return obj;
@@ -451,7 +449,7 @@ const normalizeForComparison = (obj: any, idField: string): any => {
   }
   return hasKeys ? result : null;
 };
- 
+
 const getSortedJSON = (obj: any): string => {
   if (obj === null || obj === undefined) return '';
   if (typeof obj !== 'object') return JSON.stringify(obj);
@@ -459,7 +457,7 @@ const getSortedJSON = (obj: any): string => {
   const keys = Object.keys(obj).sort();
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + getSortedJSON(obj[k])).join(',') + '}';
 };
- 
+
 const areItemsEqual = (a: any, b: any, idField: string): boolean => {
   if (!a && !b) return true;
   if (!a || !b) return false;
@@ -471,11 +469,11 @@ const areItemsEqual = (a: any, b: any, idField: string): boolean => {
     return false;
   }
 };
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Firestore write helpers                                                   */
 /* -------------------------------------------------------------------------- */
- 
+
 // Pushes a locally modified item to Firestore (used for retries from the snapshot merge).
 async function pushLocalItem(collectionName: string, idField: string, localItem: any) {
   const id = String(localItem[idField]);
@@ -493,7 +491,7 @@ async function pushLocalItem(collectionName: string, idField: string, localItem:
     inFlightWrites.delete(key);
   }
 }
- 
+
 // Uploads initial / legacy items ONCE when Firestore is confirmed empty (server data, not cache).
 async function seedCollection(collectionName: string, idField: string, items: any[]) {
   const valid = items.filter((i) => i && i[idField] !== undefined && i[idField] !== null && i[idField] !== '');
@@ -509,7 +507,7 @@ async function seedCollection(collectionName: string, idField: string, items: an
   }
   console.log(`Seeded ${valid.length} items into Firestore collection ${collectionName}`);
 }
- 
+
 async function retryPendingDelete(collectionName: string, id: string) {
   const key = `${collectionName}/${id}#delete`;
   if (inFlightWrites.has(key)) return;
@@ -523,11 +521,11 @@ async function retryPendingDelete(collectionName: string, id: string) {
     inFlightWrites.delete(key);
   }
 }
- 
+
 /* -------------------------------------------------------------------------- */
 /*  Hook                                                                      */
 /* -------------------------------------------------------------------------- */
- 
+
 export function useCollectionSync<T>(
   collectionName: string,
   idField: keyof T = 'id' as keyof T,
@@ -538,10 +536,10 @@ export function useCollectionSync<T>(
   const [data, setData] = useState<T[]>(() => loadInitial(collectionName, String(idField)) as unknown as T[]);
   const dataRef = useRef<T[]>(data);
   const prevCollectionRef = useRef(collectionName);
- 
+
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<Error | null>(null);
- 
+
   // Single place that updates state + ref + persistence (no side effects inside setState updaters).
   const commit = useCallback(
     (items: T[]) => {
@@ -551,7 +549,7 @@ export function useCollectionSync<T>(
     },
     [collectionName]
   );
- 
+
   useEffect(() => {
     // Collection name changed: reset state from the new collection's cache
     if (prevCollectionRef.current !== collectionName) {
@@ -560,20 +558,20 @@ export function useCollectionSync<T>(
       dataRef.current = init;
       setData(init);
     }
- 
+
     if (!enabled) {
       setLoading(false);
       return;
     }
- 
+
     setLoading(true);
     setError(null);
- 
+
     let isMounted = true;
     let unsubscribe: (() => void) | null = null;
     let seq = 0; // guards against out-of-order async snapshot handling
     const idKey = String(idField);
- 
+
     void (async () => {
       try {
         const localDbItems = await getLocalCollection(collectionName);
@@ -586,12 +584,12 @@ export function useCollectionSync<T>(
       } finally {
         if (isMounted && !navigator.onLine) setLoading(false);
       }
- 
+
       if (!isMounted) return;
- 
+
       const colRef = collection(db, collectionName);
       const q = sortField ? query(colRef, orderBy(sortField as string, sortDirection)) : colRef;
- 
+
       unsubscribe = onSnapshot(
         q,
         (snapshot) => {
@@ -600,12 +598,12 @@ export function useCollectionSync<T>(
             try {
               const fromServer = !snapshot.metadata.fromCache;
               const hasPendingWrites = snapshot.metadata.hasPendingWrites;
- 
+
               const rawDbItems: any[] = [];
               snapshot.forEach((d) => {
                 rawDbItems.push({ [idKey]: d.id, ...d.data() });
               });
- 
+
               /* ---- pending deletes: never let them reappear ---- */
               const pendingKey = pendingDeleteKey(collectionName);
               const pending = readIdSet(pendingKey);
@@ -623,7 +621,7 @@ export function useCollectionSync<T>(
                 if (pendingChanged) writeIdSet(pendingKey, pending);
               }
               const dbItems = rawDbItems.filter((i) => !pending.has(String(i[idKey]))) as unknown as T[];
- 
+
               /* ---- local state (IndexedDB first, localStorage as fallback) ---- */
               let localItems: T[] = [];
               try {
@@ -632,7 +630,7 @@ export function useCollectionSync<T>(
               } catch (err) {
                 console.warn(`Error reading IndexedDB for ${collectionName}:`, err);
               }
- 
+
               if (localItems.length === 0) {
                 const local = localStorage.getItem(`fca_col_${collectionName}`);
                 if (local) {
@@ -644,15 +642,15 @@ export function useCollectionSync<T>(
                   }
                 }
               }
- 
+
               // A newer snapshot arrived while we were awaiting -> drop this one
               if (!isMounted || mySeq !== seq) return;
- 
+
               /* ---- seeding / empty-cloud handling ---- */
               if (rawDbItems.length > 0 && fromServer) {
                 markSeeded(collectionName);
               }
- 
+
               if (rawDbItems.length === 0 && localItems.length > 0) {
                 if (fromServer && !isSeeded(collectionName) && canWriteNow() && !seedingCollections.has(collectionName)) {
                   // Firestore is confirmed empty and this device never uploaded its initial data -> upload it once.
@@ -662,7 +660,7 @@ export function useCollectionSync<T>(
                     .catch((err) => reportErrorSafe(err, OperationType.WRITE, collectionName))
                     .finally(() => seedingCollections.delete(collectionName));
                 }
- 
+
                 // Cache-only snapshot, or seed not finished yet: keep showing local data.
                 if (!fromServer || !isSeeded(collectionName)) {
                   const shown = sortItems([...localItems], sortField, sortDirection);
@@ -673,16 +671,16 @@ export function useCollectionSync<T>(
                 }
                 // else: cloud is really empty (was seeded before) -> fall through, only dirty local items survive
               }
- 
+
               /* ---- merge ---- */
               const mergedMap = new Map<string, any>();
               dbItems.forEach((item: any) => mergedMap.set(String(item[idKey]), item));
- 
+
               for (const localItem of localItems as any[]) {
                 const localId = String(localItem[idKey]);
                 if (pending.has(localId)) continue;
                 const dbItem = mergedMap.get(localId);
- 
+
                 if (localItem._dirty === true) {
                   if (dbItem && areItemsEqual(localItem, dbItem, idKey)) {
                     // Already synced -> use the clean DB version (drops the _dirty flag)
@@ -697,9 +695,9 @@ export function useCollectionSync<T>(
                 }
                 // Non-dirty local item that is not in the DB: deleted in the cloud or stale fallback -> discard
               }
- 
+
               const mergedItems = sortItems(Array.from(mergedMap.values()) as T[], sortField, sortDirection);
- 
+
               dataRef.current = mergedItems;
               setData(mergedItems);
               persistCollection(collectionName, mergedItems);
@@ -722,18 +720,18 @@ export function useCollectionSync<T>(
         }
       );
     })();
- 
+
     return () => {
       isMounted = false;
       if (unsubscribe) unsubscribe();
     };
   }, [collectionName, idField, sortField, sortDirection, enabled]);
- 
+
   const addOrUpdateItem = useCallback(
     async (item: T) => {
       const id = String(item[idField]);
       const idKey = String(idField);
- 
+
       let finalItem = item;
       try {
         const { optimized, changed } = await optimizeItems([item], idKey);
@@ -741,9 +739,9 @@ export function useCollectionSync<T>(
       } catch (e) {
         console.warn('Failed to optimize item before saving:', e);
       }
- 
+
       const dirtyItem: any = { ...finalItem, _dirty: true };
- 
+
       // Update local state immediately (based on the ref, no side effects in updater)
       const prev = dataRef.current;
       const idx = prev.findIndex((x) => String(x[idField]) === id);
@@ -756,12 +754,15 @@ export function useCollectionSync<T>(
       }
       commit(sortItems(updated, sortField, sortDirection));
       removePendingDelete(collectionName, id); // re-created after delete
- 
+
       if (!canWriteNow()) {
+        console.warn(
+          `[sync] Write queued for ${collectionName}/${id}: quotaFlag=${isQuotaExceededActive()}, online=${navigator.onLine}`
+        );
         void enqueueSyncOperation(collectionName, idKey, 'SET', id, dirtyItem);
         return;
       }
- 
+
       const writeKey = `${collectionName}/${id}`;
       inFlightWrites.add(writeKey);
       try {
@@ -769,7 +770,7 @@ export function useCollectionSync<T>(
         delete dataToSave[idKey];
         delete dataToSave._dirty;
         const clean = stripUndefined(dataToSave);
- 
+
         // Firestore hard limit: 1 MiB per document
         const approxBytes = new Blob([JSON.stringify(clean)]).size;
         if (approxBytes > 1000000) {
@@ -777,9 +778,9 @@ export function useCollectionSync<T>(
             `Document ${writeKey} is too large for Firestore (${(approxBytes / 1024).toFixed(0)} KB, limit 1 MiB). Reduce the images.`
           );
         }
- 
+
         await safeWrite(() => setDoc(doc(db, collectionName, id), clean, { merge: true }));
- 
+
         // Write succeeded -> clear _dirty, but only if the item was not edited again in the meantime
         const cur = dataRef.current;
         const i2 = cur.findIndex((x) => String(x[idField]) === id);
@@ -801,20 +802,23 @@ export function useCollectionSync<T>(
     },
     [collectionName, idField, sortField, sortDirection, commit]
   );
- 
+
   const removeItem = useCallback(
     async (id: string | number) => {
       const idStr = String(id);
       const idKey = String(idField);
- 
+
       commit(dataRef.current.filter((x) => String(x[idField]) !== idStr));
       addPendingDelete(collectionName, idStr); // filters the doc out of snapshots until the delete is confirmed
- 
+
       if (!canWriteNow()) {
+        console.warn(
+          `[sync] Delete queued for ${collectionName}/${idStr}: quotaFlag=${isQuotaExceededActive()}, online=${navigator.onLine}`
+        );
         void enqueueSyncOperation(collectionName, idKey, 'DELETE', idStr, null);
         return;
       }
- 
+
       try {
         await safeWrite(() => deleteDoc(doc(db, collectionName, idStr)));
         removePendingDelete(collectionName, idStr);
@@ -827,7 +831,6 @@ export function useCollectionSync<T>(
     },
     [collectionName, idField, commit]
   );
- 
+
   return { data, loading, error, addOrUpdateItem, removeItem };
 }
- 
